@@ -20,7 +20,7 @@ MMM::Agent::Helpers - an interface to helper programs for B<mmmd_agent>
 
 =item check_ip($if, $ip)
 
-Check if an ip is configured. If not, configure it and send arp requests 
+Check if the IP $ip is configured on interface $if. If not, configure it and send arp requests 
 to notify other hosts.
 
 Calls B<bin/agent/check_ip>.
@@ -30,13 +30,13 @@ Calls B<bin/agent/check_ip>.
 sub check_ip($$) {
 	my $if = shift;
 	my $ip = shift;
-	_execute('check_ip', "$if $ip")
+	return _execute('check_ip', "$if $ip");
 }
 
 
 =item clear_ip($if, $ip)
 
-Remove an ip address from interface.
+Remove the IP address $ip from interface $if.
 
 Calls B<bin/agent/clear_ip>.
 
@@ -45,7 +45,7 @@ Calls B<bin/agent/clear_ip>.
 sub clear_ip($$) {
 	my $if = shift;
 	my $ip = shift;
-	_execute('clear_ip', "$if $ip")
+	return _execute('clear_ip', "$if $ip");
 }
 
 
@@ -58,7 +58,7 @@ Calls B<bin/agent/mysql_allow_write>, which reads the config file.
 =cut
 
 sub allow_write() {
-	_execute('mysql_allow_write');
+	return _execute('mysql_allow_write');
 }
 
 
@@ -71,11 +71,37 @@ Calls B<bin/agent/mysql_deny_write>, which reads the config file.
 =cut
 
 sub deny_write() {
-	_execute('mysql_deny_write');
+	return _execute('mysql_deny_write');
 }
 
 
-=item sync_with_master($new_master)
+=item turn_on_slave( )
+
+Start slave on local MySQL server.
+
+Calls B<bin/agent/turn_on_slave>, which reads the config file.
+
+=cut
+
+sub turn_on_slave() {
+	return _execute('turn_on_slave');
+}
+
+
+=item turn_off_slave( )
+
+Stop slave on local MySQL server.
+
+Calls B<bin/agent/turn_off_slave>, which reads the config file.
+
+=cut
+
+sub turn_off_slave() {
+	return _execute('turn_off_slave');
+}
+
+
+=item sync_with_master( )
 
 Try to sync a (soon active) master up with his peer (old active master) when the
 I<active_writer_role> is moved. If peer is reachable sync with master log. If 
@@ -85,9 +111,8 @@ Calls B<bin/agent/sync_with_master>, which reads the config file.
 
 =cut
 
-sub sync_with_master($) {
-	my $new_master = shift;
-	_execute('sync_with_master', $new_master);
+sub sync_with_master() {
+	return _execute('sync_with_master');
 }
 
 
@@ -102,7 +127,7 @@ Calls B<bin/agent/set_active_master>, which reads the config file.
 
 sub set_active_master($) {
 	my $new_master = shift;
-	_execute('set_active_master', $new_master);
+	return _execute('set_active_master', $new_master);
 }
 
 #-------------------------------------------------------------------------------
@@ -111,7 +136,7 @@ sub _execute($$$) {
 	my $params		= shift;
 	my $return_all	= shift;
 
-	my $path		= "$agent->{bin_path}/$command";
+	my $path		= "$main::agent->{bin_path}/$command";
 	$params = '' unless defined($params);
 
 	DEBUG "Executing $path $params";

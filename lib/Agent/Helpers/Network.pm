@@ -4,10 +4,25 @@ use strict;
 use warnings;
 use English qw( OSNAME );
 
-
 our $VERSION = '0.01';
 
-#-------------------------------------------------------------------------------
+=head1 NAME
+
+MMM::Agent::Helpers::Network - network related functions for the B<mmmd_agent> helper programs
+
+=cut
+
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item check_ip($if, $ip)
+
+Check if the IP $ip is configured on interface $if. Returns 0 if not, 1 otherwise.
+
+=cut
+
 sub check_ip($$) {
 	my $if = shift;
 	my $ip = shift;
@@ -28,7 +43,13 @@ sub check_ip($$) {
 	return ($output =~ /$ip/) ? 1 : 0;
 }
 
-#-------------------------------------------------------------------------------
+
+=item add_ip($if, $ip)
+
+Add IP $ip to the interface $if.
+
+=cut
+
 sub add_ip($$) {
 	my $if = shift;
 	my $ip = shift;
@@ -51,7 +72,13 @@ sub add_ip($$) {
 	}
 }
 
-#-------------------------------------------------------------------------------
+
+=item clear_ip($if, $ip)
+
+Remove the IP $ip from the interface $if.
+
+=cut
+
 sub clear_ip($$) {
 	my $if = shift;
 	my $ip = shift;
@@ -68,7 +95,13 @@ sub clear_ip($$) {
 	}
 }
 
-#-------------------------------------------------------------------------------
+
+=item send_arp($if, $ip)
+
+Send arp requests for the IP $ip to the broadcast address on network interface $if.
+
+=cut
+
 sub send_arp($$) {
 	my $if = shift;
 	my $ip = shift;

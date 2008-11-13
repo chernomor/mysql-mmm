@@ -20,17 +20,13 @@ if (scalar(@ARGV) != 0) {
     exit(1);
 }
 
+# Read config file
 our $config = new MMM::Common::Config::;
 $config->read('mmm_agent');
 $config->check('AGENT');
 
-my $host		= $config->{host}->{ $config->{this} }->{ip};
-my $port		= $config->{host}->{ $config->{this} }->{mysql_port};
-my $user		= $config->{host}->{ $config->{this} }->{agent_user};
-my $password	= $config->{host}->{ $config->{this} }->{agent_password};
-
 # Finally do the work
-MMM::Agent::Helpers::Actions::mysql_deny_write($host, $port, $user, $password);
+MMM::Agent::Helpers::Actions::mysql_deny_write();
 
 __END__
 

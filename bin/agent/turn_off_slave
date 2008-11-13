@@ -26,18 +26,18 @@ $config->read('mmm_agent');
 $config->check('AGENT');
 
 # Finally do the work
-MMM::Agent::Helpers::Actions::mysql_allow_write();
+MMM::Agent::Helpers::Actions::toggle_slave(0);
 
 __END__
 
 =head1 NAME
 
-mysql_allow_write
+turn_off_slave
 
 =head1 DESCRIPTION
 
-mysql_allow_write is a helper binary for B<mmmd_agent>. It allowes writes on the local MySQL server by setting global read_only to 0.
+turn_off_slave is a helper binary for B<mmmd_agent>. It stops the slave threads on the local MySQL server.
 
 =head1 USAGE
 
-mysql_allow_write
+turn_off_slave

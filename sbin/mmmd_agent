@@ -1,0 +1,69 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use English qw( PROGRAM_NAME );
+use Log::Log4perl qw(:easy);
+Log::Log4perl->easy_init($WARN);
+
+use Cwd;
+use File::Basename;
+use Proc::Daemon;
+
+# Determine installation dir name
+our $SELF_DIR = dirname(dirname(Cwd::abs_path(__FILE__)));
+
+# Include parts of the system
+require $SELF_DIR . '/lib/Common/Config.pm';
+require $SELF_DIR . '/lib/Common/PidFile.pm';
+
+require $SELF_DIR . '/lib/Agent/Agent.pm';
+
+# Read configuration
+our $config = new MMM::Common::Config::;
+$config->read('mmm_agent');
+$config->check('AGENT');
+
+our $agent	= new MMM::Agent::;
+$agent->from_config($config);
+
+use Data::Dumper;
+print Data::Dumper->Dump([$agent]);
+print Data::Dumper->Dump([$config]);
+	
+
+our $active_master_role	= $config->{active_master_role};
+our $cluster_interface	= $config->{host}->{ $config->{this} }->{cluster_interface};
+
+my $pidfilename = $config->{host}->{ $config->{this} }->{pid_path};
+my $pidfile = new MMM::Common::PidFile:: $pidfilename;
+
+# Check pid file
+LOGDIE	"Can't run second copy of ", $PROGRAM_NAME	if ($pidfile->is_running());
+WARN	"Unclean start - found stale pid file!"		if ($pidfile->exists());
+
+# Go to background
+Proc::Daemon::Init if (0); # TODO
+$pidfile->create();
+
+# Shutdown flag
+our $shutdown = 0;
+
+# Catch signals
+$SIG{INT} = \&SignalHandler;
+$SIG{TERM} = \&SignalHandler;
+
+#my $agent = new MMM::Agent::;
+
+#$agent->main() while not $shutdown;
+
+# Remove pid file
+$pidfile->remove();
+
+exit(0);
+
+#-----------------------------------------------------------------
+sub SignalHandler() {
+	DEBUG "Signal received: exiting...";
+    $shutdown = 1;
+}

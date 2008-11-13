@@ -1,0 +1,45 @@
+#!/usr/bin/env perl
+
+# Use mandatory external modules
+use strict;
+use warnings FATAL => 'all';
+use Cwd;
+use File::Basename;
+
+# Determine installation dir name
+our $SELF_DIR = dirname(dirname(dirname(Cwd::abs_path(__FILE__))));
+
+# Include parts of the system
+require $SELF_DIR . '/lib/Agent/Helpers/Actions.pm';
+require $SELF_DIR . '/lib/Agent/Helpers/Network.pm';
+
+# Check arguments
+if (scalar(@ARGV) != 2) {
+    print "Usage: $0 <interface> <ip>\n\n";
+    exit(1);
+}
+
+# Fetch arguments
+my $if = shift;
+my $ip = shift;
+
+# Finally do the work
+MMM::Agent::Helpers::Actions::check_ip($if, $ip);
+
+__END__
+
+=head1 NAME
+
+check_ip
+
+=head1 DESCRIPTION
+
+check_ip is a helper binary for B<mmmd_agent>. It checks if the given ip is configured. If not, it configures it and sends arp requests to notify other hosts.
+
+=head1 USAGE
+
+check_ip <interface> <ip>
+
+=head1 EXAMPLE
+
+check_ip eth0 192.168.0.200

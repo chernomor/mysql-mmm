@@ -12,6 +12,7 @@ struct 'MMM::Agent' => {
 	ip				=> '$',
 	port			=> '$',
 	interface		=> '$',
+	mysql_port		=> '$',
 	mysql_user		=> '$',
 	mysql_password	=> '$',
 	writer_role		=> '$',
@@ -28,6 +29,7 @@ sub from_config($%) {
 	$self->ip				($host->{ip});
 	$self->port				($host->{agent_port});
 	$self->interface		($host->{cluster_interface});
+	$self->mysql_port		($host->{mysql_port});
 	$self->mysql_user		($host->{agent_user});
 	$self->mysql_password	($host->{agent_password});
 	$self->writer_role		($config->{active_writer_role});

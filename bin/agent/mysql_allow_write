@@ -1,0 +1,47 @@
+#!/usr/bin/env perl
+
+# Use mandatory external modules
+use strict;
+use warnings FATAL => 'all';
+use Cwd;
+use File::Basename;
+
+# Determine installation dir name
+our $SELF_DIR = dirname(dirname(dirname(Cwd::abs_path(__FILE__))));
+
+# Include parts of the system
+require $SELF_DIR . '/lib/Common/Config.pm';
+require $SELF_DIR . '/lib/Agent/Helpers/Actions.pm';
+require $SELF_DIR . '/lib/Agent/Helpers/Network.pm';
+
+# Check arguments
+if (scalar(@ARGV) != 0) {
+    print "Usage: $0\n\n";
+    exit(1);
+}
+
+our $config = new MMM::Common::Config::;
+$config->read('mmm_agent');
+$config->check('AGENT');
+
+my $host		= $config->{host}->{ $config->{this} }->{ip};
+my $port		= $config->{host}->{ $config->{this} }->{mysql_port};
+my $user		= $config->{host}->{ $config->{this} }->{agent_user};
+my $password	= $config->{host}->{ $config->{this} }->{agent_password};
+
+# Finally do the work
+MMM::Agent::Helpers::Actions::mysql_allow_write($host, $port, $user, $password);
+
+__END__
+
+=head1 NAME
+
+mysql_allow_write
+
+=head1 DESCRIPTION
+
+mysql_allow_write is a helper binary for B<mmmd_agent>. It allowes writes on the local MySQL server by setting global read_only to 0.
+
+=head1 USAGE
+
+mysql_allow_write

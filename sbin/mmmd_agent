@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use English qw( PROGRAM_NAME );
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init($WARN);
+Log::Log4perl->easy_init($DEBUG);
 
 use Cwd;
 use File::Basename;
@@ -16,24 +16,34 @@ our $SELF_DIR = dirname(dirname(Cwd::abs_path(__FILE__)));
 # Include parts of the system
 require $SELF_DIR . '/lib/Common/Config.pm';
 require $SELF_DIR . '/lib/Common/PidFile.pm';
+require $SELF_DIR . '/lib/Common/Socket.pm';
+require $SELF_DIR . '/lib/Common/Uptime.pm';
 
 require $SELF_DIR . '/lib/Agent/Agent.pm';
+require $SELF_DIR . '/lib/Agent/Helpers.pm';
+require $SELF_DIR . '/lib/Agent/Role.pm';
 
 # Read configuration
 our $config = new MMM::Common::Config::;
 $config->read('mmm_agent');
 $config->check('AGENT');
 
-our $agent	= new MMM::Agent::;
+our $agent	= new MMM::Agent::(
+	protocol_version	=> 1,
+	active_master		=> '',
+	state				=> 'UNKNOWN'
+);
 $agent->from_config($config);
 
-use Data::Dumper;
-print Data::Dumper->Dump([$agent]);
-print Data::Dumper->Dump([$config]);
-	
+# XXX use Data::Dumper;
+# XXX print Data::Dumper->Dump([$agent]);
+# XXX print Data::Dumper->Dump([$config]);
+# XXX print ($agent->handle_command('SET_STATUS:1:db1:ONLINE:reader(10.20.30.209;):db2'));
+# XXX print ($agent->handle_command('SET_STATUS:1:db1:ONLINE:reader(10.20.30.208;):db2'));
+# XXX print ($agent->handle_command('SET_STATUS:1:db1:ONLINE:reader(10.20.30.209;),reader(10.20.30.208;),writer(10.20.30.200;):db2'));
+# XXX exit(0);
 
-our $active_master_role	= $config->{active_master_role};
-our $cluster_interface	= $config->{host}->{ $config->{this} }->{cluster_interface};
+	
 
 my $pidfilename = $config->{host}->{ $config->{this} }->{pid_path};
 my $pidfile = new MMM::Common::PidFile:: $pidfilename;
@@ -53,9 +63,7 @@ our $shutdown = 0;
 $SIG{INT} = \&SignalHandler;
 $SIG{TERM} = \&SignalHandler;
 
-#my $agent = new MMM::Agent::;
-
-#$agent->main() while not $shutdown;
+$agent->main();
 
 # Remove pid file
 $pidfile->remove();

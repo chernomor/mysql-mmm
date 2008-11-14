@@ -21,10 +21,7 @@ else {
 }
 
 sub uptime {
-	my $log = get_logger();
-
 	if ($OSNAME eq 'linux') {
-
 		TRACE "Fetching uptime from ", UPTIME;
 		open(FILE, UPTIME) || LOGDIE "Unable to get uptime from ", UPTIME;
 		my $line = <FILE>;
@@ -35,7 +32,7 @@ sub uptime {
 		return $uptime;
 	}
 
-	$log->logdie("Unsupported platform - can't get uptime!");
+	LOGDIE "Unsupported platform - can't get uptime!";
 }
 
 1;

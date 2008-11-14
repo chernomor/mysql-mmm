@@ -11,7 +11,8 @@ use overload
 	'==' => \&is_equal_full,
 	'eq' => \&is_equal_name,
 	'!=' => sub { return !MMM::Agent::Role::is_equal_full($_[0], $_[1]); },
-	'ne' => sub { return !MMM::Agent::Role::is_equal_name($_[0], $_[1]); };
+	'ne' => sub { return !MMM::Agent::Role::is_equal_name($_[0], $_[1]); },
+	'""' => \&to_string;
 		
 
 struct 'MMM::Agent::Role' => {
@@ -23,48 +24,36 @@ struct 'MMM::Agent::Role' => {
 sub check($) {
 	my $self = shift;
 
+	# TODO debug output
 	if ($self->name eq $main::agent->writer_role) {
-		MMM::Agent::Helpers::allow_write(
-			$main::agent->ip,
-			$main::agent->mysql_port,
-			$main::agent->mysql_user,
-			$main::agent->mysql_password
-		);
+		MMM::Agent::Helpers::allow_write();
 	}
 
-	MMM::Agent::Helpers::check_ip($self->ip, $main::agent->interface);
+	MMM::Agent::Helpers::check_ip($main::agent->interface, $self->ip);
 }
 
 #-------------------------------------------------------------------------------
 sub add($) {
 	my $self = shift;
 	
+	# TODO debug output
 	if ($self->name eq $main::agent->writer_role) {
 		MMM::Agent::Helpers::sync_with_master();
-		MMM::Agent::Helpers::allow_write(
-			$main::agent->ip,
-			$main::agent->mysql_port,
-			$main::agent->mysql_user,
-			$main::agent->mysql_password
-		);
+		MMM::Agent::Helpers::allow_write();
 	}
 
-	MMM::Agent::Helpers::check_ip($self->ip, $main::agent->interface);
+	MMM::Agent::Helpers::check_ip($main::agent->interface, $self->ip);
 }
 
 #-------------------------------------------------------------------------------
 sub del($) {
 	my $self = shift;
 	
-	MMM::Agent::Helpers::clear_ip($self->ip, $main::agent->interface);
+	# TODO debug output
+	MMM::Agent::Helpers::clear_ip($main::agent->interface, $self->ip);
 
 	if ($self->name eq $main::agent->writer_role) {
-		MMM::Agent::Helpers::deny_write(
-			$main::agent->ip,
-			$main::agent->mysql_port,
-			$main::agent->mysql_user,
-			$main::agent->mysql_password
-		);
+		MMM::Agent::Helpers::deny_write();
 	}
 }
 
@@ -87,6 +76,23 @@ sub is_equal_name($$) {
 	my $other	= shift;
 	
 	return ($self->name eq $other->name);
+}
+
+sub to_string($) {
+	my $self	= shift;
+	return sprintf('%s(%s;)', $self->name, $self->ip);
+}
+
+sub from_string($$) {
+	my $self	= shift;
+	my $string	= shift;
+
+	if (my ($name, $ip) = $string =~ /(.*)\((.*);.*\)/) {
+		$self->name($name);
+		$self->ip  ($ip);
+		return 1;
+	}
+	return 0;
 }
 
 1;

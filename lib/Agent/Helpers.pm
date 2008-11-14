@@ -136,7 +136,7 @@ sub _execute($$$) {
 	my $params		= shift;
 	my $return_all	= shift;
 
-	my $path		= "$main::agent->{bin_path}/$command";
+	my $path		= $main::agent->bin_path . "/agent/$command";
 	$params = '' unless defined($params);
 
 	DEBUG "Executing $path $params";

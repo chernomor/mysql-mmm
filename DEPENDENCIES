@@ -1,5 +1,6 @@
 Log::Log4perl	liblog-log4perl-perl
 Proc::Daemon
+Algorithm::Diff libalgorithm-diff-perl
 
 Cwd
 File::Basename

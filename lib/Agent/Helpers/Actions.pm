@@ -221,6 +221,8 @@ sub set_active_master($) {
 	# Get connection info for old peer
 	my $old_peer = _find_host_by_ip($old_peer_ip);
 	return 'ERROR: Invalid master host in show slave status' unless ($old_peer);
+
+	return 'OK: We are already a slave of the new master.' if ($old_peer eq $new_peer);
 	
 	my ($old_peer_host, $old_peer_port, $old_peer_user, $old_peer_password)	= _get_connection_info($old_peer);
 	return "ERROR: No connection info for new peer '$old_peer'" unless defined($old_peer_host);

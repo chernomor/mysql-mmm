@@ -26,7 +26,7 @@ $config->read('mmm_agent');
 $config->check('AGENT');
 
 # Finally do the work
-my $output = MMM::Agent::Helpers::Actions::toggle_slave(1);
+my $output = MMM::Agent::Helpers::Actions::sync_with_master();
 
 print $output, "\n";
 exit(0);
@@ -35,12 +35,12 @@ __END__
 
 =head1 NAME
 
-turn_on_slave
+sync_with_master
 
 =head1 DESCRIPTION
 
-turn_on_slave is a helper binary for B<mmmd_agent>. It starts the slave threads on the local MySQL server.
+sync_with_master is a helper binary for B<mmmd_agent>. It tries to sync up a (soon active) master with his peer (old active master) when the I<active_writer_role> is moved. If the peer is reachable it syncs with the master log. If not reachable, syncs with the relay log.
 
 =head1 USAGE
 
-turn_on_slave
+sync_with_master

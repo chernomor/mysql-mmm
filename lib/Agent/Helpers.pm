@@ -20,8 +20,8 @@ MMM::Agent::Helpers - an interface to helper programs for B<mmmd_agent>
 
 =item check_ip($if, $ip)
 
-Check if the IP $ip is configured on interface $if. If not, configure it and send arp requests 
-to notify other hosts.
+Check if the IP $ip is configured on interface $if. If not, configure it and
+send arp requests to notify other hosts.
 
 Calls B<bin/agent/check_ip>.
 

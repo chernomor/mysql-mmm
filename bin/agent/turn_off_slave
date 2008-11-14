@@ -26,7 +26,10 @@ $config->read('mmm_agent');
 $config->check('AGENT');
 
 # Finally do the work
-MMM::Agent::Helpers::Actions::toggle_slave(0);
+my $output = MMM::Agent::Helpers::Actions::toggle_slave(0);
+
+print $output, "\n";
+exit(0);
 
 __END__
 

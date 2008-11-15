@@ -141,10 +141,12 @@ Try to sync up a (soon active) master with his peer (old active master) when the
 
 sub sync_with_master() {
 
-	my ($this_host, $this_port, $this_user, $this_password)	= _get_connection_info();
+	my $this = _get_this();
+
+	my ($this_host, $this_port, $this_user, $this_password)	= _get_connection_info($this);
 	return "ERROR: No local connection info" unless defined($this_host);
 
-	my $peer = $main::config->{host}->{$main::config->{this}}->{peer};
+	my $peer = $main::config->{host}->{$this}->{peer};
 	return "ERROR No peer defined" unless defined($peer);
 
 	my ($peer_host, $peer_port, $peer_user, $peer_password)	= _get_connection_info($peer);
@@ -196,8 +198,12 @@ sub set_active_master($) {
 	my $new_peer = shift;
 	return "ERROR: Name of new master is missing\n" unless (defined($new_peer));
 
+	my $this = _get_this();
+
+	return 'ERROR: new master is equal to local host!?' if ($this eq $new_peer);
+
 	# Get local connection info
-	my ($this_host, $this_port, $this_user, $this_password)	= _get_connection_info();
+	my ($this_host, $this_port, $this_user, $this_password)	= _get_connection_info($this);
 	return "ERROR: No connection info for local host '$this_host'" unless defined($this_host);
 	
 	# Get connection info for new peer
@@ -300,6 +306,14 @@ sub _get_connection_info($) {
 		$main::config->{host}->{$host}->{agent_user},
 		$main::config->{host}->{$host}->{agent_password}
 	);
+}
+
+sub _get_this() {
+	unless (defined($main::config)) {
+		print "ERROR: No config present\n";
+		exit(0);
+	}
+	return $main::config->{this};
 }
 
 sub _mysql_connect($$$$) {

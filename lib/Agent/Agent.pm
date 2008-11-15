@@ -42,11 +42,12 @@ sub main($) {
 		TRACE "Listener: Connect!";
 		while (my $cmd = <$client>) {
 			chomp($cmd);
+			TRACE "Daemon: Command = '$cmd'";
 
 			my $res = $self->handle_command($cmd);
 			my $uptime = MMM::Common::Uptime::uptime();
 
-			$client->send("$res|UP:$uptime\n");
+			print $client "$res|UP:$uptime\n";
 			TRACE "Daemon: Answer = '$res'";
 
 			return 0 if ($main::shutdown);
@@ -70,9 +71,11 @@ sub handle_command($$) {
 		WARN "Version in command '$cmd_name' ($version) is greater than mine (", $self->protocol_version, ")"
 	}
 	
-	if		($cmd_name eq 'PING')		{ command_ping				(); }
-	elsif	($cmd_name eq 'SET_STATUS')	{ $self->command_set_status	(@params); }
-	elsif	($cmd_name eq 'GET_STATUS')	{ $self->command_get_status	(); }
+	if		($cmd_name eq 'PING')		{ return command_ping				();			}
+	elsif	($cmd_name eq 'SET_STATUS')	{ return $self->command_set_status	(@params);	}
+	elsif	($cmd_name eq 'GET_STATUS')	{ return $self->command_get_status	();			}
+
+	return "ERROR: Invalid command '$cmd_name'!";
 }
 
 sub command_ping() {
@@ -95,8 +98,6 @@ sub command_get_status($) {
 sub command_set_status($$) {
 	my $self	= shift;
 	my ($new_state, $new_roles_str, $new_master) = @_;
-
-#	return "state $new_state - roles $new_roles_str - master $new_master";
 
 	# Change master if we are a slave
 	if ($new_master ne $self->active_master && $self->mode eq 'slave' && $new_state eq 'ONLINE' && $new_master != '') {

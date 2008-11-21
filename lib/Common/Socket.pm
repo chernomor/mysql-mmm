@@ -7,6 +7,24 @@ use IO::Socket::INET;
 
 our $VERSION = '0.01';
 
+
+=head1 NAME
+
+MMM::Common::Socket - functions for socket creation
+
+=cut
+
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item create_listener($host, $port)
+
+Create a listening (ssl) socket on $host:$port.
+
+=cut
+
 sub create_listener($$) {
 	my $host = shift;
 	my $port = shift;
@@ -39,6 +57,12 @@ sub create_listener($$) {
 	$sock->timeout(3);
 	return($sock);
 }
+
+=item create_sender($host, $port, $timeout)
+
+Create a (ssl) client socket on $host:$port with timeout $timeout.
+
+=cut
 
 sub create_sender($$$) {
 	my $host = shift;

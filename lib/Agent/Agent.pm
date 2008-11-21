@@ -185,15 +185,4 @@ sub from_config($%) {
 	$self->bin_path			($host->{bin_path});
 }
 
-# NOTE: takes a role object as param
-sub has_role($$) {
-	my $self = shift;
-	my $role = shift;
-	
-	foreach my $a_role ( @{ $self->roles } ) {
-		return 1 if ($a_role == $role);
-	}
-	return 0;
-}
-
 1;

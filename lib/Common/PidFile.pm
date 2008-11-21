@@ -48,3 +48,31 @@ sub remove($) {
 }
 
 1;
+
+__END__
+
+=head1 NAME
+
+MMM::Common::Pidfile - Manage process id files
+
+=cut
+
+
+=head1 SYNOPSIS
+
+	my $pidfile = new MMM::Common::PidFile:: '/path/to/your.pid';
+
+	# create pidfile with current process id
+	$pidfile->create();
+
+	# check if pidfile exists
+	$pidfile->exists();
+
+	# check if the process with the process id from the pidfile is still running
+	$pidfile->is_running();
+
+	# remove pidfile
+	$pidfile->remove();
+
+=cut
+

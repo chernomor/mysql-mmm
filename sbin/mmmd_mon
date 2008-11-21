@@ -1,0 +1,94 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings FATAL => 'all';
+use threads;
+use threads::shared;
+use Config;
+use English qw( PROGRAM_NAME );
+use POSIX ':sys_wait_h';
+use Log::Log4perl qw(:easy);
+Log::Log4perl->easy_init($DEBUG);
+
+use Cwd;
+use File::Basename;
+use Proc::Daemon;
+
+# Check perl for threads support
+$Config{useithreads} or die "Recompile Perl with threads to run this program.";
+
+# Determine installation dir name
+our $SELF_DIR = dirname(dirname(Cwd::abs_path(__FILE__)));
+
+# Include parts of the system
+require $SELF_DIR . '/lib/Common/Config.pm';
+require $SELF_DIR . '/lib/Common/PidFile.pm';
+require $SELF_DIR . '/lib/Common/Socket.pm';
+
+require $SELF_DIR . '/lib/Monitor/Monitor.pm';
+require $SELF_DIR . '/lib/Monitor/Checker.pm';
+require $SELF_DIR . '/lib/Monitor/ChecksStatus.pm';
+require $SELF_DIR . '/lib/Monitor/CheckResult.pm';
+
+# Read configuration
+our $config = new MMM::Common::Config::;
+$config->read('mmm_mon');
+$config->check('MONITOR');
+
+
+our $monitor	= new MMM::Monitor::(
+	protocol_version	=> 1,
+);
+#$monitor->from_config($config);
+
+use Data::Dumper; # XXX
+#print Data::Dumper->Dump([$config]);
+
+#exit(0);
+
+	
+
+my $pidfilename = $config->{monitor}->{pid_path};
+my $pidfile = new MMM::Common::PidFile:: $pidfilename;
+
+# Check pid file
+LOGDIE	"Can't run second copy of ", $PROGRAM_NAME	if ($pidfile->is_running());
+WARN	"Unclean start - found stale pid file!"		if ($pidfile->exists());
+
+# Go to background
+Proc::Daemon::Init if (0); # TODO
+$pidfile->create();
+
+# Shutdown flag
+our $shutdown :shared;
+$shutdown = 0;
+
+# Set signal handlers
+$SIG{INT} = \&ShutdownHandler;
+$SIG{TERM} = \&ShutdownHandler;
+$SIG{PIPE} = 'IGNORE';
+$SIG{CHLD} = \&ChildHandler;
+
+$monitor->init();
+$monitor->main();
+
+# Remove pid file
+$pidfile->remove();
+print "END\n";
+
+exit(0);
+
+#-----------------------------------------------------------------
+sub ShutdownHandler() {
+	DEBUG "Signal received: exiting...";
+	$shutdown = 1;
+}
+
+#-----------------------------------------------------------------
+sub ChildHandler {
+    local $!;   # don't let waitpid() overwrite current error
+    while ((my $pid = waitpid(-1, WNOHANG)) > 0 && WIFEXITED($?)) {
+        DEBUG "Core: reaped child $pid" . ($? ? " with exit $?" : '');
+    }
+    $SIG{CHLD} = \&ChildHandler;  # loathe sysV
+}

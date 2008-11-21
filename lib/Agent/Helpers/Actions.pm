@@ -87,7 +87,7 @@ sub mysql_deny_write() {
 sub _mysql_set_read_only($) {
 	my $read_only_new	= shift;
 	my ($host, $port, $user, $password)	= _get_connection_info();
-	return "ERROR: No connection info" unless defined($host);
+	return 'ERROR: No connection info' unless defined($host);
 
 	# connect to server
 	my $dbh = _mysql_connect($host, $port, $user, $password);
@@ -95,11 +95,11 @@ sub _mysql_set_read_only($) {
 	
 	# check old read_only state
 	(my $read_only_old) = $dbh->selectrow_array('select @@read_only');
-	return "ERROR: SQL Query Error: " . $dbh->errstr unless (defined $read_only_old);
-	return "OK" if ($read_only_old == $read_only_new);
+	return 'ERROR: SQL Query Error: ' . $dbh->errstr unless (defined $read_only_old);
+	return 'OK' if ($read_only_old == $read_only_new);
 
 	my $res = $dbh->do("set global read_only=$read_only_new");
-	return "ERROR: SQL Query Error: " . $dbh->errstr unless($res);
+	return 'ERROR: SQL Query Error: ' . $dbh->errstr unless($res);
 	
 	$dbh->disconnect();
 	$dbh = undef;
@@ -118,7 +118,7 @@ sub toggle_slave($) {
 	my $state = shift;
 
 	my ($host, $port, $user, $password)	= _get_connection_info();
-	return "ERROR: No connection info" unless defined($host);
+	return 'ERROR: No connection info' unless defined($host);
 
 	my $query = $state ? 'START SLAVE' : 'STOP SLAVE';
 
@@ -128,7 +128,7 @@ sub toggle_slave($) {
 	
 	# execute query
 	my $res = $dbh->do($query);
-	return "ERROR: SQL Query Error: " . $dbh->errstr unless($res);
+	return 'ERROR: SQL Query Error: ' . $dbh->errstr unless($res);
 	return 'OK';
 }
 
@@ -144,13 +144,13 @@ sub sync_with_master() {
 	my $this = _get_this();
 
 	my ($this_host, $this_port, $this_user, $this_password)	= _get_connection_info($this);
-	return "ERROR: No local connection info" unless defined($this_host);
+	return 'ERROR: No local connection info' unless defined($this_host);
 
 	my $peer = $main::config->{host}->{$this}->{peer};
-	return "ERROR No peer defined" unless defined($peer);
+	return 'ERROR No peer defined' unless defined($peer);
 
 	my ($peer_host, $peer_port, $peer_user, $peer_password)	= _get_connection_info($peer);
-	return "ERROR: No peer connection info" unless defined($peer_host);
+	return 'ERROR: No peer connection info' unless defined($peer_host);
 
 	# Connect to local server
 	my $this_dbh = _mysql_connect($this_host, $this_port, $this_user, $this_password);
@@ -172,14 +172,14 @@ sub sync_with_master() {
 	} 
 	unless (defined($wait_log)) {
 		my $slave_status = $this_dbh->selectrow_hashref('SHOW SLAVE STATUS');
-		return "ERROR: SQL Query Error: " . $this_dbh->errstr unless defined($slave_status);
+		return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless defined($slave_status);
 		$wait_log = $slave_status->{Master_Log_File};
 		$wait_pos = $slave_status->{Read_Master_Log_Pos};
 	}
 
 	# Sync with logs
 	my $res = $this_dbh->do("SELECT MASTER_POS_WAIT('$wait_log', $wait_pos)");
-	return "ERROR: SQL Query Error: " . $this_dbh->errstr unless($res);
+	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless($res);
 	
 	return 'OK';
 	
@@ -196,7 +196,7 @@ Try to catch up with the old master as far as possible and change the master to 
 
 sub set_active_master($) {
 	my $new_peer = shift;
-	return "ERROR: Name of new master is missing\n" unless (defined($new_peer));
+	return 'ERROR: Name of new master is missing' unless (defined($new_peer));
 
 	my $this = _get_this();
 
@@ -216,13 +216,13 @@ sub set_active_master($) {
 
 	# Get slave info
 	my $slave_status = $this_dbh->selectrow_hashref('SHOW SLAVE STATUS');
-	return "ERROR: SQL Query Error: " . $this_dbh->errstr unless defined($slave_status);
+	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless defined($slave_status);
 
 	my $wait_log	= $slave_status->{Master_Log_File};
 	my $wait_pos	= $slave_status->{Read_Master_Log_Pos};
 
 	my $old_peer_ip	= $slave_status->{Master_Host};
-	return "ERROR: No ip for old peer" unless ($old_peer_ip);
+	return 'ERROR: No ip for old peer' unless ($old_peer_ip);
 
 	# Get connection info for old peer
 	my $old_peer = _find_host_by_ip($old_peer_ip);
@@ -245,7 +245,7 @@ sub set_active_master($) {
 
 	# Sync with logs
 	my $res = $this_dbh->do($this_dbh, "SELECT MASTER_POS_WAIT('$wait_log', $wait_pos)");
-	return "ERROR: SQL Query Error: " . $this_dbh->errstr unless($res);
+	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless($res);
 	
 	# Connect to new peer
 	my $new_peer_dbh = _mysql_connect($new_peer_host, $new_peer_port, $new_peer_user, $new_peer_password);
@@ -253,7 +253,7 @@ sub set_active_master($) {
 
 	# Get log position of new master
 	my $new_master_status = $new_peer_dbh->selectrow_hashref('SHOW MASTER STATUS');
-	return "ERROR: SQL Query Error: " . $this_dbh->errstr unless($new_master_status);
+	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless($new_master_status);
 
 	my $master_log = $new_master_status->{File};
 	my $master_pos = $new_master_status->{Position};
@@ -264,19 +264,19 @@ sub set_active_master($) {
 	my ($repl_user, $repl_password) = _get_replication_credentials($new_peer);
 
 	# Change master
-	my $sql = "CHANGE MASTER TO " .
-			  "  MASTER_HOST='$new_peer_host'," .
-			  "  MASTER_PORT=$new_peer_port," .
-			  "  MASTER_USER='$repl_user'," .
-			  "  MASTER_PASSWORD='$repl_password'," .
-			  "  MASTER_LOG_FILE='$master_log'," .
-			  "  MASTER_LOG_POS=$master_pos";
+	my $sql = 'CHANGE MASTER TO'
+			  . " MASTER_HOST='$new_peer_host',"
+			  . " MASTER_PORT=$new_peer_port,"
+			  . " MASTER_USER='$repl_user',"
+			  . " MASTER_PASSWORD='$repl_password',"
+			  . " MASTER_LOG_FILE='$master_log',"
+			  . " MASTER_LOG_POS=$master_pos";
 	$res = $this_dbh->do($sql);
-	return "ERROR: SQL Query Error: " . $this_dbh->errstr unless($res);
+	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless($res);
 
 	# Start slave
 	$res = $this_dbh->do('START SLAVE');
-	return "ERROR: SQL Query Error: " . $this_dbh->errstr unless($res);
+	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless($res);
 
 	return 'OK';
 }

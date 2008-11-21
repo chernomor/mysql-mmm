@@ -52,11 +52,12 @@ our $RULESET = {
 		'replication_password'	=> { 'required' => ['AGENT', 'LVMTOOLS'] }
 		}
 	},
-	'check'					=> { 'required' => [ 'MONITOR' ], 'multiple' => 1, 'template' => 'default', 'values' => ['ping', 'mysql', 'rep_backlog', 'rep_threads'], 'section' => {
+	'check'					=> { 'create_if_empty' => ['MONITOR'], 'multiple' => 1, 'template' => 'default', 'values' => ['ping', 'mysql', 'rep_backlog', 'rep_threads'], 'section' => {
 		'check_period'			=> { 'default' => 5 },
 		'trap_period'			=> { 'default' => 10 },
 		'timeout'				=> { 'default' => 2 },
 		'restart_after'			=> { 'default' => 10000 },
+		'max_backlog'			=> { 'default' => 60 }		# XXX ugly
 		}
 	}
 };
@@ -194,7 +195,7 @@ sub check($$) {
 	my $program = shift;
 	$self->_check_ruleset('', $program, $RULESET, $self);
 }
-use Data::Dumper; #XXX
+
 #-------------------------------------------------------------------------------
 sub _check_ruleset(\%$$\%\%) {
 	my $self	= shift;
@@ -229,7 +230,7 @@ sub _check_rule(\%$$\%\%$) {
 	if (defined($cur_rule->{required}) && defined($cur_rule->{deprequired})) {
 		LOGDIE "Default value specified for required config entry '$posstr'" if defined($cur_rule->{default});
 		LOGDIE "Invalid ruleset '$posstr' - deprequired should be a hash" if (ref($cur_rule->{deprequired}) ne "HASH");
-		$cur_rule->{required} = _eval_required($program, $cur_rule->{required}) if (ref($cur_rule->{required}) eq "ARRAY");
+		$cur_rule->{required} = _eval_program_condition($program, $cur_rule->{required}) if (ref($cur_rule->{required}) eq "ARRAY");
 		my ($var, $val) = %{ $cur_rule->{deprequired} };
 		# TODO WARN if field $var has a default value - this may not be evaluated yet.
 		if (!defined($config->{$varname}) && $cur_rule->{required} == 1 && defined($config->{$var}) && $config->{$var} eq $val) {
@@ -239,7 +240,7 @@ sub _check_rule(\%$$\%\%$) {
 	}
 	elsif (defined($cur_rule->{required})) {
 		LOGDIE "Default value specified for required config entry '$posstr'" if defined($cur_rule->{default});
-		$cur_rule->{required} = _eval_required($program, $cur_rule->{required}) if (ref($cur_rule->{required}) eq "ARRAY");
+		$cur_rule->{required} = _eval_program_condition($program, $cur_rule->{required}) if (ref($cur_rule->{required}) eq "ARRAY");
 		if (!defined($config->{$varname}) && $cur_rule->{required} == 1) {
 			# TODO better error message for sections
 			LOGDIE "Required config entry '$posstr' is missing";
@@ -258,8 +259,7 @@ sub _check_rule(\%$$\%\%$) {
 		}
 	}
 
-	# skip if undefined
-	return if (!defined($config->{$varname}));
+	return if (!defined($config->{$varname}) && !$cur_rule->{multiple});
 
 	# handle sections
 	if (defined($cur_rule->{section})) {
@@ -278,7 +278,21 @@ sub _check_rule(\%$$\%\%$) {
 			my @allowed = @{$cur_rule->{values}};
 			push @allowed, $cur_rule->{template} if defined($cur_rule->{template});
 			foreach my $key (keys %{ $config->{$varname} }) {
-				LOGDIE "Invalid $posstr '$key' in configuration" unless defined(first { $_ eq $key; } @allowed);
+				unless (defined(first { $_ eq $key; } @allowed)) {
+					LOGDIE "Invalid $posstr '$key' in configuration allowed values are: '", join("', '", @allowed), "'"
+				}
+			}
+		}
+
+		# handle "create if empty"
+		if (defined($cur_rule->{create_if_empty})) {
+			$cur_rule->{create_if_empty} = _eval_program_condition($program, $cur_rule->{create_if_empty}) if (ref($cur_rule->{create_if_empty}) eq "ARRAY");
+			if ($cur_rule->{create_if_empty} == 1) {
+				$config->{$varname} = {} unless defined($config->{$varname});
+				foreach my $value (@{$cur_rule->{values}}) {
+					next if (defined($config->{$varname}->{$value}));
+					$config->{$varname}->{$value} = {};
+				}
 			}
 		}
 
@@ -301,6 +315,9 @@ sub _check_rule(\%$$\%\%$) {
 		}
 		return;
 	}
+
+	# skip if undefined
+	return if (!defined($config->{$varname}));
 	
 	# check if variable has one of the allowed values
 	if (defined($cur_rule->{values}) || defined($cur_rule->{refvalues})) {
@@ -351,12 +368,12 @@ sub _check_rule(\%$$\%\%$) {
 }
 
 #-------------------------------------------------------------------------------
-sub _eval_required($$) {
+sub _eval_program_condition($$) {
 	my $program = shift;
-	my $required = shift;
+	my $value = shift;
 	
 	return 1 unless ($program);
-	return 1 if (first { $_ eq $program; } @{ $required });
+	return 1 if (first { $_ eq $program; } @{ $value });
 	return -1;
 }
 

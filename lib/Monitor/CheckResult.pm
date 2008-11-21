@@ -19,7 +19,7 @@ sub new($$$$) {
 	$self{host} = $host;
 	$self{check} = $check;
 	$self{result} = $result;
-    return bless \%self, $class;
+	return bless \%self, $class;
 }
 
 1;

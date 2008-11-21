@@ -16,8 +16,8 @@ require $SELF_DIR . '/lib/Agent/Helpers/Network.pm';
 
 # Check arguments
 if (scalar(@ARGV) != 1) {
-    print "Usage: $0 <new_master>\n\n";
-    exit(1);
+	print "Usage: $0 <new_master>\n\n";
+	exit(1);
 }
 
 my $new_master = shift;

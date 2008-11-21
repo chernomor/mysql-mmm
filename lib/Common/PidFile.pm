@@ -11,7 +11,7 @@ sub new($$) {
 	my $self = shift;
 	my $path = shift;
 
-    return bless { 'path' => $path }, $self; 
+	return bless { 'path' => $path }, $self; 
 }
 
 sub exists($) {

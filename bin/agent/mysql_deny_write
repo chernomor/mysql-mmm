@@ -16,8 +16,8 @@ require $SELF_DIR . '/lib/Agent/Helpers/Network.pm';
 
 # Check arguments
 if (scalar(@ARGV) != 0) {
-    print "Usage: $0\n\n";
-    exit(1);
+	print "Usage: $0\n\n";
+	exit(1);
 }
 
 # Read config file

@@ -86,9 +86,9 @@ sub ShutdownHandler() {
 
 #-----------------------------------------------------------------
 sub ChildHandler {
-    local $!;   # don't let waitpid() overwrite current error
-    while ((my $pid = waitpid(-1, WNOHANG)) > 0 && WIFEXITED($?)) {
-        DEBUG "Core: reaped child $pid" . ($? ? " with exit $?" : '');
-    }
-    $SIG{CHLD} = \&ChildHandler;  # loathe sysV
+	local $!;   # don't let waitpid() overwrite current error
+	while ((my $pid = waitpid(-1, WNOHANG)) > 0 && WIFEXITED($?)) {
+		DEBUG "Core: reaped child $pid" . ($? ? " with exit $?" : '');
+	}
+	$SIG{CHLD} = \&ChildHandler;  # loathe sysV
 }

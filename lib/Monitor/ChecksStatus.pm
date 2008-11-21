@@ -40,7 +40,7 @@ sub new($) {
 		$checker->shutdown();
 	}
 
-    return bless $data, $class; 
+	return bless $data, $class; 
 }
 
 

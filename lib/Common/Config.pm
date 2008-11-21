@@ -66,7 +66,7 @@ our $RULESET = {
 sub new($) { 
 	my $self = shift;
 
-    return bless { }, $self; 
+	return bless { }, $self; 
 }
 
 #-------------------------------------------------------------------------------
@@ -94,8 +94,8 @@ sub parse(\%\%$*) {
 	while ($line = <$fd>) {
 		chomp($line);
 
-        # comments and empty lines handling
-        next if ($line =~ /^\s*#/ || $line =~ /^\s*$/);
+		# comments and empty lines handling
+		next if ($line =~ /^\s*#/ || $line =~ /^\s*$/);
 
 		# end tag
 		return if ($line =~ /^\s*<\/\s*(\w+)\s*>\s*$/);
@@ -156,15 +156,15 @@ sub parse(\%\%$*) {
 			next;
 		}
 		
-        if ($line =~/^\s*(\S+)\s+(.*)$/) {
+		if ($line =~/^\s*(\S+)\s+(.*)$/) {
 			my $var = $1;
-            my $val = $2;
+			my $val = $2;
 			LOGDIE "Unknown variable $var in '$file' on line $INPUT_LINE_NUMBER!" unless defined($ruleset->{$var});
 			LOGDIE "'$var' should be a section instead of a variable in '$file' on line $INPUT_LINE_NUMBER!" if defined($ruleset->{$var}->{section});
-            @{$config->{$var}} = split(/\s*,\s*/, $val) if ($ruleset->{$var}->{multiple});
-            $config->{$var} = $val unless ($ruleset->{$var}->{multiple});
-            next;
-        }
+			@{$config->{$var}} = split(/\s*,\s*/, $val) if ($ruleset->{$var}->{multiple});
+			$config->{$var} = $val unless ($ruleset->{$var}->{multiple});
+			next;
+		}
 
 		LOGDIE "Invalid config line in file '$file' on line $INPUT_LINE_NUMBER!";
 	}

@@ -69,27 +69,27 @@ sub create_sender($$$) {
 	my $port = shift;
 	my $timeout = shift;
 
-    my $socket_class = 'IO::Socket::INET';
-    my %socket_opts;
+	my $socket_class = 'IO::Socket::INET';
+	my %socket_opts;
 
 	if (defined($main::config->{'socket'}) && $main::config->{'socket'}->{type} eq "ssl") {
-        require IO::Socket::SSL;
-        $socket_class = 'IO::Socket::SSL';
-        %socket_opts = (
+		require IO::Socket::SSL;
+		$socket_class = 'IO::Socket::SSL';
+		%socket_opts = (
 			SSL_use_cert	=> 1,
 			SSL_cert_file	=> $main::config->{'socket'}->{cert_file},
 			SSL_key_file	=> $main::config->{'socket'}->{key_file},
 			SSL_ca_file		=> $main::config->{'socket'}->{ca_file},
-        );
-    }
+		);
+	}
 
-    return $socket_class->new(
-        PeerAddr	=> $host,
-        PeerPort	=> $port,
-        Proto		=> 'tcp',
-        ($timeout ? (Timeout => $timeout) : ()),
-        %socket_opts,
-    );
+	return $socket_class->new(
+		PeerAddr	=> $host,
+		PeerPort	=> $port,
+		Proto		=> 'tcp',
+		($timeout ? (Timeout => $timeout) : ()),
+		%socket_opts,
+	);
 }
 
 1;

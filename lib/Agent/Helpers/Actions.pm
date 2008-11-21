@@ -331,12 +331,12 @@ sub _find_host_by_ip($) {
 		exit(0);
 	}
 
-    my $hosts = $main::config->{host};
-    foreach my $host (keys(%$hosts)) {
-        return $host if ($hosts->{$host}->{ip} eq $ip);
-    }
-    
-    return undef;
+	my $hosts = $main::config->{host};
+	foreach my $host (keys(%$hosts)) {
+		return $host if ($hosts->{$host}->{ip} eq $ip);
+	}
+	
+	return undef;
 }
 
 sub _get_replication_credentials($) {

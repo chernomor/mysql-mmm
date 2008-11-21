@@ -20,8 +20,8 @@ $OUTPUT_AUTOFLUSH = 1;
 
 # Check arguments
 if (scalar(@ARGV) != 1) {
-    print "Usage: $0 <check>\n\n";
-    exit(1);
+	print "Usage: $0 <check>\n\n";
+	exit(1);
 }
 
 # Fetch arguments
@@ -38,10 +38,10 @@ LOGDIE "checker: Unknown check $check_name" unless (defined($config->{check}->{$
 our $check = \%{$config->{check}->{$check_name}};
 
 my $check_function;
-if    ($check_name eq 'ping'       ) { $check_function = \&MMM::Monitor::Checker::Checks::ping; }
-elsif ($check_name eq 'mysql'      ) { $check_function = \&MMM::Monitor::Checker::Checks::mysql; }
-elsif ($check_name eq 'rep_backlog') { $check_function = \&MMM::Monitor::Checker::Checks::rep_backlog; }
-elsif ($check_name eq 'rep_threads') { $check_function = \&MMM::Monitor::Checker::Checks::rep_threads; }
+if    ($check_name eq 'ping'       ) { $check_function = \&MMM::Monitor::Checker::Checks::ping;			}
+elsif ($check_name eq 'mysql'      ) { $check_function = \&MMM::Monitor::Checker::Checks::mysql;		}
+elsif ($check_name eq 'rep_backlog') { $check_function = \&MMM::Monitor::Checker::Checks::rep_backlog;	}
+elsif ($check_name eq 'rep_threads') { $check_function = \&MMM::Monitor::Checker::Checks::rep_threads;	}
 else { LOGDIE "checker: Unknown check $check_name"; }
 
 my $max_checks	= $check->{restart_after};
@@ -64,7 +64,7 @@ while (!eof(STDIN)) {
 
 	# Read command
 	chomp(my $cmd = <STDIN>);
-    my @command	= split(/\s+/, $cmd);
+	my @command	= split(/\s+/, $cmd);
 	my $params	= scalar(@command) - 1;
 
 	# Workaround to  prevent checker from hanging in case of unnoticed broken pipe errors
@@ -78,9 +78,9 @@ while (!eof(STDIN)) {
 	$empty_commands = 0;
 
 
-    last if ($command[0] eq 'quit' && $params == 0);
+	last if ($command[0] eq 'quit' && $params == 0);
 
-    if ($command[0] eq 'ping' && $params == 0) {
+	if ($command[0] eq 'ping' && $params == 0) {
 		print "OK: Pong!\n";
 		next;
 	}

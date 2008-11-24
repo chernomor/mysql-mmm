@@ -113,8 +113,8 @@ sub command_set_status($$) {
 	my @new_roles_arr = sort(split(/\,/, $new_roles_str));
 	my @new_roles;
 	foreach my $role_str (@new_roles_arr) {
-		my $role = new MMM::Agent::Role::;
-		if ($role->from_string($role_str)) {
+		my $role = MMM::Agent::Role->from_string($role_str);
+		if (defined($role)) {
 			push @new_roles, $role;
 		}
 	}

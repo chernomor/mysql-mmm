@@ -20,7 +20,6 @@ sub new($) {
 
 	# Perform initial checks
 	INFO 'Performing initial checks...';
-
 	foreach my $check_name (@checks) {
 
 		# Spawn checker
@@ -29,17 +28,14 @@ sub new($) {
 		# Check all hosts
 		foreach my $host_name (@hosts) {
 			DEBUG "Trying initial check '$check_name' on host '$host_name'";
-
 			my $res = $checker->check($host_name);
 			DEBUG "$check_name($host_name) = '$res'";
-
 			$data->{$host_name}->{$check_name} = ($res =~ /^OK/)? 1 : 0;
 		}
 
 		# Shutdown checker
 		$checker->shutdown();
 	}
-
 	return bless $data, $class; 
 }
 

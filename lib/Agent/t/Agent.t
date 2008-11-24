@@ -7,6 +7,7 @@ use warnings FATAL => 'all';
 use Test::More tests => 1;
 
 require '../Agent.pm';
+require '../../Common/Role.pm';
 require '../Role.pm';
 
 my $role1 = new MMM::Agent::Role:: name	=> 'writer', ip		=> '192.168.0.100';

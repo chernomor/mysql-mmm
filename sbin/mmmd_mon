@@ -23,12 +23,14 @@ our $SELF_DIR = dirname(dirname(Cwd::abs_path(__FILE__)));
 # Include parts of the system
 require $SELF_DIR . '/lib/Common/Config.pm';
 require $SELF_DIR . '/lib/Common/PidFile.pm';
+require $SELF_DIR . '/lib/Common/Role.pm';
 require $SELF_DIR . '/lib/Common/Socket.pm';
 
-require $SELF_DIR . '/lib/Monitor/Monitor.pm';
 require $SELF_DIR . '/lib/Monitor/Checker.pm';
-require $SELF_DIR . '/lib/Monitor/ChecksStatus.pm';
 require $SELF_DIR . '/lib/Monitor/CheckResult.pm';
+require $SELF_DIR . '/lib/Monitor/ChecksStatus.pm';
+require $SELF_DIR . '/lib/Monitor/Monitor.pm';
+require $SELF_DIR . '/lib/Monitor/Role.pm';
 
 # Read configuration
 our $config = new MMM::Common::Config::;

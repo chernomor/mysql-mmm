@@ -16,6 +16,7 @@ our $SELF_DIR = dirname(dirname(Cwd::abs_path(__FILE__)));
 # Include parts of the system
 require $SELF_DIR . '/lib/Common/Config.pm';
 require $SELF_DIR . '/lib/Common/PidFile.pm';
+require $SELF_DIR . '/lib/Common/Role.pm';
 require $SELF_DIR . '/lib/Common/Socket.pm';
 require $SELF_DIR . '/lib/Common/Uptime.pm';
 

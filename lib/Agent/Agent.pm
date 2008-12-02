@@ -24,9 +24,7 @@ struct 'MMM::Agent' => {
 
 	active_master		=> '$',
 	state				=> '$',
-	roles				=> '@',
-
-	protocol_version	=> '$'
+	roles				=> '@'
 };
 
 sub main($) {
@@ -67,8 +65,8 @@ sub handle_command($$) {
 
 	return "ERROR: Invalid hostname in command ($host)! My name is '" . $self->name . '"' if ($host ne $self->name);
 	
-	if ($version > $self->protocol_version) {
-		WARN "Version in command '$cmd_name' ($version) is greater than mine (", $self->protocol_version, ")"
+	if ($version > main::MMM_PROTOCOL_VERSION) {
+		WARN "Version in command '$cmd_name' ($version) is greater than mine (", main::MMM_PROTOCOL_VERSION, ")"
 	}
 	
 	if		($cmd_name eq 'PING')		{ return command_ping				();			}
@@ -86,10 +84,8 @@ sub command_get_status($) {
 	my $self	= shift;
 	
 	my $answer = join (':', (
-		$self->name,
-		$self->server_version,
 		$self->state,
-		join(',', $self->roles),
+		join(',', @{$self->roles}),
 		$self->active_master
 	));
 	return "OK: Returning status!|$answer";

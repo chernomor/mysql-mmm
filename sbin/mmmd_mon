@@ -14,11 +14,15 @@ use Cwd;
 use File::Basename;
 use Proc::Daemon;
 
+# Define protocol version
+use constant MMM_PROTOCOL_VERSION => 1;
+
 # Check perl for threads support
 $Config{useithreads} or die "Recompile Perl with threads to run this program.";
 
 # Determine installation dir name
 our $SELF_DIR = dirname(dirname(Cwd::abs_path(__FILE__)));
+
 
 # Include parts of the system
 require $SELF_DIR . '/lib/Common/Config.pm';
@@ -37,10 +41,7 @@ our $config = new MMM::Common::Config::;
 $config->read('mmm_mon');
 $config->check('MONITOR');
 
-
-our $monitor	= new MMM::Monitor::(
-	protocol_version	=> 1,
-);
+our $monitor	= new MMM::Monitor::();
 #$monitor->from_config($config);
 
 use Data::Dumper; # XXX
@@ -62,8 +63,7 @@ Proc::Daemon::Init if (0); # TODO
 $pidfile->create();
 
 # Shutdown flag
-our $shutdown :shared;
-$shutdown = 0;
+our $shutdown :shared = 0;
 
 # Set signal handlers
 $SIG{INT} = \&ShutdownHandler;

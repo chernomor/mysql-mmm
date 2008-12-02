@@ -1,4 +1,5 @@
 package MMM::Monitor::ChecksStatus;
+use base 'Class::Singleton';
 
 use strict;
 use warnings FATAL => 'all';
@@ -6,7 +7,7 @@ use Log::Log4perl qw(:easy);
 
 our $VERSION = '0.01';
 
-sub new($) {
+sub _new_instance($) {
 	my $class = shift;
 
 	my $data = {};

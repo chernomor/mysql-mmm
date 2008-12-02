@@ -7,6 +7,21 @@ use IPC::Open2;
 
 our $VERSION = '0.01';
 
+=head1 NAME
+
+MMM::Monitor::Checker - Checker class and main function for the checker threads
+
+=head1 SYNOPSIS
+
+	# Spawn a checker thread which will create and poll a checker and push its status to $queue
+	our $shutdown :shared = 0;
+	$SIG{INT} = sub { $shutdown = 1; };
+	my $queue = checker_queue(new Thread::Queue::)
+	my $ping_thread  = new threads(\&MMM::Monitor::Checker::main, 'ping', $queue)
+	my $mysql_thread = new threads(\&MMM::Monitor::Checker::main, 'mysql', $queue)
+	...
+
+=cut
 
 sub main($$) {
 	my $check_name	= shift;
@@ -74,17 +89,32 @@ sub main($$) {
 }
 
 
+=pod
+
+	# Create checker - will spawn a checker process
+	my $checker = new MMM::Monitor::Checker::('ping');
+
+=cut
+
 sub new($$) {
 	my $class	= shift;
 	my $name	= shift;
 
-	my $data = {};
+	my $self = {};
 
-	$data->{name} = $name;
-	bless $data, $class; 
-	$data->spawn();
-	return $data;
+	$self->{name} = $name;
+	bless $self, $class; 
+	$self->spawn();
+	return $self;
 }
+
+
+=pod
+
+	# Respawn checker if it doesn't respond
+	$checker->spawn() unless $checker->ping();
+
+=cut
 
 sub spawn($) {
 	my $self	= shift;
@@ -106,6 +136,14 @@ sub spawn($) {
 	$self->{writer}	= $writer;
 }
 
+
+=pod
+
+	# Shutdown checker process
+	$checker->shutdown();
+
+=cut
+
 sub shutdown($) {
 	my $self	= shift;
 	my $name	= $self->{name};
@@ -119,6 +157,14 @@ sub shutdown($) {
 	my $recv_res = <$reader>;
 	chomp($recv_res) if defined($recv_res);
 }
+
+
+=pod
+
+	# Check if checker process is still alive
+	$checker->ping();
+
+=cut
 
 sub ping($) {
 	my $self	= shift;
@@ -142,6 +188,14 @@ sub ping($) {
 	return 1;
 }
 
+
+=pod
+
+	# Tell the checker to check host 'db2'
+	$checker->check('db2');
+
+=cut
+
 sub check($$) {
 	my $self	= shift;
 	my $host	= shift;
@@ -158,3 +212,5 @@ sub check($$) {
 	return "UNKNOWN: Checker '$name' is dead!" unless ($send_res && $recv_res);
 	return $recv_res;
 }
+
+1;

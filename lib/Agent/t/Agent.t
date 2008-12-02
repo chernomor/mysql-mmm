@@ -6,6 +6,8 @@ use warnings FATAL => 'all';
 
 use Test::More tests => 1;
 
+use constant MMM_PROTOCOL_VERSION => 1; 
+
 require '../Agent.pm';
 require '../../Common/Role.pm';
 require '../Role.pm';

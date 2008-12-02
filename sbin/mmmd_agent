@@ -10,8 +10,12 @@ use Cwd;
 use File::Basename;
 use Proc::Daemon;
 
+# Define protocol version
+use constant MMM_PROTOCOL_VERSION => 1;
+
 # Determine installation dir name
 our $SELF_DIR = dirname(dirname(Cwd::abs_path(__FILE__)));
+
 
 # Include parts of the system
 require $SELF_DIR . '/lib/Common/Config.pm';
@@ -39,6 +43,7 @@ $agent->from_config($config);
 # XXX use Data::Dumper;
 # XXX print Data::Dumper->Dump([$agent]);
 # XXX print Data::Dumper->Dump([$config]);
+# XXX print ($agent->handle_command('GET_STATUS:1:db1'));
 # XXX print ($agent->handle_command('SET_STATUS:1:db1:ONLINE:reader(10.20.30.209;):db2'));
 # XXX print ($agent->handle_command('SET_STATUS:1:db1:ONLINE:reader(10.20.30.208;):db2'));
 # XXX print ($agent->handle_command('SET_STATUS:1:db1:ONLINE:reader(10.20.30.209;),reader(10.20.30.208;),writer(10.20.30.200;):db2'));

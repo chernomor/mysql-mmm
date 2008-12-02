@@ -16,7 +16,7 @@ our $RULESET = {
 	'role'					=> { 'required' => ['CONTROL', 'MONITOR'], 'multiple' => 1, 'section' => {
 		'mode'					=> { 'required' => ['MONITOR'], 'values' => ['balanced', 'exclusive'] },
 		'hosts'					=> { 'required' => ['MONITOR'], 'refvalues' => 'host', 'multiple' => 1 },
-		'ip'					=> { 'required' => ['MONITOR'], 'multiple' => 1 }
+		'ips'					=> { 'required' => ['MONITOR'], 'multiple' => 1 }
 		}
 	},
 	'monitor'				=> { 'required' => ['MONITOR', 'CONTROL'], 'section' => {

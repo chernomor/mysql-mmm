@@ -24,8 +24,8 @@ our $config = {
 	}
 };
 
-my $sstatus1 = new MMM::Monitor::ServersStatus;
-my $sstatus2 = new MMM::Monitor::ServersStatus;
+my $sstatus1 = _new_instance MMM::Monitor::ServersStatus;
+my $sstatus2 = _new_instance MMM::Monitor::ServersStatus;
 
 $sstatus1->{db1} = {
 	state	=> 'ONLINE',

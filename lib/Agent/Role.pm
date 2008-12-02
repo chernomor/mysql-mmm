@@ -1,12 +1,27 @@
 package MMM::Agent::Role;
+use base 'MMM::Common::Role';
 
 use strict;
 use warnings;
 
 our $VERSION = '0.01';
-our @ISA = qw(MMM::Common::Role);
 
-#-------------------------------------------------------------------------------
+=head1 NAME
+
+MMM::Agent::Role - role class (agent)
+
+=cut
+
+
+=head1 METHODS
+
+=over 4
+
+=item check()
+
+Check (=assure) that the role is configured on the local host.
+
+=cut
 sub check($) {
 	my $self = shift;
 
@@ -18,7 +33,11 @@ sub check($) {
 	MMM::Agent::Helpers::check_ip($main::agent->interface, $self->ip);
 }
 
-#-------------------------------------------------------------------------------
+=item add()
+
+Add a role to the local host.
+
+=cut
 sub add($) {
 	my $self = shift;
 	
@@ -31,7 +50,11 @@ sub add($) {
 	MMM::Agent::Helpers::check_ip($main::agent->interface, $self->ip);
 }
 
-#-------------------------------------------------------------------------------
+=item del()
+
+Delete a role from the local host.
+
+=cut
 sub del($) {
 	my $self = shift;
 	

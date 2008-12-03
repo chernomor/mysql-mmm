@@ -20,8 +20,7 @@ use DBI;
 
 =item check_ip($if, $ip)
 
-Check if the IP $ip is configured on interface $if. If not, configure it and
-send arp requests to notify other hosts.
+Check if the IP $ip is configured on interface $if.
 
 =cut
 
@@ -30,13 +29,31 @@ sub check_ip($$) {
 	my $ip	= shift;
 	
 	if (MMM::Agent::Helpers::Network::check_ip($if, $ip)) {
-		print 'OK: IP address is configured';
-		exit(0);
+		_exit_ok('IP address is configured');
+	}
+
+	_exit_ok('IP address is not configured', -1);
+}
+
+
+=item configure_ip($if, $ip)
+
+Check if the IP $ip is configured on interface $if. If not, configure it and
+send arp requests to notify other hosts.
+
+=cut
+
+sub configure_ip($$) {
+	my $if	= shift;
+	my $ip	= shift;
+	
+	if (MMM::Agent::Helpers::Network::check_ip($if, $ip)) {
+		_exit_ok('IP address is configured');
 	}
 
 	MMM::Agent::Helpers::Network::add_ip($if, $ip);
 	MMM::Agent::Helpers::Network::send_arp($if, $ip);
-	exit(0);
+	_exit_ok();
 }
 
 
@@ -51,12 +68,34 @@ sub clear_ip($$) {
 	my $ip	= shift;
 	
 	if (!MMM::Agent::Helpers::Network::check_ip($if, $ip)) {
-		print 'OK: IP address is not configured';
-		exit(0);
+		_exit_ok('IP address is not configured');
 	}
 
 	MMM::Agent::Helpers::Network::clear_ip($if, $ip);
-	exit(0);
+	_exit_ok();
+}
+
+
+=item mysql_may_write( )
+
+Check if writes on local MySQL server are allowes.
+
+=cut
+
+sub mysql_may_write() {
+	my ($host, $port, $user, $password)	= _get_connection_info();
+	_exit_error('No connection info') unless defined($host);
+
+	# connect to server
+	my $dbh = _mysql_connect($host, $port, $user, $password);
+	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)!") unless ($dbh);
+	
+	# check old read_only state
+	(my $read_only) = $dbh->selectrow_array('select @@read_only');
+	_exit_error('SQL Query Error: ' . $dbh->errstr) unless (defined $read_only);
+
+	_exit_ok('Not allowed') if ($read_only);
+	_exit_ok('Allowed');
 }
 
 
@@ -67,8 +106,7 @@ Allow writes on local MySQL server. Sets global read_only to 0.
 =cut
 
 sub mysql_allow_write() {
-	print _mysql_set_read_only(0);
-	exit(0);
+	_mysql_set_read_only(0);
 }
 
 
@@ -79,27 +117,26 @@ Deny writes on local MySQL server. Sets global read_only to 1.
 =cut
 
 sub mysql_deny_write() {
-	print _mysql_set_read_only(1);
-	exit(0);
+	_mysql_set_read_only(1);
 }
 
 
 sub _mysql_set_read_only($) {
 	my $read_only_new	= shift;
 	my ($host, $port, $user, $password)	= _get_connection_info();
-	return 'ERROR: No connection info' unless defined($host);
+	_exit_error('No connection info') unless defined($host);
 
 	# connect to server
 	my $dbh = _mysql_connect($host, $port, $user, $password);
-	return "ERROR: Can't connect to MySQL (host = $host:$port, user = $user)!" unless ($dbh);
+	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)!") unless ($dbh);
 	
 	# check old read_only state
 	(my $read_only_old) = $dbh->selectrow_array('select @@read_only');
-	return 'ERROR: SQL Query Error: ' . $dbh->errstr unless (defined $read_only_old);
+	_exit_error('SQL Query Error: ' . $dbh->errstr) unless (defined $read_only_old);
 	return 'OK' if ($read_only_old == $read_only_new);
 
 	my $res = $dbh->do("set global read_only=$read_only_new");
-	return 'ERROR: SQL Query Error: ' . $dbh->errstr unless($res);
+	_exit_error('SQL Query Error: ' . $dbh->errstr) unless($res);
 	
 	$dbh->disconnect();
 	$dbh = undef;
@@ -118,18 +155,18 @@ sub toggle_slave($) {
 	my $state = shift;
 
 	my ($host, $port, $user, $password)	= _get_connection_info();
-	return 'ERROR: No connection info' unless defined($host);
+	_exit_error('No connection info') unless defined($host);
 
 	my $query = $state ? 'START SLAVE' : 'STOP SLAVE';
 
 	# connect to server
 	my $dbh = _mysql_connect($host, $port, $user, $password);
-	return "ERROR: Can't connect to MySQL (host = $host:$port, user = $user)!" unless ($dbh);
+	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)!") unless ($dbh);
 	
 	# execute query
 	my $res = $dbh->do($query);
-	return 'ERROR: SQL Query Error: ' . $dbh->errstr unless($res);
-	return 'OK';
+	_exit_error('SQL Query Error: ' . $dbh->errstr) unless($res);
+	_exit_ok();
 }
 
 
@@ -144,17 +181,17 @@ sub sync_with_master() {
 	my $this = _get_this();
 
 	my ($this_host, $this_port, $this_user, $this_password)	= _get_connection_info($this);
-	return 'ERROR: No local connection info' unless defined($this_host);
+	_exit_error('No local connection info') unless defined($this_host);
 
 	my $peer = $main::config->{host}->{$this}->{peer};
-	return 'ERROR No peer defined' unless defined($peer);
+	_exit_error('No peer defined') unless defined($peer);
 
 	my ($peer_host, $peer_port, $peer_user, $peer_password)	= _get_connection_info($peer);
-	return 'ERROR: No peer connection info' unless defined($peer_host);
+	_exit_error('No peer connection info') unless defined($peer_host);
 
 	# Connect to local server
 	my $this_dbh = _mysql_connect($this_host, $this_port, $this_user, $this_password);
-	return "ERROR: Can't connect to MySQL (host = $this_host:$this_port, user = $this_user)!" unless ($this_dbh);
+	_exit_error("Can't connect to MySQL (host = $this_host:$this_port, user = $this_user)!") unless ($this_dbh);
 
 	# Connect to peer
 	my $peer_dbh = _mysql_connect($peer_host, $peer_port, $peer_user, $peer_password);
@@ -172,16 +209,16 @@ sub sync_with_master() {
 	} 
 	unless (defined($wait_log)) {
 		my $slave_status = $this_dbh->selectrow_hashref('SHOW SLAVE STATUS');
-		return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless defined($slave_status);
+		_exit_error('SQL Query Error: ' . $this_dbh->errstr) unless defined($slave_status);
 		$wait_log = $slave_status->{Master_Log_File};
 		$wait_pos = $slave_status->{Read_Master_Log_Pos};
 	}
 
 	# Sync with logs
 	my $res = $this_dbh->do("SELECT MASTER_POS_WAIT('$wait_log', $wait_pos)");
-	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless($res);
+	_exit_error('SQL Query Error: ' . $this_dbh->errstr) unless($res);
 	
-	return 'OK';
+	_exit_ok();
 	
 }
 
@@ -196,42 +233,42 @@ Try to catch up with the old master as far as possible and change the master to 
 
 sub set_active_master($) {
 	my $new_peer = shift;
-	return 'ERROR: Name of new master is missing' unless (defined($new_peer));
+	_exit_error('Name of new master is missing') unless (defined($new_peer));
 
 	my $this = _get_this();
 
-	return 'ERROR: new master is equal to local host!?' if ($this eq $new_peer);
+	_exit_error('New master is equal to local host!?') if ($this eq $new_peer);
 
 	# Get local connection info
 	my ($this_host, $this_port, $this_user, $this_password)	= _get_connection_info($this);
-	return "ERROR: No connection info for local host '$this_host'" unless defined($this_host);
+	_exit_error("No connection info for local host '$this_host'") unless defined($this_host);
 	
 	# Get connection info for new peer
 	my ($new_peer_host, $new_peer_port, $new_peer_user, $new_peer_password)	= _get_connection_info($new_peer);
-	return "ERROR: No connection info for new peer '$new_peer'" unless defined($new_peer_host);
+	_exit_error("No connection info for new peer '$new_peer'") unless defined($new_peer_host);
 	
 	# Connect to local server
 	my $this_dbh = _mysql_connect($this_host, $this_port, $this_user, $this_password);
-	return "ERROR: Can't connect to MySQL (host = $this_host:$this_port, user = $this_user)!" unless ($this_dbh);
+	_exit_error("Can't connect to MySQL (host = $this_host:$this_port, user = $this_user)!") unless ($this_dbh);
 
 	# Get slave info
 	my $slave_status = $this_dbh->selectrow_hashref('SHOW SLAVE STATUS');
-	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless defined($slave_status);
+	_exit_error('SQL Query Error: ' . $this_dbh->errstr) unless defined($slave_status);
 
 	my $wait_log	= $slave_status->{Master_Log_File};
 	my $wait_pos	= $slave_status->{Read_Master_Log_Pos};
 
 	my $old_peer_ip	= $slave_status->{Master_Host};
-	return 'ERROR: No ip for old peer' unless ($old_peer_ip);
+	_exit_error('No ip for old peer') unless ($old_peer_ip);
 
 	# Get connection info for old peer
 	my $old_peer = _find_host_by_ip($old_peer_ip);
-	return 'ERROR: Invalid master host in show slave status' unless ($old_peer);
+	_exit_error('Invalid master host in show slave status') unless ($old_peer);
 
-	return 'OK: We are already a slave of the new master.' if ($old_peer eq $new_peer);
+	_exit_ok('We are already a slave of the new master') if ($old_peer eq $new_peer);
 	
 	my ($old_peer_host, $old_peer_port, $old_peer_user, $old_peer_password)	= _get_connection_info($old_peer);
-	return "ERROR: No connection info for new peer '$old_peer'" unless defined($old_peer_host);
+	_exit_error("No connection info for new peer '$old_peer'") unless defined($old_peer_host);
 	
 	my $old_peer_dbh = _mysql_connect($old_peer_host, $old_peer_port, $old_peer_user, $old_peer_password);
 	if ($old_peer_dbh) {
@@ -244,16 +281,16 @@ sub set_active_master($) {
 	}
 
 	# Sync with logs
-	my $res = $this_dbh->do($this_dbh, "SELECT MASTER_POS_WAIT('$wait_log', $wait_pos)");
-	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless($res);
+	my $res = $this_dbh->do("SELECT MASTER_POS_WAIT('$wait_log', $wait_pos)");
+	_exit_error('SQL Query Error: ' . $this_dbh->errstr) unless($res);
 	
 	# Connect to new peer
 	my $new_peer_dbh = _mysql_connect($new_peer_host, $new_peer_port, $new_peer_user, $new_peer_password);
-	return "ERROR: Can't connect to MySQL (host = $new_peer_host:$new_peer_port, user = $new_peer_user)!" unless ($new_peer_dbh);
+	_exit_error("Can't connect to MySQL (host = $new_peer_host:$new_peer_port, user = $new_peer_user)!") unless ($new_peer_dbh);
 
 	# Get log position of new master
 	my $new_master_status = $new_peer_dbh->selectrow_hashref('SHOW MASTER STATUS');
-	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless($new_master_status);
+	_exit_error('SQL Query Error: ' . $new_peer_dbh->errstr) unless($new_master_status);
 
 	my $master_log = $new_master_status->{File};
 	my $master_pos = $new_master_status->{Position};
@@ -272,11 +309,11 @@ sub set_active_master($) {
 			  . " MASTER_LOG_FILE='$master_log',"
 			  . " MASTER_LOG_POS=$master_pos";
 	$res = $this_dbh->do($sql);
-	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless($res);
+	_exit_error('SQL Query Error: ' . $this_dbh->errstr) unless($res);
 
 	# Start slave
 	$res = $this_dbh->do('START SLAVE');
-	return 'ERROR: SQL Query Error: ' . $this_dbh->errstr unless($res);
+	_exit_error('SQL Query Error: ' . $this_dbh->errstr) unless($res);
 
 	return 'OK';
 }
@@ -290,15 +327,11 @@ Get connection info for host $host || local host.
 
 sub _get_connection_info($) {
 	my $host = shift;
-	unless (defined($main::config)) {
-		print "ERROR: No config present\n";
-		exit(0);
-	}
+
+	_exit_error('No config present') unless (defined($main::config));
+
 	$host = $main::config->{this} unless defined($host);
- 	unless (defined($main::config->{host}->{$host})) {
-		print "ERROR: No config present\n";
-		exit(0);
-	}
+	_exit_error('No config present') unless (defined($main::config->{host}->{$host}));
 
 	return (
 		$main::config->{host}->{$host}->{ip},
@@ -309,10 +342,7 @@ sub _get_connection_info($) {
 }
 
 sub _get_this() {
-	unless (defined($main::config)) {
-		print "ERROR: No config present\n";
-		exit(0);
-	}
+	_exit_error('No config present') unless (defined($main::config));
 	return $main::config->{this};
 }
 
@@ -326,10 +356,7 @@ sub _find_host_by_ip($) {
 	my $ip = shift;
 	return undef unless ($ip);
 
-	unless (defined($main::config)) {
-		print "ERROR: No config present\n";
-		exit(0);
-	}
+	_exit_error('No config present') unless (defined($main::config));
 
 	my $hosts = $main::config->{host};
 	foreach my $host (keys(%$hosts)) {
@@ -343,20 +370,39 @@ sub _get_replication_credentials($) {
 	my $host = shift;
 	return undef unless ($host);
 
-	unless (defined($main::config)) {
-		print "ERROR: No config present\n";
-		exit(0);
-	}
-
- 	unless (defined($main::config->{host}->{$host})) {
-		print "ERROR: No config present\n";
-		exit(0);
-	}
+	_exit_error('No config present') unless (defined($main::config));
+	_exit_error('No config present') unless (defined($main::config->{host}->{$host}));
 
 	return (
 		$main::config->{host}->{$host}->{replication_user},
 		$main::config->{host}->{$host}->{replication_password},
 	);
+}
+
+sub _exit_error {
+	my $msg	= shift;
+
+	print "ERROR: $msg\n"	if ($msg);
+	print "ERROR\n"			unless ($msg);
+
+	exit(1);
+}
+
+sub _exit_ok {
+	my $msg	= shift;
+
+	print "OK: $msg\n"	if ($msg);
+	print "OK\n"		unless ($msg);
+
+	exit(0);
+}
+
+sub _verbose_exit($$) {
+	my $ret	= shift;
+	my $msg	= shift;
+
+	print $msg, "\n";
+	exit($ret);
 }
 
 1;

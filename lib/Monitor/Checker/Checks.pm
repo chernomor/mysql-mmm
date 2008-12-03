@@ -2,7 +2,9 @@ package MMM::Monitor::Checker::Checks;
 
 use strict;
 use warnings FATAL => 'all';
-use English qw( OSNAME );
+use English qw(OSNAME EFFECTIVE_USER_ID);
+use DBI;
+use Net::Ping;
 
 our $VERSION = '0.01';
 
@@ -12,7 +14,6 @@ MMM::Monitor::Checker::Checks - functions for the B<mmmd_mon> helper program B<c
 
 =cut
 
-use DBI;
 
 my $fping_path;
 
@@ -33,6 +34,16 @@ sub ping($$) {
 	my $ip = $main::config->{host}->{$host}->{ip};
 	return "ERROR: Invalid host '$host'" unless ($ip);
 
+	# if super user, use Net::Ping - it's faster
+	if ($EFFECTIVE_USER_ID == 0) {
+		my $p = Net::Ping->new('icmp');
+		$p->hires();
+		if ($p->ping($ip, 0.5)) {
+			return 'OK';
+		}
+		return "ERROR: Could not ping $ip";
+	}
+
 	# Find appropriate fping version
 	_determine_fping_path() unless defined($fping_path);
 	unless (defined($fping_path)) {
@@ -41,7 +52,7 @@ sub ping($$) {
 
 	my $res = `$fping_path -q -u -t 500 -C 1 $ip 2>&1`;
 	return "ERROR: fping could not reach $ip" if ($res =~ /$ip.*\-$/);
-	return "OK";	
+	return 'OK';
 }
 
 

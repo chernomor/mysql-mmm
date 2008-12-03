@@ -69,9 +69,10 @@ sub handle_command($$) {
 		WARN "Version in command '$cmd_name' ($version) is greater than mine (", main::MMM_PROTOCOL_VERSION, ")"
 	}
 	
-	if		($cmd_name eq 'PING')		{ return command_ping				();			}
-	elsif	($cmd_name eq 'SET_STATUS')	{ return $self->command_set_status	(@params);	}
-	elsif	($cmd_name eq 'GET_STATUS')	{ return $self->command_get_status	();			}
+	if		($cmd_name eq 'PING')				{ return command_ping						();			}
+	elsif	($cmd_name eq 'SET_STATUS')			{ return $self->command_set_status			(@params);	}
+	elsif	($cmd_name eq 'GET_AGENT_STATUS')	{ return $self->command_get_agent_status	();			}
+	elsif	($cmd_name eq 'GET_SYSTEM_STATUS')	{ return $self->command_get_system_status	();			}
 
 	return "ERROR: Invalid command '$cmd_name'!";
 }
@@ -80,7 +81,7 @@ sub command_ping() {
 	return 'OK: Pinged!';
 }
 
-sub command_get_status($) {
+sub command_get_agent_status($) {
 	my $self	= shift;
 	
 	my $answer = join (':', (
@@ -88,6 +89,13 @@ sub command_get_status($) {
 		join(',', @{$self->roles}),
 		$self->active_master
 	));
+	return "OK: Returning status!|$answer";
+}
+
+sub command_get_system_status($) {
+	my $self	= shift;
+	
+	# master? hm - if slave - mysql master - else nothing.
 	return "OK: Returning status!|$answer";
 }
 

@@ -20,8 +20,7 @@ MMM::Agent::Helpers - an interface to helper programs for B<mmmd_agent>
 
 =item check_ip($if, $ip)
 
-Check if the IP $ip is configured on interface $if. If not, configure it and
-send arp requests to notify other hosts.
+Check if the IP $ip is configured on interface $if.
 
 Calls B<bin/agent/check_ip>.
 
@@ -31,6 +30,22 @@ sub check_ip($$) {
 	my $if = shift;
 	my $ip = shift;
 	return _execute('check_ip', "$if $ip");
+}
+
+
+=item configure_ip($if, $ip)
+
+Check if the IP $ip is configured on interface $if. If not, configure it and
+send arp requests to notify other hosts.
+
+Calls B<bin/agent/configure_ip>.
+
+=cut
+
+sub configure_ip($$) {
+	my $if = shift;
+	my $ip = shift;
+	return _execute('configure_ip', "$if $ip");
 }
 
 

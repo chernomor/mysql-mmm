@@ -13,10 +13,10 @@ our $RULESET = {
 	'this'					=> { 'required' => ['AGENT'], 'refvalues' => 'host' },
 	'debug'					=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
 	'active_master_role'	=> { 'required' => ['AGENT', 'MONITOR'], 'refvalues' => 'role' },
-	'role'					=> { 'required' => ['CONTROL', 'MONITOR'], 'multiple' => 1, 'section' => {
+	'role'					=> { 'required' => ['AGENT', 'CONTROL', 'MONITOR'], 'multiple' => 1, 'section' => {
 		'mode'					=> { 'required' => ['MONITOR'], 'values' => ['balanced', 'exclusive'] },
 		'hosts'					=> { 'required' => ['MONITOR'], 'refvalues' => 'host', 'multiple' => 1 },
-		'ips'					=> { 'required' => ['MONITOR'], 'multiple' => 1 }
+		'ips'					=> { 'required' => ['AGENT', 'MONITOR'], 'multiple' => 1 }
 		}
 	},
 	'monitor'				=> { 'required' => ['MONITOR', 'CONTROL'], 'section' => {
@@ -24,6 +24,8 @@ our $RULESET = {
 		'port'					=> { 'default' => '9988' },
 		'pid_path'				=> { 'required' => ['MONITOR'] },
 		'status_path'			=> { 'required' => ['MONITOR'] },
+		'ping_interval'			=> { 'default' => 1 },
+		'ping_ips'				=> { 'required' => ['MONITOR'], 'multiple' => 1 }
 		}
 	},
 	'socket'				=> { 'section' => {
@@ -63,7 +65,7 @@ our $RULESET = {
 };
 
 #-------------------------------------------------------------------------------
-sub new($) { 
+sub new($) {
 	my $self = shift;
 
 	return bless { }, $self; 

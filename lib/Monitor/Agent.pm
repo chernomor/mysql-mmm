@@ -19,10 +19,16 @@ sub new($$) {
 	return bless $self, $class;
 }
 
-sub send_command($$@) {
+sub _send_command {
 	my $self = shift;
 	my $cmd_name = shift;
 	my @params = @_;
+
+
+	my $checks_status = MMM::Monitor::ChecksStatus->instance();
+	unless ($checks_status->{$self->{host}}->{ping} && $checks_status->{$self->{host}}->{mysql}) {
+		return 0;
+	}
 
 	$socket = $self->_connect();
 
@@ -37,4 +43,23 @@ sub send_command($$@) {
 	close($socket);
 	
 	return $res;
+}
+
+sub set_status($$$$) {
+	my $self	= shift;
+	my $state	= shift;
+	my $roles	= shift;
+	my $master	= shift;
+
+	return $agent->send_command('SET_STATUS', $state, join(',', sort(@$roles)), $master);
+}
+
+sub get_agent_status($) {
+	my $self	= shift;
+	return $agent->send_command('GET_AGENT_STATUS');
+}
+
+sub get_system_status($) {
+	my $self	= shift;
+	return $agent->send_command('GET_SYSTEM_STATUS');
 }

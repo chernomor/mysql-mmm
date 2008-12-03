@@ -30,7 +30,7 @@ sub check($) {
 		MMM::Agent::Helpers::allow_write();
 	}
 
-	MMM::Agent::Helpers::check_ip($main::agent->interface, $self->ip);
+	MMM::Agent::Helpers::configure_ip($main::agent->interface, $self->ip);
 }
 
 =item add()
@@ -47,7 +47,7 @@ sub add($) {
 		MMM::Agent::Helpers::allow_write();
 	}
 
-	MMM::Agent::Helpers::check_ip($main::agent->interface, $self->ip);
+	MMM::Agent::Helpers::configure_ip($main::agent->interface, $self->ip);
 }
 
 =item del()

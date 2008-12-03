@@ -74,19 +74,42 @@ sub _distribute_roles($) {
 	my $old_active_master = $self->roles->get_active_master();
 	
 	# Process orphaned roles
+	$self->roles->process_orphans();
 
 	# Balance roles
+	$self->roles->balance();
 
 	my $new_active_master = $self->roles->get_active_master();
 
 	# notify slaves first, if master host has changed
-	unless ($new_active_master eq $old_active_master)
-		$self->_notify_slaves();
+	unless ($new_active_master eq $old_active_master) {
+		$self->_notify_slaves($new_active_master);
 	}
 }
 
-sub _notify_slaves($) {
-	
+sub _notify_slaves($$) {
+	my $self		= shift;
+	my $new_master	= shift;
+
+	foreach my $host (keys(%{$main::config->{host}}) {
+		next unless ($main::config->{host}->{$host}->{mode} eq 'slave');
+	}
+}
+
+sub set_agent_status($$$) {
+	my $self		= shift;
+	my $host		= shift;
+	my $new_master	= shift;
+
+	my $roles		= sort(@{$self->roles->get_host_roles($host)});
+
+	unless ($self->servers_status->get_host_status($host) eq 'HARD_OFFLINE') {
+		my $roles_str	= join(',', @$roles);
+		my $agent       = new MMM::Monitor::Agent::($host);
+		my $res = $agent->send_command('SET_STATUS', $state, $roles, $new_master);
+	}
+
+	$self->servers_status->set_host_roles($host, $roles);
 }
 
 1;

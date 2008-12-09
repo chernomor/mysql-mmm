@@ -54,4 +54,55 @@ sub handle_result($$) {
 	$self->{$result->{host}}->{$result->{check}} = $result->{result};
 }
 
+=item ping($host)
+
+Get state of check "ping" on host $host.
+
+=cut
+
+sub ping() {
+	my $self = shift;
+	my $host = shift;
+	return $self->{$host}->{ping};
+}
+
+
+=item ping($host)
+
+Get state of check "mysql" on host $host.
+
+=cut
+
+sub mysql() {
+	my $self = shift;
+	my $host = shift;
+	return $self->{$host}->{mysql};
+}
+
+
+=item rep_threads($host)
+
+Get state of check "rep_threads" on host $host.
+
+=cut
+
+sub rep_threads() {
+	my $self = shift;
+	my $host = shift;
+	return $self->{$host}->{rep_threads};
+}
+
+
+=item rep_backlog($host)
+
+Get state of check "rep_backlog" on host $host.
+
+=cut
+
+sub rep_backlog() {
+	my $self = shift;
+	my $host = shift;
+	return $self->{$host}->{rep_backlog};
+}
+
 1;

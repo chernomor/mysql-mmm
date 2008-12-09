@@ -94,7 +94,7 @@ sub command_get_agent_status($) {
 
 sub command_get_system_status($) {
 	my $self	= shift;
-	
+	my $answer = 'NOT IMPLEMENTED';
 	# master? hm - if slave - mysql master - else nothing.
 	return "OK: Returning status!|$answer";
 }

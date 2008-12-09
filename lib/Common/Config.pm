@@ -78,9 +78,10 @@ sub read($$) {
 	my $fullname = $self->_get_filename($file);
 	LOGDIE "Could not find config file" unless $fullname;
 	DEBUG "Loading configuration from $fullname";
-	open(CONF, "<$fullname") || LOGDIE "Can't read config file '$fullname'";
-	my $ret = $self->parse($RULESET, $fullname, *CONF);
-	close(CONF);
+	my $fd;
+	open($fd, "<$fullname") || LOGDIE "Can't read config file '$fullname'";
+	my $ret = $self->parse($RULESET, $fullname, $fd);
+	close($fd);
 	return $ret;
 }
 
@@ -101,6 +102,12 @@ sub parse(\%\%$*) {
 
 		# end tag
 		return if ($line =~ /^\s*<\/\s*(\w+)\s*>\s*$/);
+
+		if ($line =~ /^\s*include\s+(\S+)\s*$/) {
+			my $include_file = $1;
+			$config->read($include_file);
+			next;
+		}
 
 		# start tag - unique section
 		if ($line =~/^\s*<\s*(\w+)\s*>\s*$/) {

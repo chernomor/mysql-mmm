@@ -115,7 +115,7 @@ sub load_from_agent($$) {
 
 	# Check if host is reachable
 	my $checks_status = MMM::Monitor::ChecksStatus->instance();
-	unless ($checks_status->{$host_name}->{ping} && $checks_status->{$host_name}->{mysql}) {
+	unless ($checks_status->ping($host_name) && $checks_status->mysql($host_name)) {
 		FATAL "No saved state for unreachable host $host_name - setting state to HARD_OFFLINE";
 		$self->{$host_name}->{state} = 'HARD_OFFLINE';
 		return;

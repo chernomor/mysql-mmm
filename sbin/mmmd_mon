@@ -64,6 +64,7 @@ $pidfile->create();
 
 # Shutdown flag
 our $shutdown :shared = 0;
+our $have_net :shared = 0;
 
 # Set signal handlers
 $SIG{INT} = \&ShutdownHandler;

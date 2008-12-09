@@ -16,9 +16,9 @@ sub new($$$$) {
 	my $result	= shift;
 
 	my %self :shared;
-	$self{host} = $host;
-	$self{check} = $check;
-	$self{result} = $result;
+	$self{host}		= $host;
+	$self{check}	= $check;
+	$self{result}	= $result;
 	return bless \%self, $class;
 }
 

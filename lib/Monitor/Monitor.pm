@@ -18,8 +18,8 @@ struct 'MMM::Monitor' => {
 
 sub init($) {
 	my $self = shift;
-	$self->checks_status(MMM::Monitor::ChecksStatus->instance());
 	$self->checker_queue(new Thread::Queue::);
+	$self->checks_status(MMM::Monitor::ChecksStatus->instance());
 	$self->roles(MMM::Monitor::Roles->instance());
 }
 
@@ -33,12 +33,14 @@ sub main($) {
 	# Spawn checker threads
 	my @checks	= keys(%{$main::config->{check}});
 	my @threads;
+
+	push(@threads, new threads(\&MMM::Monitor::Checker::ping_main));
+
 	foreach my $check_name (@checks) {
 		push(@threads, new threads(\&MMM::Monitor::Checker::main, $check_name, $self->checker_queue));
 	}
 	
 	while (!$main::shutdown) {
-		# Process check results from checker threads
 		$self->_process_check_results();
 		$self->_check_server_states();
 		$self->_distribute_roles();
@@ -91,8 +93,9 @@ sub _notify_slaves($$) {
 	my $self		= shift;
 	my $new_master	= shift;
 
-	foreach my $host (keys(%{$main::config->{host}}) {
+	foreach my $host (keys(%{$main::config->{host}})) {
 		next unless ($main::config->{host}->{$host}->{mode} eq 'slave');
+		$self->set_agent_status($host);
 	}
 }
 
@@ -101,15 +104,12 @@ sub set_agent_status($$$) {
 	my $host		= shift;
 	my $new_master	= shift;
 
-	my $roles		= sort(@{$self->roles->get_host_roles($host)});
+	my @roles		= sort(@{$self->roles->get_host_roles($host)});
+	my $roles_str	= join(',', @roles);
+	my $agent       = new MMM::Monitor::Agent::($host);
+	my $res = $agent->send_command('SET_STATUS', $self->servers_status->get_host_state($host), @roles, $new_master);
 
-	unless ($self->servers_status->get_host_status($host) eq 'HARD_OFFLINE') {
-		my $roles_str	= join(',', @$roles);
-		my $agent       = new MMM::Monitor::Agent::($host);
-		my $res = $agent->send_command('SET_STATUS', $state, $roles, $new_master);
-	}
-
-	$self->servers_status->set_host_roles($host, $roles);
+	$self->servers_status->set_host_roles($host, @roles);
 }
 
 1;

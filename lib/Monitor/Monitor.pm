@@ -13,13 +13,14 @@ struct 'MMM::Monitor' => {
 	checker_queue		=> 'Thread::Queue',
 	checks_status		=> 'MMM::Monitor::ChecksStatus',
 	servers_status		=> 'MMM::Monitor::ServersStatus',
-	roles				=> '@'
+	roles				=> 'MMM::Monitor::Roles'
 };
 
 sub init($) {
 	my $self = shift;
 	$self->checker_queue(new Thread::Queue::);
 	$self->checks_status(MMM::Monitor::ChecksStatus->instance());
+	$self->servers_status(MMM::Monitor::ServersStatus->instance());
 	$self->roles(MMM::Monitor::Roles->instance());
 }
 
@@ -34,7 +35,7 @@ sub main($) {
 	my @checks	= keys(%{$main::config->{check}});
 	my @threads;
 
-	push(@threads, new threads(\&MMM::Monitor::Checker::ping_main));
+	push(@threads, new threads(\&MMM::Monitor::NetworkChecker::main));
 
 	foreach my $check_name (@checks) {
 		push(@threads, new threads(\&MMM::Monitor::Checker::main, $check_name, $self->checker_queue));
@@ -68,10 +69,11 @@ sub _process_check_results($) {
 	return $cnt;
 }
 
+sub _check_server_states($) {
+}
 
 sub _distribute_roles($) {
 	my $self = shift;
-
 
 	my $old_active_master = $self->roles->get_active_master();
 	

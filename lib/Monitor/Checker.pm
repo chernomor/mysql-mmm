@@ -38,7 +38,10 @@ sub main($$) {
 	# Initialize failure counters
 	my $failures = {};
 	foreach my $host_name (@hosts) {
-		$failures->{$host_name} = 0;
+		$failures->{$host_name} = {
+			state	=> -1,				# -1 undefined; 1 - ok; -2 untrapped error; 0 trapped error
+			time	=> 0,
+		}
 	}
 
 	# Perform checks until shutdown
@@ -55,58 +58,34 @@ sub main($$) {
 
 			# If success
 			if ($res =~ /^OK/) {
+				next if ($failures->{$host_name}->{state} == 1);
 				FATAL "Check '$check_name' on '$host_name' is ok!";
-				$failures->{$host_name} = 0;
 				$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 1));
+				$failures->{$host_name}->{time}		= 0;
+				$failures->{$host_name}->{state}	= 1;
 				next;
 			}
 			
 			# If failed
 			if ($res =~ /^ERROR/) {
 				last unless ($main::have_net);
-				if (!$failures->{$host_name}) {
-					$failures->{$host_name} = time();
+				next if ($failures->{$host_name}->{state} == 0);
+				if ($failures->{$host_name}->{state} != 0 && $failures->{$host_name}->{state} != -2) {
+					$failures->{$host_name}->{time} = time();
+					$failures->{$host_name}->{state}= -2;
 				}
-				my $failure_age = time() - $failures->{$host_name};
+				my $failure_age = time() - $failures->{$host_name}->{time};
 				
-				if ($failure_age >= $options->{trap_period}) {
-					FATAL "Check '$check_name' on '$host_name' has failed for $failure_age seconds!";
-					$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 0));
-				}
+				next if ($failure_age < $options->{trap_period});
+
+				FATAL "Check '$check_name' on '$host_name' has failed for $failure_age seconds!";
+				$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 0));
+				$failures->{$host_name}->{state}	= 0;
 				next;
 			}
 		}
 
 		sleep($options->{check_period});
-	}
-	$checker->shutdown();
-}
-
-sub ping_main() {
-	my @ips		= @{$main::config->{monitor}->{ping_ips}};
-	
-	# Create checker
-	my $checker = new MMM::Monitor::Checker::('ping_ip');
-
-	# Perform checks until shutdown
-	while (!$main::shutdown) {
-		my $state = 0;
-
-		foreach my $ip (@ips) {
-			last if ($main::shutdown);
-
-			# Ping checker
-			$checker->spawn() unless $checker->ping();
-
-			my $res = $checker->check($ip);
-
-			$state = 1 if ($res =~ /^OK/);
-		}
-
-		$main::have_net = $state;
-
-		# Sleep a while before checking every ip again
-		sleep($main::config->{monitor}->{ping_interval});
 	}
 	$checker->shutdown();
 }

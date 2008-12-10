@@ -34,7 +34,10 @@ require $SELF_DIR . '/lib/Monitor/Checker.pm';
 require $SELF_DIR . '/lib/Monitor/CheckResult.pm';
 require $SELF_DIR . '/lib/Monitor/ChecksStatus.pm';
 require $SELF_DIR . '/lib/Monitor/Monitor.pm';
+require $SELF_DIR . '/lib/Monitor/NetworkChecker.pm';
+require $SELF_DIR . '/lib/Monitor/ServersStatus.pm';
 require $SELF_DIR . '/lib/Monitor/Role.pm';
+require $SELF_DIR . '/lib/Monitor/Roles.pm';
 
 # Read configuration
 our $config = new MMM::Common::Config::;
@@ -49,7 +52,12 @@ use Data::Dumper; # XXX
 
 #exit(0);
 
-	
+
+
+if (!MMM::Monitor::NetworkChecker->initial_check()) {
+	LOGDIE "DIED: Network is unreachable";
+}
+
 
 my $pidfilename = $config->{monitor}->{pid_path};
 my $pidfile = new MMM::Common::PidFile:: $pidfilename;
@@ -62,9 +70,8 @@ WARN	"Unclean start - found stale pid file!"		if ($pidfile->exists());
 Proc::Daemon::Init if (0); # TODO
 $pidfile->create();
 
-# Shutdown flag
-our $shutdown :shared = 0;
-our $have_net :shared = 0;
+our $shutdown :shared = 0;		# Shutdown flag
+our $have_net :shared = 1;		# Network status flag
 
 # Set signal handlers
 $SIG{INT} = \&ShutdownHandler;

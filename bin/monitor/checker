@@ -33,12 +33,23 @@ our $config = new MMM::Common::Config::;
 $config->read('mmm_mon');
 $config->check('MONITOR');
 
-LOGDIE "checker: Unknown check $check_name" unless (defined($config->{check}->{$check_name}));
+our $check;
 
-our $check = \%{$config->{check}->{$check_name}};
+# NOTE: the check "ping_ip" is not a host check. Its a checker for pinging single IPs to test if the monitor network connection is still working.
+if ($check_name eq 'ping_ip') {
+	$check = {
+		restart_after	=> 0,
+		timeout			=> 1
+	}
+}
+else {
+	LOGDIE "checker: Unknown check $check_name" unless (defined($config->{check}->{$check_name}));
+	$check = \%{$config->{check}->{$check_name}};
+}
 
 my $check_function;
-if    ($check_name eq 'ping'       ) { $check_function = \&MMM::Monitor::Checker::Checks::ping;			}
+if    ($check_name eq 'ping_ip'    ) { $check_function = \&MMM::Monitor::Checker::Checks::ping_ip;		}
+elsif ($check_name eq 'ping'       ) { $check_function = \&MMM::Monitor::Checker::Checks::ping;			}
 elsif ($check_name eq 'mysql'      ) { $check_function = \&MMM::Monitor::Checker::Checks::mysql;		}
 elsif ($check_name eq 'rep_backlog') { $check_function = \&MMM::Monitor::Checker::Checks::rep_backlog;	}
 elsif ($check_name eq 'rep_threads') { $check_function = \&MMM::Monitor::Checker::Checks::rep_threads;	}
@@ -57,7 +68,7 @@ INFO "$check_name: Start";
 while (!eof(STDIN)) {
 
 	# Check if it is time to die
-	if (defined($max_checks) && $max_checks < 1) {
+	if ($max_checks && $max_checks < 1) {
 		INFO "$check_name: Max checks performed, restarting...";
 		last;
 	}

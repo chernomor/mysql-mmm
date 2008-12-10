@@ -55,6 +55,37 @@ sub ping($$) {
 	return 'OK';
 }
 
+=item ping_ip($timeout, $ip)
+
+Check if the IP $ip is reachable.
+
+=cut
+
+sub ping_ip($$) {
+	my $timeout	= shift;
+	my $ip	= shift;
+
+	# if super user, use Net::Ping - it's faster
+	if ($EFFECTIVE_USER_ID == 0) {
+		my $p = Net::Ping->new('icmp');
+		$p->hires();
+		if ($p->ping($ip, 0.5)) {
+			return 'OK';
+		}
+		return "ERROR: Could not ping $ip";
+	}
+
+	# Find appropriate fping version
+	_determine_fping_path() unless defined($fping_path);
+	unless (defined($fping_path)) {
+		return "ERROR: fping is not functional - please, install your own version of fping on this server!";
+	}
+
+	my $res = `$fping_path -q -u -t 500 -C 1 $ip 2>&1`;
+	return "ERROR: fping could not reach $ip" if ($res =~ /$ip.*\-$/);
+	return 'OK';
+}
+
 
 =item mysql($timeout, $host)
 
@@ -240,8 +271,8 @@ sub _get_connection_info($) {
 	return (
 		$main::config->{host}->{$host}->{ip},
 		$main::config->{host}->{$host}->{mysql_port},
-		$main::config->{host}->{$host}->{agent_user},
-		$main::config->{host}->{$host}->{agent_password}
+		$main::config->{host}->{$host}->{monitor_user},
+		$main::config->{host}->{$host}->{monitor_password}
 	);
 }
 

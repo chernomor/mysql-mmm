@@ -134,7 +134,7 @@ sub send_arp($$) {
 			print "ERROR: Unknown arping version!\n";
 			exit(1);
 		}
-		`$arp_util -c 1 $arp_param $if_bcast`
+		`$arp_util -c 5 $arp_param $if_bcast`
 	}
 	elsif ($OSNAME eq 'solaris') {
 		# Get params for send_arp

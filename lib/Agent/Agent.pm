@@ -33,11 +33,11 @@ sub main($) {
 
 	while (!$main::shutdown) {
 
-		TRACE "Listener: Waiting for connection...";
+		TRACE 'Listener: Waiting for connection...';
 		my $client = $socket->accept();
 		next unless ($client);
 
-		TRACE "Listener: Connect!";
+		TRACE 'Listener: Connect!';
 		while (my $cmd = <$client>) {
 			chomp($cmd);
 			TRACE "Daemon: Command = '$cmd'";
@@ -50,9 +50,9 @@ sub main($) {
 
 			return 0 if ($main::shutdown);
 		}
-		close($client);
 
-		TRACE("Listener: Disconnect!");
+		close($client);
+		TRACE 'Listener: Disconnect!';
 		
 		$self->check_roles();
 	}

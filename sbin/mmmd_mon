@@ -33,6 +33,7 @@ require $SELF_DIR . '/lib/Common/Socket.pm';
 require $SELF_DIR . '/lib/Monitor/Checker.pm';
 require $SELF_DIR . '/lib/Monitor/CheckResult.pm';
 require $SELF_DIR . '/lib/Monitor/ChecksStatus.pm';
+require $SELF_DIR . '/lib/Monitor/Commands.pm';
 require $SELF_DIR . '/lib/Monitor/Monitor.pm';
 require $SELF_DIR . '/lib/Monitor/NetworkChecker.pm';
 require $SELF_DIR . '/lib/Monitor/ServersStatus.pm';
@@ -80,6 +81,10 @@ $SIG{PIPE} = 'IGNORE';
 $SIG{CHLD} = \&ChildHandler;
 
 $monitor->init();
+
+# TODO handle restore case
+# $monitor->main_recover();
+
 $monitor->main();
 
 # Remove pid file

@@ -127,6 +127,24 @@ sub get_active_master($) {
 }
 
 
+=item get_exclusive_role_owner($role)
+
+Get the host which has the exclusive role $role assigned
+
+=cut
+
+sub get_exclusive_role_owner($$) {
+	my $self	= shift;
+	my $role	= shift;
+
+	my $role_info = $self->{$role};
+	return '' unless $role_info;
+
+	my @ips = keys( %{ $role_info->{ips} } );
+	return $role_info->{ips}->{$ips[0]}->{assigned_to};
+}
+
+
 =item clear_host_roles($host)
 
 Remove all roles from host $host.
@@ -273,7 +291,63 @@ sub move_one_ip($$$) {
 	}
 }
 
-# TODO while each durch foreach ersetzen!!!
+sub find_by_ip($$) {
+	my $self	= shift;
+	my $ip		= shift;
 
+	foreach my $role (keys(%$self)) {
+		return $role if (defined($self->{$role}->{ips}->{$ip}));
+	}
+	
+	return undef;
+}
+sub set_role($$$$) {
+	my $self	= shift;
+	my $role	= shift;
+	my $ip		= shift;
+	my $host	= shift;
+
+	# XXX no checks here - caller should check if:
+	# - role is valid
+	# - ip is valid
+	# - host is valid
+	# - host may handle role
+	$self->{$role}->{ips}->{$ip}->{assigned_to} = $host;
+}
+
+sub exists($$) {
+	my $self	= shift;
+	my $role	= shift;
+	return defined($self->{$role});
+}
+
+sub is_exclusive($$) {
+	my $self	= shift;
+	my $role	= shift;
+	return 0 unless defined($self->{$role});
+	return ($self->{$role}->{mode} eq 'exclusive');
+}
+
+sub get_valid_hosts($$) {
+	my $self	= shift;
+	my $role	= shift;
+	return () unless defined($self->{$role});
+	return $self->{$role}->{hosts};
+}
+
+sub can_handle($$) {
+	my $self	= shift;
+	my $role	= shift;
+	my $host	= shift;
+	return 0 unless defined($self->{$role});
+	return grep({$_ eq $host} @{$self->{$role}->{hosts}});
+}
+
+sub is_active_master_role($$) {
+	my $self	= shift;
+	my $role	= shift;
+	
+	return ($role eq $main::config->{active_master_role});
+}
 
 1;

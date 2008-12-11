@@ -9,19 +9,27 @@ our $VERSION = '0.01';
 
 use Class::Struct;
 
+sub instance() {
+	return $main::monitor;
+}
+
 struct 'MMM::Monitor' => {
 	checker_queue		=> 'Thread::Queue',
 	checks_status		=> 'MMM::Monitor::ChecksStatus',
-	servers_status		=> 'MMM::Monitor::ServersStatus',
-	roles				=> 'MMM::Monitor::Roles'
+	command_queue		=> 'Thread::Queue',
+	result_queue		=> 'Thread::Queue',
+	roles				=> 'MMM::Monitor::Roles',
+	servers_status		=> 'MMM::Monitor::ServersStatus'
 };
 
 sub init($) {
 	my $self = shift;
 	$self->checker_queue(new Thread::Queue::);
 	$self->checks_status(MMM::Monitor::ChecksStatus->instance());
-	$self->servers_status(MMM::Monitor::ServersStatus->instance());
+	$self->command_queue(new Thread::Queue::);
+	$self->result_queue(new Thread::Queue::);
 	$self->roles(MMM::Monitor::Roles->instance());
+	$self->servers_status(MMM::Monitor::ServersStatus->instance());
 }
 
 sub main($) {
@@ -36,6 +44,7 @@ sub main($) {
 	my @threads;
 
 	push(@threads, new threads(\&MMM::Monitor::NetworkChecker::main));
+	push(@threads, new threads(\&MMM::Monitor::Commands::main, $self->result_queue, $self->command_queue));
 
 	foreach my $check_name (@checks) {
 		push(@threads, new threads(\&MMM::Monitor::Checker::main, $check_name, $self->checker_queue));
@@ -44,7 +53,9 @@ sub main($) {
 	while (!$main::shutdown) {
 		$self->_process_check_results();
 		$self->_check_server_states();
+		$self->_handle_commands();
 		$self->_distribute_roles();
+		sleep(1);
 	}
 
 	foreach my $thread (@threads) {
@@ -70,6 +81,7 @@ sub _process_check_results($) {
 }
 
 sub _check_server_states($) {
+	# TODO do nothing if in PASSIVE mode
 }
 
 sub _distribute_roles($) {
@@ -87,31 +99,43 @@ sub _distribute_roles($) {
 
 	# notify slaves first, if master host has changed
 	unless ($new_active_master eq $old_active_master) {
-		$self->_notify_slaves($new_active_master);
+		$self->notify_slaves($new_active_master);
 	}
 }
 
-sub _notify_slaves($$) {
+sub notify_slaves($$) {
 	my $self		= shift;
 	my $new_master	= shift;
 
 	foreach my $host (keys(%{$main::config->{host}})) {
 		next unless ($main::config->{host}->{$host}->{mode} eq 'slave');
-		$self->set_agent_status($host);
+		$self->send_agent_status($host);
 	}
 }
 
-sub set_agent_status($$$) {
-	my $self		= shift;
-	my $host		= shift;
-	my $new_master	= shift;
+sub send_agent_status($$$) {
+	my $self	= shift;
+	my $host	= shift;
+	my $master	= shift;
+
+	# TODO never send anything to agents if we are in RECOVERY/PASSIVE mode
+
+	$master = $self->roles->get_active_master() unless (defined($master));
 
 	my @roles		= sort(@{$self->roles->get_host_roles($host)});
 	my $roles_str	= join(',', @roles);
 	my $agent       = new MMM::Monitor::Agent::($host);
-	my $res = $agent->send_command('SET_STATUS', $self->servers_status->get_host_state($host), @roles, $new_master);
+	my $res = $agent->set_status($self->servers_status->get_host_state($host), @roles, $master);
 
 	$self->servers_status->set_host_roles($host, @roles);
+}
+
+sub _handle_commands($) {
+	my $self		= shift;
+	while (my $command = $self->command_queue->dequeue_nb) {
+		if ($command eq 'show') { $self->result_queue->enqueue(MMM::Monitor::Commands::show()); }
+		else { $self->result_queue->enqueue("Invalid command '$command'\n"); }
+	}
 }
 
 1;

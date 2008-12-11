@@ -12,7 +12,7 @@ MMM::Monitor::ServersStatus - holds status information for all agent hosts
 
 =head1 SYNOPSIS
 
-	my $status = new MMM::Monitor::ServersStatus::;
+	my $status = MMM::Monitor::ServersStatus->instance();
 
 =cut
 
@@ -152,6 +152,34 @@ sub load_from_agent($$) {
 
 	FATAL "Restored state $state and roles from agent on host $host_name";
 	return;
+}
+
+sub to_string($) {
+	my $self	= shift;
+	my $res		= '';
+
+	keys (%$self); # reset iterator
+	while (my ($server, $status) = each(%$self)) {
+		next unless $status;
+		my $host_config = $main::config->{host}->{$server};
+		$res .= sprintf("  %s(%s) %s/%s. Roles: %s\n", $server, $host_config->{ip}, $host_config->{mode}, $status->{state}, join(',', sort(@{$status->{roles}})));
+	}
+	return $res;
+}
+
+sub set_state($$$) {
+	my $self	= shift;
+	my $host	= shift;
+	my $state	= shift;
+
+	LOGDIE "Can't set state of invalid host '$host'" if (!defined($self->{$host}));
+	$self->{$host}->{state} = $state;
+}
+
+sub exists($$) {
+	my $self	= shift;
+	my $host	= shift;
+	return defined($self->{$host});
 }
 
 # a server status contains

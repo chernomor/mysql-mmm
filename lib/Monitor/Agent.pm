@@ -45,6 +45,11 @@ sub _send_command {
 	return $res;
 }
 
+sub ping($) {
+	my $self	= shift;
+	return $agent->send_command('PING');
+}
+
 sub set_status($$$$) {
 	my $self	= shift;
 	my $state	= shift;

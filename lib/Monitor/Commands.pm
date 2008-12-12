@@ -193,10 +193,16 @@ sub move_role($$) {
 }
 
 sub set_active() {
+	# TODO check that there are no roles on OFFLINE hosts
 	# TODO maybe inform all hosts - which one first?
 	# TODO unset passive flag
+	MMM::Monitor->instance()->passive(0);
+	return "OK: Switched into passive mode.";
 }
 
 sub set_passive() {
-	# TODO set passive flag
+	return "OK: Already in passive mode" if (MMM::Monitor->instance()->passive());
+
+	MMM::Monitor->instance()->passive(1);
+	return "OK: Switched into passive mode.";
 }

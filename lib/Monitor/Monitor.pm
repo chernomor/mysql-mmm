@@ -19,7 +19,8 @@ struct 'MMM::Monitor' => {
 	command_queue		=> 'Thread::Queue',
 	result_queue		=> 'Thread::Queue',
 	roles				=> 'MMM::Monitor::Roles',
-	servers_status		=> 'MMM::Monitor::ServersStatus'
+	servers_status		=> 'MMM::Monitor::ServersStatus',
+	passive				=> '$'
 };
 
 sub init($) {
@@ -30,6 +31,7 @@ sub init($) {
 	$self->result_queue(new Thread::Queue::);
 	$self->roles(MMM::Monitor::Roles->instance());
 	$self->servers_status(MMM::Monitor::ServersStatus->instance());
+	$self->passive(0);
 }
 
 sub main($) {
@@ -81,11 +83,14 @@ sub _process_check_results($) {
 }
 
 sub _check_server_states($) {
-	# TODO do nothing if in PASSIVE mode
+	my $self = shift;
 }
 
 sub _distribute_roles($) {
 	my $self = shift;
+
+	# Never change roles if we are in PASSIVE mode
+	return if ($self->passive);
 
 	my $old_active_master = $self->roles->get_active_master();
 	
@@ -118,7 +123,8 @@ sub send_agent_status($$$) {
 	my $host	= shift;
 	my $master	= shift;
 
-	# TODO never send anything to agents if we are in RECOVERY/PASSIVE mode
+	# Never send anything to agents if we are in PASSIVE mode
+	return if ($self->passive);
 
 	$master = $self->roles->get_active_master() unless (defined($master));
 
@@ -132,9 +138,19 @@ sub send_agent_status($$$) {
 
 sub _handle_commands($) {
 	my $self		= shift;
-	while (my $command = $self->command_queue->dequeue_nb) {
-		if ($command eq 'show') { $self->result_queue->enqueue(MMM::Monitor::Commands::show()); }
-		else { $self->result_queue->enqueue("Invalid command '$command'\n"); }
+	while (my $cmdline = $self->command_queue->dequeue_nb) {
+		my @args	= split(/\s+/, $cmdline);
+		my $command	= shift @args;
+		my $arg_cnt	= scalar(@args);
+		if ($command eq 'ping'			&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::ping()); }
+		if ($command eq 'show'			&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::show()); }
+		if ($command eq 'set_active'	&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_active()); }
+		if ($command eq 'set_passive'	&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_passive()); }
+		if ($command eq 'move_role'		&& $arg_cnt == 2) { $self->result_queue->enqueue(MMM::Monitor::Commands::move_role($args[0], $args[1])); }
+		if ($command eq 'set_ip'		&& $arg_cnt == 2) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_ip($args[0], $args[1])); }
+		if ($command eq 'set_online'	&& $arg_cnt == 1) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_online($args[0])); }
+		if ($command eq 'set_offline'	&& $arg_cnt == 1) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_offline($args[0])); }
+		else { $self->result_queue->enqueue("Invalid command '$cmdline'\n"); }
 	}
 }
 

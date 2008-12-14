@@ -53,4 +53,4 @@ $agents2->load_status();
 #print Data::Dumper->Dump([$agents1, $agents2]);
 is_deeply($agents1, $agents2);
 
-#unlink('status.tmp');
+unlink('status.tmp');

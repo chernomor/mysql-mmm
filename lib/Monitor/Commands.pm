@@ -132,7 +132,8 @@ sub set_ip($$) {
 	}
 
 	my $host_state = $agents->state($host);
-	unless ($host_state eq 'ONLINE' || $host_state eq 'REPLICATION_FAIL' || $host_state eq 'REPLICATION_BACKLOG') {
+#	unless ($host_state eq 'ONLINE' || $host_state eq 'REPLICATION_FAIL' || $host_state eq 'REPLICATION_BACKLOG') {
+	unless ($host_state eq 'ONLINE') {
 		return "ERROR: Host '$host' is '$host_state' at the moment. Can't move role with ip '$ip' there.";
 	}
 
@@ -188,9 +189,7 @@ sub move_role($$) {
 
 sub set_active() {
 	return "OK: Already in active mode" unless (MMM::Monitor->instance()->passive);
-	# TODO check that there are no roles on OFFLINE hosts
-	# TODO maybe inform all hosts - which one first?
-	# TODO unset passive flag
+	# TODO check that there are no roles on non-ONLINE hosts
 	MMM::Monitor->instance()->passive(0);
 	return "OK: Switched into active mode.";
 }

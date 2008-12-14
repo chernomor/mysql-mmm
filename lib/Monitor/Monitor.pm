@@ -31,7 +31,9 @@ sub init($) {
 	$self->command_queue(new Thread::Queue::);
 	$self->result_queue(new Thread::Queue::);
 	$self->roles(MMM::Monitor::Roles->instance());
-	$self->passive(0);
+
+	# Go into passive mode if we have no network connection at startup
+	$self->passive(!$main::have_net);
 }
 
 sub main($) {
@@ -57,6 +59,7 @@ sub main($) {
 		$self->_check_server_states();
 		$self->_handle_commands();
 		$self->_distribute_roles();
+		$self->send_status_to_agents();
 		sleep(1);
 	}
 
@@ -85,14 +88,22 @@ sub _process_check_results($) {
 sub _check_server_states($) {
 	my $self = shift;
 
+	# Don't do anything if we have no network connection
+	return if (!$main::have_net);
+
 	my $checks	= $self->checks_status;
 	my $agents	= $self->agents;
 
 	foreach my $host (keys(%{$main::config->{host}})) {
-		my $state	= $agents->state($host);
+		my $agent		= $agents->get($host);
+		my $state		= $agent->state;
+		my $ping		= $checks->ping($host);
+		my $mysql		= $checks->mysql($host);
+		my $rep_backlog	= $checks->rep_backlog($host);
+		my $rep_threads	= $checks->rep_threads($host);
 
 		my $peer	= $main::config->{host}->{$host}->{peer};
-		if (!$peer && $main::config->{host}->{$host}->{mode} eq 'slave') {
+		if (!$peer && $agent->mode eq 'slave') {
 			$peer	= $self->roles->get_active_master();
 		}
 
@@ -102,90 +113,117 @@ sub _check_server_states($) {
 		# Simply skip this host. It is offlined by admin
 		next if ($state eq 'ADMIN_OFFLINE');
 
+		########################################################################
+
 		if ($state eq 'ONLINE') {
 
 			# ONLINE -> HARD_OFFLINE
-			unless ($checks->ping($host) && $checks->mysql($host)) {
+			unless ($ping && $mysql) {
 				FATAL "State of host '$host' changed from $state to HARD_OFFLINE";
-				$agents->set_state($host, 'HARD_OFFLINE');
-				# TODO send state to agent
-				# clear roles
+				$agent->state('HARD_OFFLINE');
+				$self->roles->clear_host_roles($host);
 				$self->send_agent_status($host);
 				# TODO kill host (remove ips, drop connections, iptable connections, ...) if sending state was not ok
+				next;
 			}
 
-			# TODO
 			# ONLINE -> REPLICATION_FAIL
-			# ping mysql !rep_threads UND peer==online -> REPLICATION_FAIL
+			if ($ping && $mysql && !$rep_threads && $peer_state eq 'ONLINE') {
 				FATAL "State of host '$host' changed from $state to REPLICATION_FAIL";
-				$agents->set_state($host, 'REPLICATION_FAIL');
-				# TODO clear roles
+				$agent->state('REPLICATION_FAIL');
+				$self->roles->clear_host_roles($host);
 				$self->send_agent_status($host);
-			
-			# TODO
+				next;
+			}
+
 			# ONLINE -> REPLICATION_DELAY
-			# alles ok ausser rep_backlog UND peer==online -> REPLICATION_DELAY
+			if ($ping && $mysql && !$rep_backlog && $rep_threads && $peer_state eq 'ONLINE') {
 				FATAL "State of host '$host' changed from $state to REPLICATION_DELAY";
-				$agents->set_state($host, 'REPLICATION_DELAY');
-				# TODO clear roles
+				$agent->state('REPLICATION_DELAY');
+				$self->roles->clear_host_roles($host);
 				$self->send_agent_status($host);
+				next;
+			}
 			next;
 		}
+
+		########################################################################
 
 		if ($state eq 'AWAITING_RECOVERY') {
 
 			# AWAITING_RECOVERY -> HARD_OFFLINE
-			unless ($checks->ping($host) && $checks->mysql($host)) {
+			unless ($ping && $mysql) {
 				FATAL "State of host '$host' changed from $state to HARD_OFFLINE";
-				$agents->set_state($host, 'HARD_OFFLINE');
-				# $self->send_agent_status($host); TODO
+				$agent->state('HARD_OFFLINE');
 				next;
 			}
 
 			# AWAITING_RECOVERY -> ONLINE (if host was offline for a short period)
-			if ($checks->ping($host) && $checks->mysql($host) && $checks->rep_backlog($host) && $checks->rep_threads($host)) {
-				# TODO if uptime is small set to online and inform agent. Log fatal
-				# WAIT until peer replication is ok if we are a master
+			if ($ping && $mysql && $rep_backlog && $rep_threads) {
+				my $uptime_diff = $agent->uptime - $agent->last_uptime;
+				next unless ($host->{last_uptime} > 0 && $uptime_diff > 0 && $uptime_diff < 60);
+				next unless ($agent->mode eq 'master' && $peer_state eq 'ONLINE' && $checks->rep_backlog($peer) && $checks->rep_threads($peer));
 				FATAL "State of host '$host' changed from $state to ONLINE";
-				$agents->set_state($host, 'ONLINE');
+				$agent->state('ONLINE');
 				$self->send_agent_status($host);
 				next;
 			}
 			next;
 		}
 
+		########################################################################
+
 		if ($state eq 'HARD_OFFLINE') {
 
 			# HARD_OFFLINE -> AWAITING_RECOVERY
-			if ($checks->ping($host) && $checks->mysql($host)) {
+			if ($ping && $mysql) {
 				FATAL "State of host '$host' changed from $state to AWAITING_RECOVERY";
-				$agents->set_state($host, 'AWAITING_RECOVERY');
+				$agent->state('AWAITING_RECOVERY');
 				$self->send_agent_status($host);
 				next;
 			}
 		}
 
-        # REPLICATION_FAIL -> REPLICATION_DELAY
-        # REPLICATION_DELAY -> REPLICATION_FAIL
+		########################################################################
+
+		if ($state eq 'REPLICATION_FAIL') {
+        	# REPLICATION_FAIL -> REPLICATION_DELAY
+			if ($ping && $mysql && !$rep_backlog && $rep_threads) {
+				FATAL "State of host '$host' changed from $state to REPLICATION_DELAY";
+				$agent->state('REPLICATION_DELAY');
+				next;
+			}
+		}
+		if ($state eq 'REPLICATION_DELAY') {
+	        # REPLICATION_DELAY -> REPLICATION_FAIL
+			if ($ping && $mysql && $rep_backlog && !$rep_threads) {
+				FATAL "State of host '$host' changed from $state to REPLICATION_FAIL";
+				$agent->state('REPLICATION_FAIL');
+				next;
+			}
+		}
+
+		########################################################################
 
 		if ($state eq 'REPLICATION_DELAY' || $state eq 'REPLICATION_FAIL') {
 			# REPLICATION_DELAY || REPLICATION_FAIL -> ONLINE
-			if ($checks->ping($host) && $checks->mysql($host)
-				&& (($checks->rep_backlog($host) && $checks->rep_threads($host)) || $peer_state ne 'ONLINE')
+			if ($ping && $mysql && (($rep_backlog && $rep_threads) || $peer_state ne 'ONLINE')
 			) {
 				FATAL "State of host '$host' changed from $state to ONLINE";
-				$agents->set_state($host, 'ONLINE');
+				$agent->state('ONLINE');
 				$self->send_agent_status($host);
 				next;
 			}
 
 	        # REPLICATION_DELAY || REPLICATION_FAIL -> HARD_OFFLINE
-			unless ($checks->ping($host) && $checks->mysql($host)) {
+			unless ($ping && $mysql) {
 				FATAL "State of host '$host' changed from $state to HARD_OFFLINE";
-				$agents->set_state($host, 'HARD_OFFLINE');
+				$agent->state('HARD_OFFLINE');
 				$self->send_agent_status($host);
 				# TODO kill host (remove ips, drop connections, iptable connections, ...) if sending state was not ok
+				next;
 			}
+			next;
 		}
 	}
 }
@@ -212,6 +250,14 @@ sub _distribute_roles($) {
 	}
 }
 
+sub send_status_to_agents($) {
+	my $self	= shift;
+	my $master	= $self->roles->get_active_master();
+	foreach my $host (keys(%{$main::config->{host}})) {
+		$self->send_agent_status($host, $master);
+	}
+}
+
 sub notify_slaves($$) {
 	my $self		= shift;
 	my $new_master	= shift;
@@ -228,11 +274,12 @@ sub send_agent_status($$$) {
 	my $master	= shift;
 
 	# Never send anything to agents if we are in PASSIVE mode
-	return if ($self->passive);
+	# Never send anything to agents if we have no network connection
+	return if ($self->passive || !$main::have_net);
 
 	$master = $self->roles->get_active_master() unless (defined($master));
 
-	my @roles		= sort(@{$self->roles->get_host_roles($host)});
+	my @roles		= sort($self->roles->get_host_roles($host));
 	my $agent = $self->agents->get($host);
 	$agent->roles(@roles);
 	return $agent->cmd_set_status($master);

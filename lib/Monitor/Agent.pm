@@ -41,30 +41,37 @@ sub _send_command {
 	print $socket join(':', $cmd, main::MMM_PROTOCOL_VERSION, $self->host, @params), "\n";
 	my $res = <$socket>;
 	close($socket);
+
+	if ($res =~ /(.*)\|UP\:(.*)/) {
+		$res = $1;
+		my $uptime = $2;
+		$self->uptime($uptime);
+		$self->last_uptime($uptime) if ($self->state eq 'ONLINE');
+	}
 	
 	return $res;
 }
 
 sub cmd_ping($) {
 	my $self	= shift;
-	return $self->send_command('PING');
+	return $self->_send_command('PING');
 }
 
 sub cmd_set_status($$) {
 	my $self	= shift;
 	my $master	= shift;
 
-	return $self->send_command('SET_STATUS', $self->state, join(',', sort(@{$self->roles})), $master);
+	return $self->_send_command('SET_STATUS', $self->state, join(',', sort(@{$self->roles})), $master);
 }
 
 sub cmd_get_agent_status($) {
 	my $self	= shift;
-	return $self->send_command('GET_AGENT_STATUS');
+	return $self->_send_command('GET_AGENT_STATUS');
 }
 
 sub cmd_get_system_status($) {
 	my $self	= shift;
-	return $self->send_command('GET_SYSTEM_STATUS');
+	return $self->_send_command('GET_SYSTEM_STATUS');
 }
 
 1;

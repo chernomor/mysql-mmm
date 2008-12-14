@@ -9,7 +9,7 @@ our $VERSION = '0.01';
 
 =head1 NAME
 
-MMM::Monitor::ServersStatus - holds status information for all agent hosts
+MMM::Monitor::Roles - holds information for all roles
 
 =cut
 
@@ -185,10 +185,10 @@ sub find_eligible_host($$) {
 	my $min_host	= '';
 	my $min_count	= 0;
 
-	my $servers_status = MMM::Monitor::ServersStatus->instance();
+	my $agents = MMM::Monitor::Agents->instance();
 
 	foreach my $host ( @{ $self->{$role}->{hosts} } ) {
-		next unless ($servers_status->{$host}->{state} eq 'ONLINE');
+		next unless ($agents->{$host}->state eq 'ONLINE');
 		my $cnt = $self->count_host_roles($host);
 		next unless ($cnt < $min_count || $min_host eq '');
 		$min_host	= $host;
@@ -211,10 +211,10 @@ sub find_eligible_hosts($$) {
 
 	my $hosts	= {};
 
-	my $servers_status = MMM::Monitor::ServersStatus->instance();
+	my $agents = MMM::Monitor::Agents->instance();
 
 	foreach my $host ( @{ $self->{$role}->{hosts} } ) {
-		next unless ($servers_status->{$host}->{state} eq 'ONLINE');
+		next unless ($agents->{$host}->state eq 'ONLINE');
 		my $cnt = $self->count_host_roles($host);
 		$hosts->{$host} = $cnt;
 	}

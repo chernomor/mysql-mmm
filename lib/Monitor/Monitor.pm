@@ -14,23 +14,23 @@ sub instance() {
 }
 
 struct 'MMM::Monitor' => {
+	agents				=> 'MMM::Monitor::Agents',
 	checker_queue		=> 'Thread::Queue',
 	checks_status		=> 'MMM::Monitor::ChecksStatus',
 	command_queue		=> 'Thread::Queue',
 	result_queue		=> 'Thread::Queue',
 	roles				=> 'MMM::Monitor::Roles',
-	servers_status		=> 'MMM::Monitor::ServersStatus',
 	passive				=> '$'
 };
 
 sub init($) {
 	my $self = shift;
+	$self->agents(MMM::Monitor::Agents->instance());
 	$self->checker_queue(new Thread::Queue::);
 	$self->checks_status(MMM::Monitor::ChecksStatus->instance());
 	$self->command_queue(new Thread::Queue::);
 	$self->result_queue(new Thread::Queue::);
 	$self->roles(MMM::Monitor::Roles->instance());
-	$self->servers_status(MMM::Monitor::ServersStatus->instance());
 	$self->passive(0);
 }
 
@@ -84,6 +84,110 @@ sub _process_check_results($) {
 
 sub _check_server_states($) {
 	my $self = shift;
+
+	my $checks	= $self->checks_status;
+	my $agents	= $self->agents;
+
+	foreach my $host (keys(%{$main::config->{host}})) {
+		my $state	= $agents->state($host);
+
+		my $peer	= $main::config->{host}->{$host}->{peer};
+		if (!$peer && $main::config->{host}->{$host}->{mode} eq 'slave') {
+			$peer	= $self->roles->get_active_master();
+		}
+
+		my $peer_state = '';
+		$peer_state = $agents->state($peer) if ($peer);
+
+		# Simply skip this host. It is offlined by admin
+		next if ($state eq 'ADMIN_OFFLINE');
+
+		if ($state eq 'ONLINE') {
+
+			# ONLINE -> HARD_OFFLINE
+			unless ($checks->ping($host) && $checks->mysql($host)) {
+				FATAL "State of host '$host' changed from $state to HARD_OFFLINE";
+				$agents->set_state($host, 'HARD_OFFLINE');
+				# TODO send state to agent
+				# clear roles
+				$self->send_agent_status($host);
+				# TODO kill host (remove ips, drop connections, iptable connections, ...) if sending state was not ok
+			}
+
+			# TODO
+			# ONLINE -> REPLICATION_FAIL
+			# ping mysql !rep_threads UND peer==online -> REPLICATION_FAIL
+				FATAL "State of host '$host' changed from $state to REPLICATION_FAIL";
+				$agents->set_state($host, 'REPLICATION_FAIL');
+				# TODO clear roles
+				$self->send_agent_status($host);
+			
+			# TODO
+			# ONLINE -> REPLICATION_DELAY
+			# alles ok ausser rep_backlog UND peer==online -> REPLICATION_DELAY
+				FATAL "State of host '$host' changed from $state to REPLICATION_DELAY";
+				$agents->set_state($host, 'REPLICATION_DELAY');
+				# TODO clear roles
+				$self->send_agent_status($host);
+			next;
+		}
+
+		if ($state eq 'AWAITING_RECOVERY') {
+
+			# AWAITING_RECOVERY -> HARD_OFFLINE
+			unless ($checks->ping($host) && $checks->mysql($host)) {
+				FATAL "State of host '$host' changed from $state to HARD_OFFLINE";
+				$agents->set_state($host, 'HARD_OFFLINE');
+				# $self->send_agent_status($host); TODO
+				next;
+			}
+
+			# AWAITING_RECOVERY -> ONLINE (if host was offline for a short period)
+			if ($checks->ping($host) && $checks->mysql($host) && $checks->rep_backlog($host) && $checks->rep_threads($host)) {
+				# TODO if uptime is small set to online and inform agent. Log fatal
+				# WAIT until peer replication is ok if we are a master
+				FATAL "State of host '$host' changed from $state to ONLINE";
+				$agents->set_state($host, 'ONLINE');
+				$self->send_agent_status($host);
+				next;
+			}
+			next;
+		}
+
+		if ($state eq 'HARD_OFFLINE') {
+
+			# HARD_OFFLINE -> AWAITING_RECOVERY
+			if ($checks->ping($host) && $checks->mysql($host)) {
+				FATAL "State of host '$host' changed from $state to AWAITING_RECOVERY";
+				$agents->set_state($host, 'AWAITING_RECOVERY');
+				$self->send_agent_status($host);
+				next;
+			}
+		}
+
+        # REPLICATION_FAIL -> REPLICATION_DELAY
+        # REPLICATION_DELAY -> REPLICATION_FAIL
+
+		if ($state eq 'REPLICATION_DELAY' || $state eq 'REPLICATION_FAIL') {
+			# REPLICATION_DELAY || REPLICATION_FAIL -> ONLINE
+			if ($checks->ping($host) && $checks->mysql($host)
+				&& (($checks->rep_backlog($host) && $checks->rep_threads($host)) || $peer_state ne 'ONLINE')
+			) {
+				FATAL "State of host '$host' changed from $state to ONLINE";
+				$agents->set_state($host, 'ONLINE');
+				$self->send_agent_status($host);
+				next;
+			}
+
+	        # REPLICATION_DELAY || REPLICATION_FAIL -> HARD_OFFLINE
+			unless ($checks->ping($host) && $checks->mysql($host)) {
+				FATAL "State of host '$host' changed from $state to HARD_OFFLINE";
+				$agents->set_state($host, 'HARD_OFFLINE');
+				$self->send_agent_status($host);
+				# TODO kill host (remove ips, drop connections, iptable connections, ...) if sending state was not ok
+			}
+		}
+	}
 }
 
 sub _distribute_roles($) {
@@ -129,11 +233,9 @@ sub send_agent_status($$$) {
 	$master = $self->roles->get_active_master() unless (defined($master));
 
 	my @roles		= sort(@{$self->roles->get_host_roles($host)});
-	my $roles_str	= join(',', @roles);
-	my $agent       = new MMM::Monitor::Agent::($host);
-	my $res = $agent->set_status($self->servers_status->get_host_state($host), @roles, $master);
-
-	$self->servers_status->set_host_roles($host, @roles);
+	my $agent = $self->agents->get($host);
+	$agent->roles(@roles);
+	return $agent->cmd_set_status($master);
 }
 
 sub _handle_commands($) {
@@ -142,14 +244,14 @@ sub _handle_commands($) {
 		my @args	= split(/\s+/, $cmdline);
 		my $command	= shift @args;
 		my $arg_cnt	= scalar(@args);
-		if ($command eq 'ping'			&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::ping()); }
-		if ($command eq 'show'			&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::show()); }
-		if ($command eq 'set_active'	&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_active()); }
-		if ($command eq 'set_passive'	&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_passive()); }
-		if ($command eq 'move_role'		&& $arg_cnt == 2) { $self->result_queue->enqueue(MMM::Monitor::Commands::move_role($args[0], $args[1])); }
-		if ($command eq 'set_ip'		&& $arg_cnt == 2) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_ip($args[0], $args[1])); }
-		if ($command eq 'set_online'	&& $arg_cnt == 1) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_online($args[0])); }
-		if ($command eq 'set_offline'	&& $arg_cnt == 1) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_offline($args[0])); }
+		if    ($command eq 'ping'			&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::ping       ());                    }
+		elsif ($command eq 'show'			&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::show       ());                    }
+		elsif ($command eq 'set_active'		&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_active ());                    }
+		elsif ($command eq 'set_passive'	&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_passive());					}
+		elsif ($command eq 'move_role'		&& $arg_cnt == 2) { $self->result_queue->enqueue(MMM::Monitor::Commands::move_role  ($args[0], $args[1]));	}
+		elsif ($command eq 'set_ip'			&& $arg_cnt == 2) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_ip     ($args[0], $args[1]));	}
+		elsif ($command eq 'set_online'		&& $arg_cnt == 1) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_online ($args[0]));            }
+		elsif ($command eq 'set_offline'	&& $arg_cnt == 1) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_offline($args[0]));            }
 		else { $self->result_queue->enqueue("Invalid command '$cmdline'\n"); }
 	}
 }

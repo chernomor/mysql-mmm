@@ -6,65 +6,65 @@ use Log::Log4perl qw(:easy);
 
 our $VERSION = '0.01';
 
-sub new($$) {
-	my $class	= shift;
-	my $host	= shift;
+use Class::Struct;
 
-	my $self  = {
-		host	=> $host,
-		ip		=> $main::config->{host}->{$host}->{ip},
-		port	=> $main::config->{host}->{$host}->{agent_port}
-	};
 
-	return bless $self, $class;
-}
+struct 'MMM::Monitor::Agent' => {
+	host		=> '$',
+	mode		=> '$',
+	ip			=> '$',
+	port		=> '$',
+
+	state		=> '$',
+	roles		=> '@',
+	uptime		=> '$',
+	last_uptime	=> '$'
+};
 
 sub _send_command {
-	my $self = shift;
-	my $cmd_name = shift;
-	my @params = @_;
+	my $self	= shift;
+	my $cmd		= shift;
+	my @params	= @_;
 
 
 	my $checks_status = MMM::Monitor::ChecksStatus->instance();
-	unless ($checks_status->ping($self->{host}) && $checks_status->mysql($self->{host})) {
+	unless ($checks_status->ping($self->host) && $checks_status->mysql($self->host)) {
 		return 0;
 	}
 
-	$socket = $self->_connect();
+	DEBUG sprintf("Sending command '$cmd(%s)' to %s (%s:%s)", join(', ', @params), $self->host, $self->ip, $self->port);
 
-	DEBUG "Sending command '$cmd(",  ,")' to $self->{host} ($self->{ip}:$self->{port})";
-
-	my $socket = MMM::Common::Socket::create_sender($self->{ip}, $self->{port}, 10);
+	my $socket = MMM::Common::Socket::create_sender($self->ip, $self->port, 10);
 	return 0 unless ($socket && $socket->connected);
 
 
-	print $socket join(':', $cmd, main::MMM_PROTOCOL_VERSION, $host, @params), "\n";
+	print $socket join(':', $cmd, main::MMM_PROTOCOL_VERSION, $self->host, @params), "\n";
 	my $res = <$socket>;
 	close($socket);
 	
 	return $res;
 }
 
-sub ping($) {
+sub cmd_ping($) {
 	my $self	= shift;
-	return $agent->send_command('PING');
+	return $self->send_command('PING');
 }
 
-sub set_status($$$$) {
+sub cmd_set_status($$) {
 	my $self	= shift;
-	my $state	= shift;
-	my $roles	= shift;
 	my $master	= shift;
 
-	return $agent->send_command('SET_STATUS', $state, join(',', sort(@$roles)), $master);
+	return $self->send_command('SET_STATUS', $self->state, join(',', sort(@{$self->roles})), $master);
 }
 
-sub get_agent_status($) {
+sub cmd_get_agent_status($) {
 	my $self	= shift;
-	return $agent->send_command('GET_AGENT_STATUS');
+	return $self->send_command('GET_AGENT_STATUS');
 }
 
-sub get_system_status($) {
+sub cmd_get_system_status($) {
 	my $self	= shift;
-	return $agent->send_command('GET_SYSTEM_STATUS');
+	return $self->send_command('GET_SYSTEM_STATUS');
 }
+
+1;

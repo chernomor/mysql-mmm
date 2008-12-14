@@ -49,18 +49,18 @@ sub ping() {
 
 
 sub show() {
-	my $status = MMM::Monitor::ServersStatus->instance();
-	return $status->to_string();
+	my $agents = MMM::Monitor::Agents->instance();
+	return $agents->get_status_info();
 }
 
 sub set_online($) {
 	my $host	= shift;
 
-	my $status	= MMM::Monitor::ServersStatus->instance();
+	my $agents	= MMM::Monitor::Agents->instance();
 
 	return "ERROR: Unknown host name '$host'!" unless (defined($main::config->{host}->{$host}));
 
-	my $host_state = $status->state($host);
+	my $host_state = $agents->state($host);
 	return "OK: This host is already ONLINE. Skipping command." if ($host_state eq 'ONLINE');
 
 	if ($host_state eq 'ADMIN_OFFLINE' || $host_state eq 'AWAITING_RECOVERY') {
@@ -71,7 +71,7 @@ sub set_online($) {
 	if ($main::config->{host}->{$host}->{peer}) {
 		my $peer = $main::config->{host}->{$host}->{peer};
 		my $checks	= MMM::Monitor::ChecksStatus->instance();
-		if ($status->state($peer) eq 'ONLINE' && (!$checks->rep_threads($peer) || !$checks->rep_backlog($peer))) {
+		if ($agents->state($peer) eq 'ONLINE' && (!$checks->rep_threads($peer) || !$checks->rep_backlog($peer))) {
 			return "ERROR: Some replication checks failed on peer '$peer'. We can't set '$host' online now. Please, wait some time.";
 		}
 	}
@@ -82,7 +82,7 @@ sub set_online($) {
 	}
 
 	FATAL "Admin changed state of '$host' from $host_state to ONLINE";
-	$status->set_state($host, 'ONLINE');
+	$agents->set_state($host, 'ONLINE');
 	MMM::Monitor->instance()->send_agent_status($host);
 
     return "OK: State of '$host' changed to ONLINE. Now you can wait some time and check its new roles!";
@@ -91,11 +91,11 @@ sub set_online($) {
 sub set_offline($) {
 	my $host	= shift;
 
-	my $status	= MMM::Monitor::ServersStatus->instance();
+	my $agents	= MMM::Monitor::Agents->instance();
 
 	return "ERROR: Unknown host name '$host'!" unless (defined($main::config->{host}->{$host}));
 
-	my $host_state = $status->state($host);
+	my $host_state = $agents->state($host);
 	return "OK: This host is already ADMIN_OFFLINE. Skipping command." if ($host_state eq 'ADMIN_OFFLINE');
 
 	unless ($host_state eq 'ONLINE' || $host_state eq 'REPLICATION_FAIL' || $host_state eq 'REPLICATION_BACKLOG') {
@@ -106,7 +106,7 @@ sub set_offline($) {
 	return "ERROR: Can't reach agent daemon on '$host'! Can't switch its state!" unless ($agent->ping());
 
 	FATAL "Admin changed state of '$host' from $host_state to ADMIN_OFFLINE";
-	$status->set_state($host, 'ADMIN_OFFLINE');
+	$agents->set_state($host, 'ADMIN_OFFLINE');
 	MMM::Monitor::Roles->instance()->clear_host_roles($host);
 	MMM::Monitor->instance()->send_agent_status($host);
 
@@ -117,27 +117,21 @@ sub set_ip($$) {
 	my $ip		= shift;
 	my $host	= shift;
 
-	# TODO
-	# TODO
-	# TODO
-	# TODO this should only be possible in recovery mode
-	# TODO
-	# TODO
-	# TODO
+	return "ERROR: This command is only allowed in passive mode" unless (MMM::Monitor->instance()->passive);
 
-	my $status	= MMM::Monitor::ServersStatus->instance();
+	my $agents	= MMM::Monitor::Agents->instance();
 	my $roles	= MMM::Monitor::Roles->instance();
 
 	my $role = $roles->find_by_ip($ip);
 
 	return "ERROR: Unknown ip '$ip'!" unless (defined($role));
-	return "ERROR: Unknown host name '$host'!" unless ($status->exists($host));
+	return "ERROR: Unknown host name '$host'!" unless ($agents->exists($host));
 
-	if ($roles->can_handle($role, $host)) {
-		return "ERROR: Host '$host' can't handle role '$role'. Following hosts could: " . $roles->get_valid_hosts($role);
+	unless ($roles->can_handle($role, $host)) {
+		return "ERROR: Host '$host' can't handle role '$role'. Following hosts could: " . join(', ', @{ $roles->get_valid_hosts($role) });
 	}
 
-	my $host_state = $status->state($host);
+	my $host_state = $agents->state($host);
 	unless ($host_state eq 'ONLINE' || $host_state eq 'REPLICATION_FAIL' || $host_state eq 'REPLICATION_BACKLOG') {
 		return "ERROR: Host '$host' is '$host_state' at the moment. Can't move role with ip '$ip' there.";
 	}
@@ -153,18 +147,18 @@ sub move_role($$) {
 	my $host	= shift;
 	
 
-	my $status	= MMM::Monitor::ServersStatus->instance();
+	my $agents	= MMM::Monitor::Agents->instance();
 	my $roles	= MMM::Monitor::Roles->instance();
 
 	return "ERROR: Unknown role name '$role'!" unless ($roles->exists($role));
-	return "ERROR: Unknown host name '$host'!" unless ($status->exists($host));
+	return "ERROR: Unknown host name '$host'!" unless ($agents->exists($host));
 	return "ERROR: move_role may be used for exclusive roles only!" unless ($roles->is_exclusive($role));
 
-	my $host_state = $status->state($host);
+	my $host_state = $agents->state($host);
 	return "ERROR: Can't move role to host with state $host_state." unless ($host_state eq 'ONLINE');
 
 	unless ($roles->can_handle($role, $host)) {
-        return "ERROR: Host '$host' can't handle role '$role'. Only following hosts could: " . join(', ', $roles->get_valid_hosts($role));
+        return "ERROR: Host '$host' can't handle role '$role'. Only following hosts could: " . join(', ', @{ $roles->get_valid_hosts($role) });
 	}
 	
 	my $old_owner = $roles->get_exclusive_role_owner($role);
@@ -193,15 +187,16 @@ sub move_role($$) {
 }
 
 sub set_active() {
+	return "OK: Already in active mode" unless (MMM::Monitor->instance()->passive);
 	# TODO check that there are no roles on OFFLINE hosts
 	# TODO maybe inform all hosts - which one first?
 	# TODO unset passive flag
 	MMM::Monitor->instance()->passive(0);
-	return "OK: Switched into passive mode.";
+	return "OK: Switched into active mode.";
 }
 
 sub set_passive() {
-	return "OK: Already in passive mode" if (MMM::Monitor->instance()->passive());
+	return "OK: Already in passive mode" if (MMM::Monitor->instance()->passive);
 
 	MMM::Monitor->instance()->passive(1);
 	return "OK: Switched into passive mode.";

@@ -6,9 +6,12 @@ use warnings FATAL => 'all';
 use Test::More tests => 14;
 
 require '../../Common/Role.pm';
+require '../Agent.pm';
+require '../Agents.pm';
 require '../Role.pm';
 require '../Roles.pm';
-require '../ServersStatus.pm';
+
+use constant MMM_PROTOCOL_VERSION => 1;
 
 #my $role2 = new MMM::Monitor::Role:: name	=> 'writer', ip		=> '192.168.0.1';
 #my $role3 = new MMM::Monitor::Role:: name	=> 'reader', ip		=> '192.168.0.3';
@@ -71,16 +74,16 @@ $roles->assign($role_reader3, 'db2');
 is($roles->count_host_roles('db2'), 4, 'count host roles (8)');
 is_deeply(\[$roles->get_host_roles('db2')], \[$role_reader1, $role_reader2, $role_reader3, $role_writer], 'get host roles (2)');
 
-my $servers_status = MMM::Monitor::ServersStatus->instance();
-$servers_status->{db1}->{state} = 'ONLINE';
-$servers_status->{db2}->{state} = 'ONLINE';
+my $agents = MMM::Monitor::Agents->instance();
+$agents->{db1} = new MMM::Monitor::Agent (state => 'ONLINE');
+$agents->{db2} = new MMM::Monitor::Agent (state => 'ONLINE');
 
 $roles->balance();
 
 is($roles->count_host_roles('db1'), 2, 'balance roles (role count db1)');
 is($roles->count_host_roles('db2'), 2, 'balance roles (role count db2)');
 
-$servers_status->{db2}->{state} = 'HARD_OFFLINE';
+$agents->{db2}->state('HARD_OFFLINE');
 $roles->clear_host_roles('db2');
 $roles->process_orphans();
 is($roles->count_host_roles('db1'), 4, 'process orphans assigns all orphaned roles');

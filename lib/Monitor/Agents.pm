@@ -1,4 +1,4 @@
-package MMM::Monitor::ServersStatus;
+package MMM::Monitor::Agents;
 use base 'Class::Singleton';
 
 use strict;
@@ -6,13 +6,16 @@ use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
 use IO::Handle;
 
+
+
+
 =head1 NAME
 
-MMM::Monitor::ServersStatus - holds status information for all agent hosts
+MMM::Monitor::Agents - holds status information for all agent hosts
 
 =head1 SYNOPSIS
 
-	my $status = MMM::Monitor::ServersStatus->instance();
+	my $agents = MMM::Monitor::Agents->instance();
 
 =cut
 
@@ -22,13 +25,17 @@ sub _new_instance($) {
 
 	my @hosts		= keys(%{$main::config->{host}});
 
-	foreach my $host_name (@hosts) {
-		$data->{$host_name} = {
+	foreach my $host (@hosts) {
+		$data->{$host} = new MMM::Monitor::Agent:: (
+			host		=> $host,
+			mode		=> $main::config->{host}->{$host}->{mode},
+			ip			=> $main::config->{host}->{$host}->{ip},
+			port		=> $main::config->{host}->{$host}->{agent_port},
 			state		=> 'UNKNOWN',
 			roles		=> [],
 			uptime		=> 0,
 			last_uptime => 0
-		};
+		);
 	}
 	return bless $data, $class;
 }
@@ -41,7 +48,7 @@ sub _new_instance($) {
 
 =cut
 
-sub save($) {
+sub save_status($) {
 	my $self	= shift;
 	
 	my $filename = $main::config->{monitor}->{status_path};
@@ -50,9 +57,9 @@ sub save($) {
 	open(STATUS, ">" . $tempname) || LOGDIE "Can't open temporary status file '$tempname' for writing!";
 
 	keys (%$self); # reset iterator
-	while (my ($server, $status) = each(%$self)) {
-		next unless $status;
-		printf(STATUS "%s|%s|%s\n", $server, $status->{state}, join(',', sort(@{$status->{roles}})));
+	while (my ($host, $agent) = each(%$self)) {
+		next unless $agent;
+		printf(STATUS "%s|%s|%s\n", $host, $agent->state, join(',', sort(@{$agent->roles})));
 	}
 	IO::Handle::flush(*STATUS);
 	IO::Handle::sync(*STATUS);
@@ -65,11 +72,11 @@ sub save($) {
 =pod
 
 	# Load status information from status file
-	$status->load();
+	$agents->load_status();
 
 =cut
 
-sub load($) {
+sub load_status($) {
 	my $self	= shift;
 
 	my $filename = $main::config->{monitor}->{status_path};
@@ -78,22 +85,22 @@ sub load($) {
 
 	while (my $line = <STATUS>) {
 		chomp($line);
-		my ($server, $state, $roles) = split(/\|/, $line);
-		unless (defined($self->{$server})) {
-			WARN "Ignoring saved status information for unknown host '$server'";
+		my ($host, $state, $roles) = split(/\|/, $line);
+		unless (defined($self->{$host})) {
+			WARN "Ignoring saved status information for unknown host '$host'";
 			next;
 		}
 
 		# Parse roles
 		my @saved_roles_str = sort(split(/\,/, $roles));
-		my @saved_roles;
+		my @saved_roles = ();
 		foreach my $role_str (@saved_roles_str) {
 			my $role = MMM::Monitor::Role->from_string($role_str);
 			push (@saved_roles, $role) if defined($role);
 		}
 
-		$self->{$server}->{state} = $state;
-		@{$self->{$server}->{roles}} = @saved_roles;
+		$self->{$host}->state($state);
+		$self->{$host}->roles(\@saved_roles);
 	}
 	close(STATUS);
 	return;
@@ -154,15 +161,14 @@ sub load_from_agent($$) {
 	return;
 }
 
-sub to_string($) {
+sub get_status_info($) {
 	my $self	= shift;
 	my $res		= '';
 
 	keys (%$self); # reset iterator
-	while (my ($server, $status) = each(%$self)) {
-		next unless $status;
-		my $host_config = $main::config->{host}->{$server};
-		$res .= sprintf("  %s(%s) %s/%s. Roles: %s\n", $server, $host_config->{ip}, $host_config->{mode}, $status->{state}, join(',', sort(@{$status->{roles}})));
+	while (my ($host, $agent) = each(%$self)) {
+		next unless $agent;
+		$res .= sprintf("  %s(%s) %s/%s. Roles: %s\n", $host, $agent->ip, $agent->mode, $agent->state, join(',', sort(@{$agent->roles})));
 	}
 	return $res;
 }
@@ -173,7 +179,14 @@ sub set_state($$$) {
 	my $state	= shift;
 
 	LOGDIE "Can't set state of invalid host '$host'" if (!defined($self->{$host}));
-	$self->{$host}->{state} = $state;
+	$self->{$host}->state($state);
+}
+
+sub state($$) {
+	my $self	= shift;
+	my $host	= shift;
+	LOGDIE "Can't get state of invalid host '$host'" if (!defined($self->{$host}));
+	return $self->{$host}->state;
 }
 
 sub exists($$) {
@@ -181,6 +194,13 @@ sub exists($$) {
 	my $host	= shift;
 	return defined($self->{$host});
 }
+
+sub get($$) {
+	my $self	= shift;
+	my $host	= shift;
+	return $self->{$host};
+}
+
 
 # a server status contains
 #	state

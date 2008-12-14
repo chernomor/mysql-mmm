@@ -30,13 +30,14 @@ require $SELF_DIR . '/lib/Common/PidFile.pm';
 require $SELF_DIR . '/lib/Common/Role.pm';
 require $SELF_DIR . '/lib/Common/Socket.pm';
 
+require $SELF_DIR . '/lib/Monitor/Agent.pm';
+require $SELF_DIR . '/lib/Monitor/Agents.pm';
 require $SELF_DIR . '/lib/Monitor/Checker.pm';
 require $SELF_DIR . '/lib/Monitor/CheckResult.pm';
 require $SELF_DIR . '/lib/Monitor/ChecksStatus.pm';
 require $SELF_DIR . '/lib/Monitor/Commands.pm';
 require $SELF_DIR . '/lib/Monitor/Monitor.pm';
 require $SELF_DIR . '/lib/Monitor/NetworkChecker.pm';
-require $SELF_DIR . '/lib/Monitor/ServersStatus.pm';
 require $SELF_DIR . '/lib/Monitor/Role.pm';
 require $SELF_DIR . '/lib/Monitor/Roles.pm';
 

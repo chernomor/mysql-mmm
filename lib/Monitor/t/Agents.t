@@ -7,7 +7,10 @@ use Test::More tests => 2;
 
 require '../../Common/Role.pm';
 require '../Role.pm';
-require '../ServersStatus.pm';
+require '../Agents.pm';
+require '../Agent.pm';
+
+use constant MMM_PROTOCOL_VERSION => 1;
 
 my $role1 = new MMM::Monitor::Role:: name	=> 'reader', ip		=> '192.168.0.2';
 my $role2 = new MMM::Monitor::Role:: name	=> 'writer', ip		=> '192.168.0.1';
@@ -24,22 +27,30 @@ our $config = {
 	}
 };
 
-my $sstatus1 = _new_instance MMM::Monitor::ServersStatus;
-my $sstatus2 = _new_instance MMM::Monitor::ServersStatus;
+my $agents1 = _new_instance MMM::Monitor::Agents;
+my $agents2 = _new_instance MMM::Monitor::Agents;
 
-$sstatus1->{db1} = {
+$agents1->{db1} = new MMM::Monitor::Agent (
+	host	=> 'db1',
 	state	=> 'ONLINE',
 	roles	=> [$role1, $role2],
-};
-$sstatus1->{db2} = {
+	uptime	=> '0',
+	last_uptime	=> '0',
+);
+$agents1->{db2} = new MMM::Monitor::Agent (
+	host	=> 'db2',
 	state	=> 'ONLINE',
 	roles	=> [$role3, $role4],
-};
+	uptime	=> '0',
+	last_uptime	=> '0',
+);
 
-isa_ok($sstatus1, 'MMM::Monitor::ServersStatus');
+isa_ok($agents1, 'MMM::Monitor::Agents');
 
-$sstatus1->save();
-$sstatus2->load();
-is_deeply($sstatus1, $sstatus2);
+$agents1->save_status();
+$agents2->load_status();
+#use Data::Dumper;
+#print Data::Dumper->Dump([$agents1, $agents2]);
+is_deeply($agents1, $agents2);
 
-unlink('status.tmp');
+#unlink('status.tmp');

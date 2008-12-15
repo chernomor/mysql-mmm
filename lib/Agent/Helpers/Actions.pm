@@ -32,7 +32,7 @@ sub check_ip($$) {
 		_exit_ok('IP address is configured');
 	}
 
-	_exit_ok('IP address is not configured', -1);
+	_exit_ok('IP address is not configured', 1);
 }
 
 
@@ -78,7 +78,7 @@ sub clear_ip($$) {
 
 =item mysql_may_write( )
 
-Check if writes on local MySQL server are allowes.
+Check if writes on local MySQL server are allowed.
 
 =cut
 
@@ -95,7 +95,7 @@ sub mysql_may_write() {
 	_exit_error('SQL Query Error: ' . $dbh->errstr) unless (defined $read_only);
 
 	_exit_ok('Not allowed') if ($read_only);
-	_exit_ok('Allowed');
+	_exit_ok('Allowed', 1);
 }
 
 
@@ -348,7 +348,7 @@ sub _get_this() {
 
 sub _mysql_connect($$$$) {
 	my ($host, $port, $user, $password)	= @_;
-	my $dsn = "DBI:mysql:host=$host;port=$port";
+	my $dsn = "DBI:mysql:host=$host;port=$port;mysql_connect_timeout=3";
 	return DBI->connect($dsn, $user, $password, { PrintError => 0 });
 }
 
@@ -385,16 +385,17 @@ sub _exit_error {
 	print "ERROR: $msg\n"	if ($msg);
 	print "ERROR\n"			unless ($msg);
 
-	exit(1);
+	exit(255);
 }
 
 sub _exit_ok {
 	my $msg	= shift;
+	my $ret = shift || 0;
 
 	print "OK: $msg\n"	if ($msg);
 	print "OK\n"		unless ($msg);
 
-	exit(0);
+	exit($ret);
 }
 
 sub _verbose_exit($$) {

@@ -4,6 +4,7 @@ use strict;
 use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
 use Thread::Queue;
+use Data::Dumper;
 
 our $VERSION = '0.01';
 
@@ -25,7 +26,7 @@ struct 'MMM::Monitor' => {
 
 sub init($) {
 	my $self = shift;
-	$self->agents(MMM::Monitor::Agents->instance());
+	my $agents = MMM::Monitor::Agents->instance();
 	$self->checker_queue(new Thread::Queue::);
 	$self->checks_status(MMM::Monitor::ChecksStatus->instance());
 	$self->command_queue(new Thread::Queue::);
@@ -34,6 +35,70 @@ sub init($) {
 
 	# Go into passive mode if we have no network connection at startup
 	$self->passive(!$main::have_net);
+
+	# Figure out current status. Go into passive mode if there are discrepancies
+	$agents->load_status();
+
+	my $system_status	= {};
+	my $agent_status	= {};
+	my $status			= 1;
+	my $res;
+	foreach my $host (keys(%{$main::config->{host}})) {
+		my $agent = $agents->get($host);
+		if ($res = $agent->cmd_get_agent_status() && $res =~ /^OK/) {
+			my ($msg, $state, $roles_str, $master) = split('|', $res);
+			my @roles = sort(split(/\,/, $roles_str));
+			$agent_status->{$host} = {
+				state	=> $state,
+				roles	=> @roles,
+				master	=> $master
+			};
+		}
+		else {
+			FATAL "Could not get agent status for host '$host'. Will switch to passive mode: $res";
+			$status = 0;
+		}
+		
+		if ($res = $agent->cmd_get_system_status() && $res =~ /^OK/) {
+			my ($msg, $writable, $roles_str) = split('|', $res);
+			my @roles = sort(split(/\,/, $roles_str));
+			$system_status->{$host} = {
+				writable	=> $writable,
+				roles		=> @roles
+			};
+		}
+		else {
+			FATAL "Could not get system status for host '$host'. Will switch to passive mode: $res";
+			$status = 0;
+		}
+		next unless (defined($agent_status->{$host}));
+		next unless (defined($system_status->{$host}));
+
+		if ($agent_status->{$host}->state ne 'UNKNOWN' && $agent_status->{$host}->state ne $agent->state) {
+			FATAL "Agent state '", $agent_status->{$host}->state, "' differs from stored one '", $agent->state, "' for host '$host'. Will switch to passive mode";
+			$status = 0;
+			next;
+		}
+
+		# Determine changes
+		my $changes = 0;
+		my $diff = Algorithm::Diff->new($system_status->{$host}->roles, $agent->roles);
+		while ($diff->Next) {
+			next if ($diff->Same);
+			FATAL "Roles of host '$host' differ from stored ones. Will switch to passive mode";
+			$status = 0;
+			last;
+		}
+		
+		# TODO check "writable" if host has master role
+	}
+	unless ($status) {
+		$self->passive(1);
+		FATAL "Switching to PASSIVE MODE!!!\nStored status:\n", $agents->get_status_info(), "\n", Data::Dumper->Dump([$agent_status, $system_status], ['Agent status', 'System status']);
+		return;
+	}
+
+	# Everything is okay, apply roles from status file.
 }
 
 sub main($) {
@@ -92,9 +157,12 @@ sub _check_server_states($) {
 	return if (!$main::have_net);
 
 	my $checks	= $self->checks_status;
-	my $agents	= $self->agents;
+	my $agents	= MMM::Monitor::Agents->instance();
 
 	foreach my $host (keys(%{$main::config->{host}})) {
+
+		$agents->save_status() unless ($self->passive);
+
 		my $agent		= $agents->get($host);
 		my $state		= $agent->state;
 		my $ping		= $checks->ping($host);
@@ -226,6 +294,7 @@ sub _check_server_states($) {
 			next;
 		}
 	}
+	$agents->save_status() unless ($self->passive);
 }
 
 sub _distribute_roles($) {
@@ -280,7 +349,7 @@ sub send_agent_status($$$) {
 	$master = $self->roles->get_active_master() unless (defined($master));
 
 	my @roles		= sort($self->roles->get_host_roles($host));
-	my $agent = $self->agents->get($host);
+	my $agent = MMM::Monitor::Agents->instance()->get($host);
 	$agent->roles(@roles);
 	return $agent->cmd_set_status($master);
 }

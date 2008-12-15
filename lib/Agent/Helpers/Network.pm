@@ -40,7 +40,7 @@ sub check_ip($$) {
 		exit(1);
 	}
 
-	return ($output =~ /$ip/) ? 1 : 0;
+	return ($output =~ /\D+$ip\D+/) ? 1 : 0;
 }
 
 

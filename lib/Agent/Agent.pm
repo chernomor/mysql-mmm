@@ -84,7 +84,7 @@ sub command_ping() {
 sub command_get_agent_status($) {
 	my $self	= shift;
 	
-	my $answer = join (':', (
+	my $answer = join ('|', (
 		$self->state,
 		join(',', @{$self->roles}),
 		$self->active_master
@@ -94,8 +94,25 @@ sub command_get_agent_status($) {
 
 sub command_get_system_status($) {
 	my $self	= shift;
-	my $answer = 'NOT IMPLEMENTED';
-	# master? hm - if slave - mysql master - else nothing.
+
+	# TODO determine and send master info if we are a slave host.
+
+	my @roles;
+	foreach my $role (keys(%{$main::config->{role}})) {
+		my $role_info = $main::config->{role}->{$role};
+		foreach my $ip (@{$role_info->{ips}}) {
+			my $res = MMM::Agent::Helpers::check_ip($self->interface, $ip);
+			return "ERROR: Could not check if IP is configured: $res" if ($? == 255);
+			next if ($? == 0);
+			# IP is configured...
+			push @roles, new MMM::Common::Role::(name => $role, ip => $ip);
+		}
+	}
+	my $res = MMM::Agent::Helpers::may_write();
+	return "ERROR: Could not check if MySQL is writable: $res" if ($? == 255);
+	my $writable = $? == 0;
+
+	my $answer = join('|', ($writable, join(',', @roles)));
 	return "OK: Returning status!|$answer";
 }
 

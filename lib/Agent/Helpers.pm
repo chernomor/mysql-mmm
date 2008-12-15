@@ -64,6 +64,18 @@ sub clear_ip($$) {
 }
 
 
+=item mysql_may_write( )
+
+Determine wheter writes on local MySQL server are allowes.
+
+Calls B<bin/agent/mysql_may_write>, which reads the config file.
+
+=cut
+
+sub may_write() {
+	return _execute('mysql_may_write');
+}
+
 =item mysql_allow_write( )
 
 Allow writes on local MySQL server. Sets global read_only to 0.

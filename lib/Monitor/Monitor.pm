@@ -64,7 +64,14 @@ sub init($) {
 		$res = $agent->cmd_get_system_status();
 		if ($res =~ /^OK/) {
 			my ($msg, $writable, $roles_str) = split('\|', $res);
-			my @roles = sort(split(/\,/, $roles_str));
+			my @roles_str_arr = sort(split(/\,/, $roles_str));
+			my @roles;
+			foreach my $role_str (@roles_str_arr) {
+				my $role = MMM::Monitor::Role->from_string($role_str);
+				if (defined($role)) {
+					push @roles, $role;
+				}
+			}
 			$system_status->{$host} = {
 				writable	=> $writable,
 				roles		=> \@roles
@@ -84,8 +91,9 @@ sub init($) {
 		}
 
 		# Determine changes
+		DEBUG "STATE INFO\n", Data::Dumper->Dump([$agents, $agent_status, $system_status], ['Stored status', 'Agent status', 'System status']);
 		my $changes = 0;
-		my $diff = Algorithm::Diff->new($system_status->{$host}->{roles}, $agent->roles);
+		my $diff = Algorithm::Diff->new($system_status->{$host}->{roles}, $agent->roles, { keyGen => \&MMM::Common::Role::to_string });
 		while ($diff->Next) {
 			next if ($diff->Same);
 			FATAL "Roles of host '$host' differ from stored ones. Will switch to passive mode";
@@ -360,7 +368,7 @@ sub send_agent_status($$$) {
 
 	my @roles		= sort($self->roles->get_host_roles($host));
 	my $agent = MMM::Monitor::Agents->instance()->get($host);
-	$agent->roles(@roles);
+	$agent->roles(\@roles);
 	return $agent->cmd_set_status($master);
 }
 

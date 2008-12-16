@@ -126,7 +126,7 @@ sub command_set_status($$) {
 	my ($new_state, $new_roles_str, $new_master) = @_;
 
 	# Change master if we are a slave
-	if ($new_master ne $self->active_master && $self->mode eq 'slave' && $new_state eq 'ONLINE' && $new_master != '') {
+	if ($new_master ne $self->active_master && $self->mode eq 'slave' && $new_state eq 'ONLINE' && $new_master ne '') {
 		INFO "Changing active master to '$new_master'";
 		my $res = MMM::Agent::Helpers::set_active_master($new_master);
 		DEBUG "Result: $res";
@@ -154,7 +154,8 @@ sub command_set_status($$) {
 	my $changes_count = 0;
 
 	# Determine changes
-	my $diff = Algorithm::Diff->new($self->roles, \@new_roles);#, keyGen => \&MMM::Agent::Role::to_string);
+	my $diff = Algorithm::Diff->new($self->roles, \@new_roles, { keyGen => \&MMM::Common::Role::to_string });
+	# TODO testen... scheint nur namen der rollen zu prüfen
 	while ($diff->Next) {
 		next if ($diff->Same);
 
@@ -171,6 +172,8 @@ sub command_set_status($$) {
 
 		foreach my $role (@deleted_roles)	{ $role->del(); }
 		foreach my $role (@added_roles)		{ $role->add(); }
+
+		# TODO wipe roles that we should not have
 
 		$self->roles(\@new_roles);
 	}

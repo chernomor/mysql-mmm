@@ -283,6 +283,10 @@ sub set_active_master($) {
 	# Sync with logs
 	my $res = $this_dbh->do("SELECT MASTER_POS_WAIT('$wait_log', $wait_pos)");
 	_exit_error('SQL Query Error: ' . $this_dbh->errstr) unless($res);
+
+	# Stop slave
+	$res = $this_dbh->do("STOP SLAVE");
+	_exit_error('SQL Query Error: ' . $this_dbh->errstr) unless($res);
 	
 	# Connect to new peer
 	my $new_peer_dbh = _mysql_connect($new_peer_host, $new_peer_port, $new_peer_user, $new_peer_password);

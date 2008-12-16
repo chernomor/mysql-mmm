@@ -63,7 +63,7 @@ sub set_online($) {
 	my $host_state = $agents->state($host);
 	return "OK: This host is already ONLINE. Skipping command." if ($host_state eq 'ONLINE');
 
-	if ($host_state eq 'ADMIN_OFFLINE' || $host_state eq 'AWAITING_RECOVERY') {
+	unless ($host_state eq 'ADMIN_OFFLINE' || $host_state eq 'AWAITING_RECOVERY') {
 		return "ERROR: Host '$host' is '$host_state' at the moment. It can't be switched to ONLINE.";
 	}
 
@@ -76,8 +76,8 @@ sub set_online($) {
 		}
 	}
 
-	my $agent = new MMM::Monitor::Agent::($host);
-	if (!$agent->ping()) {
+	my $agent = MMM::Monitor::Agents->instance()->get($host);
+	if (!$agent->cmd_ping()) {
 		return "ERROR: Can't reach agent daemon on '$host'! Can't switch its state!";
 	}
 
@@ -102,8 +102,8 @@ sub set_offline($) {
 		return "ERROR: Host '$host' is '$host_state' at the moment. It can't be switched to ADMIN_OFFLINE.";
 	}
 
-	my $agent = new MMM::Monitor::Agent::($host);
-	return "ERROR: Can't reach agent daemon on '$host'! Can't switch its state!" unless ($agent->ping());
+	my $agent = MMM::Monitor::Agents->instance()->get($host);
+	return "ERROR: Can't reach agent daemon on '$host'! Can't switch its state!" unless ($agent->cmd_ping());
 
 	FATAL "Admin changed state of '$host' from $host_state to ADMIN_OFFLINE";
 	$agents->set_state($host, 'ADMIN_OFFLINE');
@@ -165,8 +165,8 @@ sub move_role($$) {
 	my $old_owner = $roles->get_exclusive_role_owner($role);
 	return "OK: Role is on '$host' already. Skipping command." if ($old_owner eq $host);
 
-	my $agent = new MMM::Monitor::Agent::($host);
-	return "ERROR: Can't reach agent daemon on '$host'! Can't move roles there!" unless ($agent->ping());
+	my $agent = MMM::Monitor::Agents->instance()->get($host);
+	return "ERROR: Can't reach agent daemon on '$host'! Can't move roles there!" unless ($agent->cmd_ping());
 
 
 	FATAL "Admin moved role '$role' from '$old_owner' to '$host'";

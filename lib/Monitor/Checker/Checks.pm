@@ -164,12 +164,14 @@ sub rep_backlog($$) {
 
 		if ($dbh->err) {
 			my $ret = 'UNKNOWN: Unknown state. Execute error: ' . $dbh->errstr;
+			$sth->finish();
 			$dbh->disconnect();
 			$dbh = undef;
 			return $ret;
 		}
 
 		unless ($res) {
+			$sth->finish();
 			$dbh->disconnect();
 			$dbh = undef;
 			return 'ERROR: Replication is not running';
@@ -177,6 +179,7 @@ sub rep_backlog($$) {
 	
 		my $status = $sth->fetchrow_hashref;
 
+		$sth->finish();
 		$dbh->disconnect();
 		$dbh = undef;
 
@@ -227,12 +230,14 @@ sub rep_threads($$) {
 
 		if ($dbh->err) {
 			my $ret = 'UNKNOWN: Unknown state. Execute error: ' . $dbh->errstr;
+			$sth->finish();
 			$dbh->disconnect();
 			$dbh = undef;
 			return $ret;
 		}
 
 		unless ($res) {
+			$sth->finish();
 			$dbh->disconnect();
 			$dbh = undef;
 			return 'ERROR: Replication is not running';
@@ -240,6 +245,7 @@ sub rep_threads($$) {
 	
 		my $status = $sth->fetchrow_hashref;
 
+		$sth->finish();
 		$dbh->disconnect();
 		$dbh = undef;
 

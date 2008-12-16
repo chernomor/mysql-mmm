@@ -231,7 +231,7 @@ sub _check_rule(\%$$\%\%$) {
 
 	# set default value if not defined
 	if (!defined($config->{$varname}) && defined($cur_rule->{default})) {
-		TRACE "Undefined value for '$posstr', using default value '$cur_rule->{default}'";
+		DEBUG "Undefined value for '$posstr', using default value '$cur_rule->{default}'";
 		$config->{$varname} = $cur_rule->{default};
 	}
 

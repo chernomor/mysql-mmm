@@ -172,13 +172,17 @@ sub ping($) {
 	my $self	= shift;
 	my $name	= $self->{name};
 
-	TRACE "Pinging checker '$name'...";
+	DEBUG "Pinging checker '$name'...";
 
 	my $reader = $self->{reader};
 	my $writer = $self->{writer};
 	
 	my $send_res = print $writer "ping\n";
-	my $recv_res = <$reader>;
+	my $recv_res;
+READ: {
+	$recv_res = <$reader>;
+	redo READ if !$recv_res && $!{EINTR};
+}
 	chomp($recv_res) if defined($recv_res);
 
 	if (!$send_res || !$recv_res || !($recv_res =~ /^OK/)) {
@@ -186,7 +190,7 @@ sub ping($) {
 		return 0;
 	}
 
-	TRACE "Checker '$name' is OK ($recv_res)";
+	DEBUG "Checker '$name' is OK ($recv_res)";
 	return 1;
 }
 
@@ -208,7 +212,11 @@ sub check($$) {
 	my $writer = $self->{writer};
 	
 	my $send_res = print $writer "check $host\n";
-	my $recv_res = <$reader>;
+	my $recv_res;
+READ: {
+	$recv_res = <$reader>;
+	redo READ if !$recv_res && $!{EINTR};
+}
 	chomp($recv_res) if defined($recv_res);
 
 	return "UNKNOWN: Checker '$name' is dead!" unless ($send_res && $recv_res);

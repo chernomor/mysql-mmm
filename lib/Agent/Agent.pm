@@ -30,29 +30,31 @@ struct 'MMM::Agent' => {
 sub main($) {
 	my $self	= shift;
 	my $socket	= MMM::Common::Socket::create_listener($self->ip, $self->port);
+	$self->roles([]);
+	$self->active_master('');
 
 	while (!$main::shutdown) {
 
-		TRACE 'Listener: Waiting for connection...';
+		DEBUG 'Listener: Waiting for connection...';
 		my $client = $socket->accept();
 		next unless ($client);
 
-		TRACE 'Listener: Connect!';
+		DEBUG 'Listener: Connect!';
 		while (my $cmd = <$client>) {
 			chomp($cmd);
-			TRACE "Daemon: Command = '$cmd'";
+			DEBUG "Daemon: Command = '$cmd'";
 
 			my $res = $self->handle_command($cmd);
 			my $uptime = MMM::Common::Uptime::uptime();
 
 			print $client "$res|UP:$uptime\n";
-			TRACE "Daemon: Answer = '$res'";
+			DEBUG "Daemon: Answer = '$res'";
 
 			return 0 if ($main::shutdown);
 		}
 
 		close($client);
-		TRACE 'Listener: Disconnect!';
+		DEBUG 'Listener: Disconnect!';
 		
 		$self->check_roles();
 	}
@@ -61,7 +63,8 @@ sub main($) {
 sub handle_command($$) {
 	my $self	= shift;
 	my $cmd		= shift;
-	my ($cmd_name, $version, $host, @params) = split(':', $cmd);
+	DEBUG "Received Command $cmd";
+	my ($cmd_name, $version, $host, @params) = split('\|', $cmd, -1);
 
 	return "ERROR: Invalid hostname in command ($host)! My name is '" . $self->name . '"' if ($host ne $self->name);
 	
@@ -71,6 +74,7 @@ sub handle_command($$) {
 	
 	if		($cmd_name eq 'PING')				{ return command_ping						();			}
 	elsif	($cmd_name eq 'SET_STATUS')			{ return $self->command_set_status			(@params);	}
+#	elsif	($cmd_name eq 'SET_STATUS')			{ return $self->command_set_status			($params[0], $params[1], $params[2]); }
 	elsif	($cmd_name eq 'GET_AGENT_STATUS')	{ return $self->command_get_agent_status	();			}
 	elsif	($cmd_name eq 'GET_SYSTEM_STATUS')	{ return $self->command_get_system_status	();			}
 
@@ -102,8 +106,9 @@ sub command_get_system_status($) {
 		my $role_info = $main::config->{role}->{$role};
 		foreach my $ip (@{$role_info->{ips}}) {
 			my $res = MMM::Agent::Helpers::check_ip($self->interface, $ip);
-			return "ERROR: Could not check if IP is configured: $res" if ($? == 255);
-			next if ($? == 0);
+			my $ret = $? >> 8;
+			return "ERROR: Could not check if IP is configured: $res" if ($ret == 255);
+			next if ($ret == 1);
 			# IP is configured...
 			push @roles, new MMM::Common::Role::(name => $role, ip => $ip);
 		}
@@ -124,7 +129,7 @@ sub command_set_status($$) {
 	if ($new_master ne $self->active_master && $self->mode eq 'slave' && $new_state eq 'ONLINE' && $new_master != '') {
 		INFO "Changing active master to '$new_master'";
 		my $res = MMM::Agent::Helpers::set_active_master($new_master);
-		TRACE "Result: $res";
+		DEBUG "Result: $res";
 		if ($res =~ /^OK/) {
 			$self->active_master($new_master);
 		}
@@ -140,8 +145,8 @@ sub command_set_status($$) {
 		}
 	}
 
-	TRACE 'Old roles: ', Dumper([$self->roles]);
-	TRACE 'New roles: ', Dumper(\@new_roles);
+	DEBUG 'Old roles: ', Dumper([$self->roles]);
+	DEBUG 'New roles: ', Dumper(\@new_roles);
 	
 	# Process roles
 	my @added_roles = ();
@@ -183,7 +188,7 @@ sub command_set_status($$) {
 sub check_roles($) {
 	my $self	= shift;
 
-	foreach my $role ($self->roles) {
+	foreach my $role (@{$self->roles}) {
 		$role->check();	
 	}
 }

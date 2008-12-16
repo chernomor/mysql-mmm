@@ -22,13 +22,13 @@ else {
 
 sub uptime {
 	if ($OSNAME eq 'linux') {
-		TRACE "Fetching uptime from ", UPTIME;
+		DEBUG "Fetching uptime from ", UPTIME;
 		open(FILE, UPTIME) || LOGDIE "Unable to get uptime from ", UPTIME;
 		my $line = <FILE>;
 		my ($uptime, $idle) = split(/\s+/, $line);
 		close(FILE);
 
-		TRACE "Uptime is ", $uptime;
+		DEBUG "Uptime is ", $uptime;
 		return $uptime;
 	}
 

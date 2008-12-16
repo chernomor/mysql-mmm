@@ -5,6 +5,7 @@ use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
 use Thread::Queue;
 use Data::Dumper;
+use Algorithm::Diff;
 
 our $VERSION = '0.01';
 
@@ -45,12 +46,13 @@ sub init($) {
 	my $res;
 	foreach my $host (keys(%{$main::config->{host}})) {
 		my $agent = $agents->get($host);
-		if ($res = $agent->cmd_get_agent_status() && $res =~ /^OK/) {
-			my ($msg, $state, $roles_str, $master) = split('|', $res);
+		$res = $agent->cmd_get_agent_status();
+		if ($res =~ /^OK/) {
+			my ($msg, $state, $roles_str, $master) = split('\|', $res);
 			my @roles = sort(split(/\,/, $roles_str));
 			$agent_status->{$host} = {
 				state	=> $state,
-				roles	=> @roles,
+				roles	=> \@roles,
 				master	=> $master
 			};
 		}
@@ -59,12 +61,13 @@ sub init($) {
 			$status = 0;
 		}
 		
-		if ($res = $agent->cmd_get_system_status() && $res =~ /^OK/) {
-			my ($msg, $writable, $roles_str) = split('|', $res);
+		$res = $agent->cmd_get_system_status();
+		if ($res =~ /^OK/) {
+			my ($msg, $writable, $roles_str) = split('\|', $res);
 			my @roles = sort(split(/\,/, $roles_str));
 			$system_status->{$host} = {
 				writable	=> $writable,
-				roles		=> @roles
+				roles		=> \@roles
 			};
 		}
 		else {
@@ -74,15 +77,15 @@ sub init($) {
 		next unless (defined($agent_status->{$host}));
 		next unless (defined($system_status->{$host}));
 
-		if ($agent_status->{$host}->state ne 'UNKNOWN' && $agent_status->{$host}->state ne $agent->state) {
-			FATAL "Agent state '", $agent_status->{$host}->state, "' differs from stored one '", $agent->state, "' for host '$host'. Will switch to passive mode";
+		if ($agent_status->{$host}->{state} ne 'UNKNOWN' && $agent_status->{$host}->{state} ne $agent->state) {
+			FATAL "Agent state '", $agent_status->{$host}->{state}, "' differs from stored one '", $agent->state, "' for host '$host'. Will switch to passive mode";
 			$status = 0;
 			next;
 		}
 
 		# Determine changes
 		my $changes = 0;
-		my $diff = Algorithm::Diff->new($system_status->{$host}->roles, $agent->roles);
+		my $diff = Algorithm::Diff->new($system_status->{$host}->{roles}, $agent->roles);
 		while ($diff->Next) {
 			next if ($diff->Same);
 			FATAL "Roles of host '$host' differ from stored ones. Will switch to passive mode";
@@ -99,6 +102,13 @@ sub init($) {
 	}
 
 	# Everything is okay, apply roles from status file.
+	foreach my $host (keys(%{$main::config->{host}})) {
+		my $agent = $agents->get($host);
+		# Set new hosts to AWAITING_RECOVERY
+		$agent->state('AWAITING_RECOVERY') if ($agent->state eq 'UNKNOWN');
+		# TODO apply roles
+	}
+
 }
 
 sub main($) {
@@ -229,7 +239,7 @@ sub _check_server_states($) {
 			# AWAITING_RECOVERY -> ONLINE (if host was offline for a short period)
 			if ($ping && $mysql && $rep_backlog && $rep_threads) {
 				my $uptime_diff = $agent->uptime - $agent->last_uptime;
-				next unless ($host->{last_uptime} > 0 && $uptime_diff > 0 && $uptime_diff < 60);
+				next unless ($agent->last_uptime > 0 && $uptime_diff > 0 && $uptime_diff < 60);
 				next unless ($agent->mode eq 'master' && $peer_state eq 'ONLINE' && $checks->rep_backlog($peer) && $checks->rep_threads($peer));
 				FATAL "State of host '$host' changed from $state to ONLINE";
 				$agent->state('ONLINE');

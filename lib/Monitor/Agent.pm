@@ -38,11 +38,20 @@ sub _send_command {
 	return 0 unless ($socket && $socket->connected);
 
 
-	print $socket join(':', $cmd, main::MMM_PROTOCOL_VERSION, $self->host, @params), "\n";
-	my $res = <$socket>;
+	print $socket join('|', $cmd, main::MMM_PROTOCOL_VERSION, $self->host, @params), "\n";
+
+	my $res;
+READ: {
+	$res = <$socket>;
+	redo READ if !$res && $!{EINTR};
+}
 	close($socket);
 
-	if ($res =~ /(.*)\|UP\:(.*)/) {
+	return 0 unless (defined($res));
+
+	DEBUG "Received Answer: $res";
+
+	if ($res =~ /(.*)\|UP:(.*)/) {
 		$res = $1;
 		my $uptime = $2;
 		$self->uptime($uptime);

@@ -16,11 +16,11 @@ sub main($$) {
 	my $socket	= MMM::Common::Socket::create_listener($main::config->{monitor}->{ip}, $main::config->{monitor}->{port});
 
 	while (!$main::shutdown) {
-		TRACE 'Listener: Waiting for connection...';
+		DEBUG 'Listener: Waiting for connection...';
 		my $client = $socket->accept();
 		next unless ($client);
 
-		TRACE 'Listener: Connect!';
+		DEBUG 'Listener: Connect!';
 		while (my $cmd = <$client>) {	
 			chomp($cmd);
 			last if ($cmd eq 'quit');
@@ -38,7 +38,7 @@ sub main($$) {
 		}
 
 		close($client);
-		TRACE 'Listener: Disconnect!';
+		DEBUG 'Listener: Disconnect!';
 
 	}	
 }

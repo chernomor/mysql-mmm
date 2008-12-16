@@ -1,5 +1,5 @@
 Log::Log4perl	liblog-log4perl-perl
-Proc::Daemon
+Proc::Daemon	libproc-daemon-perl
 Algorithm::Diff libalgorithm-diff-perl
 Class:Singleton	libclass-singleton-perl
 Time::HighRes

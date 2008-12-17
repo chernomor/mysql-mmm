@@ -188,8 +188,9 @@ sub rep_backlog($$) {
 	
 		# Check backlog size
 		my $backlog = $status->{Seconds_Behind_Master};
+		$backlog = 0 unless ($backlog);
 
-		return 'OK: Backlog is null' if ($backlog eq '');
+		return 'OK: Backlog is null' if ($backlog == 0);
 		return 'ERROR: Backlog is too big' if ($backlog > $main::check->{max_backlog});
 		return 0;
 	};

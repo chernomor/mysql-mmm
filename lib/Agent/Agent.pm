@@ -3,7 +3,6 @@ package MMM::Agent;
 use strict;
 use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
-use Data::Dumper;
 use Algorithm::Diff;
 
 our $VERSION = '0.01';
@@ -129,7 +128,7 @@ sub cmd_clear_bad_roles($) {
 		my $role_info = $main::config->{role}->{$role};
 		foreach my $ip (@{$role_info->{ips}}) {
 			my $role_valid = 0;
-			foreach $agentrole (@{$self->roles}) {
+			foreach my $agentrole (@{$self->roles}) {
 				next unless ($agentrole->name eq $role);
 				next unless ($agentrole->ip   eq $ip);
 				$role_valid = 1;
@@ -141,7 +140,7 @@ sub cmd_clear_bad_roles($) {
 			return "ERROR: Could not check if IP is configured: $res" if ($ret == 255);
 			next if ($ret == 1);
 			# IP is configured...
-			$roleobj = new MMM::Agent::Role::(name => $role, ip => $ip);
+			my $roleobj = new MMM::Agent::Role::(name => $role, ip => $ip);
 			$roleobj->del();
 			$count++;
 		}
@@ -173,16 +172,13 @@ sub cmd_set_status($$) {
 		}
 	}
 
-	DEBUG 'Old roles: ', Dumper([$self->roles]);
-	DEBUG 'New roles: ', Dumper(\@new_roles);
-	
 	# Process roles
 	my @added_roles = ();
 	my @deleted_roles = ();
 	my $changes_count = 0;
 
 	# Determine changes
-	my $diff = Algorithm::Diff->new($self->roles, \@new_roles, { keyGen => \&MMM::Common::Role::to_string });
+	my $diff = new Algorithm::Diff:: ($self->roles, \@new_roles, { keyGen => \&MMM::Common::Role::to_string });
 	while ($diff->Next) {
 		next if ($diff->Same);
 
@@ -194,13 +190,11 @@ sub cmd_set_status($$) {
 	# Apply changes
 	if ($changes_count) {
 		INFO 'We have some new roles added or old rules deleted!';
-		INFO 'Deleted: ', Dumper(\@deleted_roles)	if (scalar(@deleted_roles));
-		INFO 'Added:   ', Dumper(\@added_roles)		if (scalar(@added_roles));
+		INFO 'Deleted: ', join(', ', sort(@deleted_roles))	if (scalar(@deleted_roles));
+		INFO 'Added:   ', join(', ', sort(@added_roles))	if (scalar(@added_roles));
 
 		foreach my $role (@deleted_roles)	{ $role->del(); }
 		foreach my $role (@added_roles)		{ $role->add(); }
-
-		# TODO wipe roles that we should not have
 
 		$self->roles(\@new_roles);
 	}

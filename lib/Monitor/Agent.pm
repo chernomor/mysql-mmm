@@ -47,7 +47,10 @@ READ: {
 }
 	close($socket);
 
-	return 0 unless (defined($res));
+	unless (defined($res)) {
+		WARN sprintf('Received undefined answer from host %s. $!: %s', $self->host, $!);
+		return 0;
+	}
 
 	DEBUG "Received Answer: $res";
 
@@ -56,6 +59,9 @@ READ: {
 		my $uptime = $2;
 		$self->uptime($uptime);
 		$self->last_uptime($uptime) if ($self->state eq 'ONLINE');
+	}
+	else {
+		WARN sprintf('Received bad answer \'%s\' from host %s. $!: %s', $res, $self->host, $!);
 	}
 	
 	return $res;

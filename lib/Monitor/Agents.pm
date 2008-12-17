@@ -113,7 +113,8 @@ sub get_status_info($) {
 	my $res		= '';
 
 	keys (%$self); # reset iterator
-	while (my ($host, $agent) = each(%$self)) {
+	foreach my $host (sort(keys(%$self))) {
+		my $agent = $self->{$host};
 		next unless $agent;
 		$res .= sprintf("  %s(%s) %s/%s. Roles: %s\n", $host, $agent->ip, $agent->mode, $agent->state, join(',', sort(@{$agent->roles})));
 	}

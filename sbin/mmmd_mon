@@ -8,7 +8,7 @@ use Config;
 use English qw( PROGRAM_NAME );
 use POSIX ':sys_wait_h';
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init($DEBUG);
+Log::Log4perl->easy_init($INFO);
 
 use Cwd;
 use File::Basename;
@@ -47,14 +47,6 @@ $config->read('mmm_mon');
 $config->check('MONITOR');
 
 our $monitor	= new MMM::Monitor::();
-#$monitor->from_config($config);
-
-use Data::Dumper; # XXX
-#print Data::Dumper->Dump([$config]);
-
-#exit(0);
-
-
 
 if (!MMM::Monitor::NetworkChecker->initial_check()) {
 	LOGDIE "DIED: Network is unreachable";
@@ -83,9 +75,6 @@ $SIG{CHLD} = \&ChildHandler;
 
 $monitor->init();
 
-# TODO handle restore case
-# $monitor->main_recover();
-
 $monitor->main();
 
 # Remove pid file
@@ -96,7 +85,7 @@ exit(0);
 
 #-----------------------------------------------------------------
 sub ShutdownHandler() {
-	DEBUG "Signal received: exiting...";
+	INFO "Signal received: exiting...";
 	$shutdown = 1;
 }
 

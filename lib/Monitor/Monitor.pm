@@ -118,8 +118,8 @@ sub init($) {
 			next if ($diff->Same);
 			FATAL sprintf(
 				"Switching to passive mode: Roles of host '$host' [%s] differ from stored ones [%s]",
-				join(',', $system_status->{$host}->{roles}),
-				join(',', $agent->roles)
+				join(',', @{$system_status->{$host}->{roles}}),
+				join(',', @{$agent->roles})
 			);
 			$status = 0;
 			last;
@@ -147,7 +147,7 @@ sub init($) {
 		}
 
 		# Apply roles loaded from status file
-		foreach $role (@{$agent->roles}) {
+		foreach my $role (@{$agent->roles}) {
 			unless ($self->roles->exists_ip($role->name, $role->ip)) {
 				FATAL "Detected change in role definitions: Role '$role' was removed.";
 				next;
@@ -485,14 +485,14 @@ sub _process_commands($) {
 		my $res;
 
 		# Execute command
-		if    ($command eq 'ping'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::ping();				}
-		elsif ($command eq 'show'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::show();				}
-		elsif ($command eq 'set_active'		&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_active();		}
-		elsif ($command eq 'set_passive'	&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_passive();		}
-		elsif ($command eq 'set_online'		&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_online (@args);	}
-		elsif ($command eq 'set_offline'	&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_offline(@args);	}
-		elsif ($command eq 'move_role'		&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::move_role(@args);	}
-		elsif ($command eq 'set_ip'			&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::set_ip(@args);		}
+		if    ($command eq 'ping'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::ping();			}
+		elsif ($command eq 'show'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::show();			}
+		elsif ($command eq 'set_active'		&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_active();	}
+		elsif ($command eq 'set_passive'	&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_passive();	}
+		elsif ($command eq 'set_online'		&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_online ($args[0]);	}
+		elsif ($command eq 'set_offline'	&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_offline($args[0]);	}
+		elsif ($command eq 'move_role'		&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::move_role($args[0], $args[1]);	}
+		elsif ($command eq 'set_ip'			&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::set_ip($args[0], $args[1]);		}
 		else { $res = "Invalid command '$cmdline'"; }
 
 		# Enqueue result

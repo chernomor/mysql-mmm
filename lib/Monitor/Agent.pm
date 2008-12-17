@@ -83,4 +83,9 @@ sub cmd_get_system_status($) {
 	return $self->_send_command('GET_SYSTEM_STATUS');
 }
 
+sub cmd_clear_bad_roles($) {
+	my $self	= shift;
+	return $self->_send_command('CLEAR_BAD_ROLES');
+}
+
 1;

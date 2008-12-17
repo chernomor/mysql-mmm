@@ -63,6 +63,7 @@ sub main($) {
 sub handle_command($$) {
 	my $self	= shift;
 	my $cmd		= shift;
+
 	DEBUG "Received Command $cmd";
 	my ($cmd_name, $version, $host, @params) = split('\|', $cmd, -1);
 
@@ -72,20 +73,20 @@ sub handle_command($$) {
 		WARN "Version in command '$cmd_name' ($version) is greater than mine (", main::MMM_PROTOCOL_VERSION, ")"
 	}
 	
-	if		($cmd_name eq 'PING')				{ return command_ping						();			}
-	elsif	($cmd_name eq 'SET_STATUS')			{ return $self->command_set_status			(@params);	}
-#	elsif	($cmd_name eq 'SET_STATUS')			{ return $self->command_set_status			($params[0], $params[1], $params[2]); }
-	elsif	($cmd_name eq 'GET_AGENT_STATUS')	{ return $self->command_get_agent_status	();			}
-	elsif	($cmd_name eq 'GET_SYSTEM_STATUS')	{ return $self->command_get_system_status	();			}
+	if		($cmd_name eq 'PING')				{ return cmd_ping						();			}
+	elsif	($cmd_name eq 'SET_STATUS')			{ return $self->cmd_set_status			(@params);	}
+	elsif	($cmd_name eq 'GET_AGENT_STATUS')	{ return $self->cmd_get_agent_status	();			}
+	elsif	($cmd_name eq 'GET_SYSTEM_STATUS')	{ return $self->cmd_get_system_status	();			}
+	elsif	($cmd_name eq 'CLEAR_BAD_ROLES')	{ return $self->cmd_clear_bad_roles		();			}
 
 	return "ERROR: Invalid command '$cmd_name'!";
 }
 
-sub command_ping() {
+sub cmd_ping() {
 	return 'OK: Pinged!';
 }
 
-sub command_get_agent_status($) {
+sub cmd_get_agent_status($) {
 	my $self	= shift;
 	
 	my $answer = join ('|', (
@@ -96,7 +97,7 @@ sub command_get_agent_status($) {
 	return "OK: Returning status!|$answer";
 }
 
-sub command_get_system_status($) {
+sub cmd_get_system_status($) {
 	my $self	= shift;
 
 	# TODO determine and send master info if we are a slave host.
@@ -121,7 +122,34 @@ sub command_get_system_status($) {
 	return "OK: Returning status!|$answer";
 }
 
-sub command_set_status($$) {
+sub cmd_clear_bad_roles($) {
+	my $self	= shift;
+	my $count	= 0;
+	foreach my $role (keys(%{$main::config->{role}})) {
+		my $role_info = $main::config->{role}->{$role};
+		foreach my $ip (@{$role_info->{ips}}) {
+			my $role_valid = 0;
+			foreach $agentrole (@{$self->roles}) {
+				next unless ($agentrole->name eq $role);
+				next unless ($agentrole->ip   eq $ip);
+				$role_valid = 1;
+				last;
+			}
+			next if ($role_valid);
+			my $res = MMM::Agent::Helpers::check_ip($self->interface, $ip);
+			my $ret = $? >> 8;
+			return "ERROR: Could not check if IP is configured: $res" if ($ret == 255);
+			next if ($ret == 1);
+			# IP is configured...
+			$roleobj = new MMM::Agent::Role::(name => $role, ip => $ip);
+			$roleobj->del();
+			$count++;
+		}
+	}
+	return "OK: Removed $count roles";
+}
+
+sub cmd_set_status($$) {
 	my $self	= shift;
 	my ($new_state, $new_roles_str, $new_master) = @_;
 
@@ -155,7 +183,6 @@ sub command_set_status($$) {
 
 	# Determine changes
 	my $diff = Algorithm::Diff->new($self->roles, \@new_roles, { keyGen => \&MMM::Common::Role::to_string });
-	# TODO testen... scheint nur namen der rollen zu prüfen
 	while ($diff->Next) {
 		next if ($diff->Same);
 

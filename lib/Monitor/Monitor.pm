@@ -7,6 +7,12 @@ use Thread::Queue;
 use Data::Dumper;
 use Algorithm::Diff;
 
+=head1 NAME
+
+MMM::Monitor - single instance class with monitor logic
+
+=cut
+
 our $VERSION = '0.01';
 
 use Class::Struct;
@@ -24,6 +30,17 @@ struct 'MMM::Monitor' => {
 	roles				=> 'MMM::Monitor::Roles',
 	passive				=> '$'
 };
+
+
+=head1 FUNCTIONS
+
+=over 4
+
+=item init
+
+Init queues, single instance classes, ... and try to determine status.
+
+=cut
 
 sub init($) {
 	my $self = shift;
@@ -90,19 +107,29 @@ sub init($) {
 			next;
 		}
 
-		# Determine changes
-		DEBUG "STATE INFO\n", Data::Dumper->Dump([$agents, $agent_status, $system_status], ['Stored status', 'Agent status', 'System status']);
-		my $changes = 0;
-		my $diff = Algorithm::Diff->new($system_status->{$host}->{roles}, $agent->roles, { keyGen => \&MMM::Common::Role::to_string });
+		# Determine if roles differ 
+		my $changes	= 0;
+		my $diff	= new Algorithm::Diff:: (
+			$system_status->{$host}->{roles},
+			$agent->roles,
+			{ keyGen => \&MMM::Common::Role::to_string }
+		);
 		while ($diff->Next) {
 			next if ($diff->Same);
-			FATAL "Roles of host '$host' differ from stored ones. Will switch to passive mode";
+			FATAL sprintf(
+				"Switching to passive mode: Roles of host '$host' [%s] differ from stored ones [%s]",
+				join(',', $system_status->{$host}->{roles}),
+				join(',', $agent->roles)
+			);
 			$status = 0;
 			last;
 		}
 		
 		# TODO check "writable" if host has master role
 	}
+
+	DEBUG "STATE INFO\n", Data::Dumper->Dump([$agents, $agent_status, $system_status], ['Stored status', 'Agent status', 'System status']);
+
 	unless ($status) {
 		$self->passive(1);
 		FATAL "Switching to PASSIVE MODE!!!\nStored status:\n", $agents->get_status_info(), "\n", Data::Dumper->Dump([$agent_status, $system_status], ['Agent status', 'System status']);
@@ -112,12 +139,35 @@ sub init($) {
 	# Everything is okay, apply roles from status file.
 	foreach my $host (keys(%{$main::config->{host}})) {
 		my $agent = $agents->get($host);
+
 		# Set new hosts to AWAITING_RECOVERY
-		$agent->state('AWAITING_RECOVERY') if ($agent->state eq 'UNKNOWN');
-		# TODO apply roles
+		if ($agent->state eq 'UNKNOWN') {
+			FATAL "Detected new host '$host': Setting its initial state to 'AWAITING_RECOVERY'.";
+			$agent->state('AWAITING_RECOVERY');
+		}
+
+		# Apply roles loaded from status file
+		foreach $role (@{$agent->roles}) {
+			unless ($self->roles->exists_ip($role->name, $role->ip)) {
+				FATAL "Detected change in role definitions: Role '$role' was removed.";
+				next;
+			}
+			unless ($self->roles->can_handle($role->name, $host)) {
+				FATAL "Detected change in role definitions: Host '$host' can't handle role '$role' anymore.";
+				next;
+			}
+			$self->roles->set_role($role->name, $role->ip, $host);
+		}
 	}
 
 }
+
+
+=item main
+
+Main thread
+
+=cut
 
 sub main($) {
 	my $self	= shift;
@@ -139,8 +189,8 @@ sub main($) {
 	
 	while (!$main::shutdown) {
 		$self->_process_check_results();
-		$self->_check_server_states();
-		$self->_handle_commands();
+		$self->_check_host_states();
+		$self->_process_commands();
 		$self->_distribute_roles();
 		$self->send_status_to_agents();
 		sleep(1);
@@ -168,7 +218,14 @@ sub _process_check_results($) {
 	return $cnt;
 }
 
-sub _check_server_states($) {
+
+=item _check_host_states
+
+Check states of hosts and change status/roles accordingly.
+
+=cut
+
+sub _check_host_states($) {
 	my $self = shift;
 
 	# Don't do anything if we have no network connection
@@ -315,6 +372,13 @@ sub _check_server_states($) {
 	$agents->save_status() unless ($self->passive);
 }
 
+
+=item _distribute_roles
+
+Distribute roles among the hosts.
+
+=cut
+
 sub _distribute_roles($) {
 	my $self = shift;
 
@@ -337,23 +401,47 @@ sub _distribute_roles($) {
 	}
 }
 
+
+=item send_status_to_agents
+
+Send status information to all agents.
+
+=cut
+
 sub send_status_to_agents($) {
 	my $self	= shift;
+
+	# Send status to all hosts
 	my $master	= $self->roles->get_active_master();
 	foreach my $host (keys(%{$main::config->{host}})) {
 		$self->send_agent_status($host, $master);
 	}
 }
 
+
+=item notify_slaves
+
+Notify all slave hosts (used when master changes).
+
+=cut
+
 sub notify_slaves($$) {
 	my $self		= shift;
 	my $new_master	= shift;
 
+	# Send status to all hosts with mode = 'slave'
 	foreach my $host (keys(%{$main::config->{host}})) {
 		next unless ($main::config->{host}->{$host}->{mode} eq 'slave');
-		$self->send_agent_status($host);
+		$self->send_agent_status($host, $new_master);
 	}
 }
+
+
+=item send_agent_status($host[, $master])
+
+Send status information to agent on host $host.
+
+=cut
 
 sub send_agent_status($$$) {
 	my $self	= shift;
@@ -364,29 +452,51 @@ sub send_agent_status($$$) {
 	# Never send anything to agents if we have no network connection
 	return if ($self->passive || !$main::have_net);
 
+	# Determine active master if it was not passed
 	$master = $self->roles->get_active_master() unless (defined($master));
 
-	my @roles		= sort($self->roles->get_host_roles($host));
 	my $agent = MMM::Monitor::Agents->instance()->get($host);
+
+	# Determine and set roles
+	my @roles = sort($self->roles->get_host_roles($host));
 	$agent->roles(\@roles);
+
+	# Finally send command
 	return $agent->cmd_set_status($master);
 }
 
-sub _handle_commands($) {
+
+=item _process_commands
+
+Process commands received from the command thread.
+
+=cut
+
+sub _process_commands($) {
 	my $self		= shift;
+
+	# Handle all queued commands
 	while (my $cmdline = $self->command_queue->dequeue_nb) {
+
+		# Parse command
 		my @args	= split(/\s+/, $cmdline);
 		my $command	= shift @args;
 		my $arg_cnt	= scalar(@args);
-		if    ($command eq 'ping'			&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::ping       ());                    }
-		elsif ($command eq 'show'			&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::show       ());                    }
-		elsif ($command eq 'set_active'		&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_active ());                    }
-		elsif ($command eq 'set_passive'	&& $arg_cnt == 0) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_passive());					}
-		elsif ($command eq 'move_role'		&& $arg_cnt == 2) { $self->result_queue->enqueue(MMM::Monitor::Commands::move_role  ($args[0], $args[1]));	}
-		elsif ($command eq 'set_ip'			&& $arg_cnt == 2) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_ip     ($args[0], $args[1]));	}
-		elsif ($command eq 'set_online'		&& $arg_cnt == 1) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_online ($args[0]));            }
-		elsif ($command eq 'set_offline'	&& $arg_cnt == 1) { $self->result_queue->enqueue(MMM::Monitor::Commands::set_offline($args[0]));            }
-		else { $self->result_queue->enqueue("Invalid command '$cmdline'\n"); }
+		my $res;
+
+		# Execute command
+		if    ($command eq 'ping'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::ping();				}
+		elsif ($command eq 'show'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::show();				}
+		elsif ($command eq 'set_active'		&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_active();		}
+		elsif ($command eq 'set_passive'	&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_passive();		}
+		elsif ($command eq 'set_online'		&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_online (@args);	}
+		elsif ($command eq 'set_offline'	&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_offline(@args);	}
+		elsif ($command eq 'move_role'		&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::move_role(@args);	}
+		elsif ($command eq 'set_ip'			&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::set_ip(@args);		}
+		else { $res = "Invalid command '$cmdline'"; }
+
+		# Enqueue result
+		$self->result_queue->enqueue($res);
 	}
 }
 

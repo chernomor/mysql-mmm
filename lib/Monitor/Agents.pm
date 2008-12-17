@@ -11,10 +11,11 @@ use IO::Handle;
 
 =head1 NAME
 
-MMM::Monitor::Agents - holds status information for all agent hosts
+MMM::Monitor::Agents - single instance class holding status information for all agent hosts
 
 =head1 SYNOPSIS
 
+	# Get the instance
 	my $agents = MMM::Monitor::Agents->instance();
 
 =cut
@@ -41,10 +42,88 @@ sub _new_instance($) {
 }
 
 
-=pod
+=head1 FUNCTIONS
 
-	# Save status information into status file
-	$status->save();
+=over 4
+
+=item exists($host)
+
+Check if host $host exists.
+
+=cut
+
+sub exists($$) {
+	my $self	= shift;
+	my $host	= shift;
+	return defined($self->{$host});
+}
+
+
+=item get($host)
+
+Get agent for host $host.
+
+=cut
+
+sub get($$) {
+	my $self	= shift;
+	my $host	= shift;
+	return $self->{$host};
+}
+
+
+=item state($host)
+
+Get state of host $host.
+
+=cut
+
+sub state($$) {
+	my $self	= shift;
+	my $host	= shift;
+	LOGDIE "Can't get state of invalid host '$host'" if (!defined($self->{$host}));
+	return $self->{$host}->state;
+}
+
+
+=item set_state($host, $state)
+
+Set state of host $host to $state.
+
+=cut
+
+sub set_state($$$) {
+	my $self	= shift;
+	my $host	= shift;
+	my $state	= shift;
+
+	LOGDIE "Can't set state of invalid host '$host'" if (!defined($self->{$host}));
+	$self->{$host}->state($state);
+}
+
+
+=item get_status_info
+
+Get string containing status information.
+
+=cut
+
+sub get_status_info($) {
+	my $self	= shift;
+	my $res		= '';
+
+	keys (%$self); # reset iterator
+	while (my ($host, $agent) = each(%$self)) {
+		next unless $agent;
+		$res .= sprintf("  %s(%s) %s/%s. Roles: %s\n", $host, $agent->ip, $agent->mode, $agent->state, join(',', sort(@{$agent->roles})));
+	}
+	return $res;
+}
+
+
+=item save_status
+
+Save status information into status file.
 
 =cut
 
@@ -54,7 +133,7 @@ sub save_status($) {
 	my $filename = $main::config->{monitor}->{status_path};
 	my $tempname = $filename . '.tmp';
 
-	open(STATUS, ">" . $tempname) || LOGDIE "Can't open temporary status file '$tempname' for writing!";
+	open(STATUS, '>', $tempname) || LOGDIE "Can't open temporary status file '$tempname' for writing!";
 
 	keys (%$self); # reset iterator
 	while (my ($host, $agent) = each(%$self)) {
@@ -69,10 +148,9 @@ sub save_status($) {
 }
 
 
-=pod
+=item load_status
 
-	# Load status information from status file
-	$agents->load_status();
+Load status information from status file
 
 =cut
 
@@ -81,7 +159,11 @@ sub load_status($) {
 
 	my $filename = $main::config->{monitor}->{status_path};
 	
-	open(STATUS, $filename) || return;
+	# Open status file
+	unless (open(STATUS, '<', $filename)) {
+		FATAL "Couldn't open status file '$filename': Starting up without status information.";
+		return;
+	}
 
 	while (my $line = <STATUS>) {
 		chomp($line);
@@ -105,107 +187,5 @@ sub load_status($) {
 	close(STATUS);
 	return;
 }
-
-
-=pod
-
-	# Fetch status information for host 'db2' from agent
-	$status->load_from_agent('db2');
-
-=cut
-
-sub load_from_agent($$) {
-	my $self		= shift;
-	my $host_name	= shift;
-
-	my $agent	= new MMM::Monitor::Agent::($host_name);
-
-	# Check if host is reachable
-	my $checks_status = MMM::Monitor::ChecksStatus->instance();
-	unless ($checks_status->ping($host_name) && $checks_status->mysql($host_name)) {
-		FATAL "No saved state for unreachable host $host_name - setting state to HARD_OFFLINE";
-		$self->{$host_name}->{state} = 'HARD_OFFLINE';
-		return;
-	}
-
-	# Get status information from agent
-	my $res = $agent->send_command('GET_STATUS');
-	if (!$res || $res !~ /(.*)\|(.*)?\|.*UP\:(.*)/) {
-		FATAL "No saved state and unreachable agent on host $host_name - setting state to HARD_OFFLINE";
-		$self->{$host_name}->{state} = 'HARD_OFFLINE';
-		return;
-	}
-
-	my ($state, $roles, $master) = split(':', $2);
-
-	# skip if agent doesn't know his state
-	if ($state eq "UNKNOWN") {
-		FATAL "No saved state and agent on host $host_name reportet state UNKNOWN - setting state to HARD_OFFLINE";
-		$self->{$host_name}->{state} = 'HARD_OFFLINE';
-		return;
-	}
-
-	# Restore status from agent data
-	my @restored_roles_str = sort(split(/\,/, $roles));
-	my @restored_roles;
-	foreach my $role_str (@restored_roles_str) {
-		my $role = MMM::Monitor::Role->from_string($role_str);
-		push (@restored_roles, $role) if defined($role);
-	}
-	$self->{$host_name}->{state} = $state;
-	@{$self->{$host_name}->{roles}} = @restored_roles;
-
-	# TODO maybe we should somehow prevent a role _change_ of the "active_master"-role?
-
-	FATAL "Restored state $state and roles from agent on host $host_name";
-	return;
-}
-
-sub get_status_info($) {
-	my $self	= shift;
-	my $res		= '';
-
-	keys (%$self); # reset iterator
-	while (my ($host, $agent) = each(%$self)) {
-		next unless $agent;
-		$res .= sprintf("  %s(%s) %s/%s. Roles: %s\n", $host, $agent->ip, $agent->mode, $agent->state, join(',', sort(@{$agent->roles})));
-	}
-	return $res;
-}
-
-sub set_state($$$) {
-	my $self	= shift;
-	my $host	= shift;
-	my $state	= shift;
-
-	LOGDIE "Can't set state of invalid host '$host'" if (!defined($self->{$host}));
-	$self->{$host}->state($state);
-}
-
-sub state($$) {
-	my $self	= shift;
-	my $host	= shift;
-	LOGDIE "Can't get state of invalid host '$host'" if (!defined($self->{$host}));
-	return $self->{$host}->state;
-}
-
-sub exists($$) {
-	my $self	= shift;
-	my $host	= shift;
-	return defined($self->{$host});
-}
-
-sub get($$) {
-	my $self	= shift;
-	my $host	= shift;
-	return $self->{$host};
-}
-
-
-# a server status contains
-#	state
-#	roles (array of type MMM::Monitor::Role with to_string operator overloaded)
-#	uptime
-#	last_uptime
 
 1;

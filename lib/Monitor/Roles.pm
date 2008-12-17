@@ -35,6 +35,9 @@ sub _new_instance($) {
 	return bless $self, $class; 
 }
 
+
+=head1 FUNCTIONS
+
 =over 4
 
 =item assign($role, $host)
@@ -201,7 +204,7 @@ sub find_eligible_host($$) {
 
 =item find_eligible_hosts($role)
 
-find all hosts which can take over the role $role
+find all hosts which can take over the role $role.
 
 =cut
 
@@ -222,6 +225,12 @@ sub find_eligible_hosts($$) {
 	return $hosts;
 }
 
+
+=item process_orphans
+
+Find orphaned roles and assign them to a host if possible.
+
+=cut
 
 sub process_orphans($) {
 	my $self	= shift;
@@ -244,6 +253,12 @@ sub process_orphans($) {
 	}
 }
 
+
+=item balance
+
+Balance roles with mode 'balanced'
+
+=cut
 
 sub balance($) {
 	my $self	= shift;
@@ -275,7 +290,14 @@ sub balance($) {
 	}
 }
 
-sub move_one_ip($$$) {
+
+=item move_one_ip($role, $host1, $host2)
+
+Move one IP of role $role from $host1 to $host2.
+
+=cut
+
+sub move_one_ip($$$$) {
 	my $self	= shift;
 	my $role	= shift;
 	my $host1	= shift;
@@ -287,9 +309,19 @@ sub move_one_ip($$$) {
 
 		INFO sprintf("Moving role '$role' with ip '$ip' from host '$host1' to host '$host2'", $role, $ip, $host1);
 		$ip_info->{assigned_to} = $host2;
-		return;
+		return 1;
 	}
+
+	# No ip was moved
+	return 0;
 }
+
+
+=item find_by_ip($ip)
+
+Find name of role with IP $ip.
+
+=cut
 
 sub find_by_ip($$) {
 	my $self	= shift;
@@ -301,25 +333,58 @@ sub find_by_ip($$) {
 	
 	return undef;
 }
+
+
+=item set_role($role, $ip, $host)
+
+Set role $role with IP $ip to host $host.
+
+NOTE: No checks are done. Caller should assure that:
+Role is valid, IP is valid, Host is valid, Host can handle role
+
+=cut
 sub set_role($$$$) {
 	my $self	= shift;
 	my $role	= shift;
 	my $ip		= shift;
 	my $host	= shift;
 
-	# XXX no checks here - caller should check if:
-	# - role is valid
-	# - ip is valid
-	# - host is valid
-	# - host may handle role
 	$self->{$role}->{ips}->{$ip}->{assigned_to} = $host;
 }
 
+
+=item exists($role)
+
+Check if role $role exists.
+
+=cut
 sub exists($$) {
 	my $self	= shift;
 	my $role	= shift;
 	return defined($self->{$role});
 }
+
+
+=item exists_ip($role, $ip)
+
+Check if role $role with IP $ip exists.
+
+=cut
+
+sub exists_ip($$$) {
+	my $self	= shift;
+	my $role	= shift;
+	my $ip		= shift;
+	return 0 unless defined($self->{$role});
+	return defined($self->{$role}->{ips}->{$ip});
+}
+
+
+=item is_exclusive($role)
+
+Determine whether given role is an exclusive role.
+
+=cut
 
 sub is_exclusive($$) {
 	my $self	= shift;
@@ -328,6 +393,13 @@ sub is_exclusive($$) {
 	return ($self->{$role}->{mode} eq 'exclusive');
 }
 
+
+=item get_valid_hosts($role)
+
+Get all valid hosts for role $role.
+
+=cut
+
 sub get_valid_hosts($$) {
 	my $self	= shift;
 	my $role	= shift;
@@ -335,13 +407,27 @@ sub get_valid_hosts($$) {
 	return $self->{$role}->{hosts};
 }
 
-sub can_handle($$) {
+
+=item can_handle($role, $host)
+
+Check if host $host can handle role $role.
+
+=cut
+
+sub can_handle($$$) {
 	my $self	= shift;
 	my $role	= shift;
 	my $host	= shift;
 	return 0 unless defined($self->{$role});
 	return grep({$_ eq $host} @{$self->{$role}->{hosts}});
 }
+
+
+=item is_active_master_role($role)
+
+Check whether $role is the active master role.
+
+=cut
 
 sub is_active_master_role($$) {
 	my $self	= shift;

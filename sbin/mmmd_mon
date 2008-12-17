@@ -79,8 +79,8 @@ $monitor->main();
 
 # Remove pid file
 $pidfile->remove();
-print "END\n";
 
+INFO 'END';
 exit(0);
 
 #-----------------------------------------------------------------

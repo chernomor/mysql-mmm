@@ -2,6 +2,8 @@ package MMM::Monitor;
 
 use strict;
 use warnings FATAL => 'all';
+use threads;
+use threads::shared;
 use Log::Log4perl qw(:easy);
 use Thread::Queue;
 use Data::Dumper;
@@ -187,13 +189,19 @@ sub main($) {
 		push(@threads, new threads(\&MMM::Monitor::Checker::main, $check_name, $self->checker_queue));
 	}
 	
+
+	my $command_queue = $self->command_queue;
+
 	while (!$main::shutdown) {
 		$self->_process_check_results();
 		$self->_check_host_states();
 		$self->_process_commands();
 		$self->_distribute_roles();
 		$self->send_status_to_agents();
-		sleep(1);
+
+		# sleep 1 second, wake up if command queue gets filled
+		lock($command_queue);
+		cond_timedwait($command_queue, time() + 1); 
 	}
 
 	foreach my $thread (@threads) {

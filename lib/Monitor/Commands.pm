@@ -146,6 +146,7 @@ sub move_role($$) {
 	my $role	= shift;
 	my $host	= shift;
 	
+	return "ERROR: This command is only allowed in active mode" if (MMM::Monitor->instance()->passive);
 
 	my $agents	= MMM::Monitor::Agents->instance();
 	my $roles	= MMM::Monitor::Roles->instance();
@@ -184,6 +185,18 @@ sub move_role($$) {
 	
 	return "OK: Role '$role' has been moved from '$old_owner' to '$host'. Now you can wait some time and check new roles info!";
 	
+}
+
+
+=item mode
+
+Get information about current mode (active or passive)
+
+=cut
+
+sub mode() {
+	return "PASSIVE" if (MMM::Monitor->instance()->passive);
+	return "ACTIVE";
 }
 
 

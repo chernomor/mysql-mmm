@@ -120,8 +120,8 @@ sub init($) {
 			next if ($diff->Same);
 			FATAL sprintf(
 				"Switching to passive mode: Roles of host '$host' [%s] differ from stored ones [%s]",
-				join(',', @{$system_status->{$host}->{roles}}),
-				join(',', @{$agent->roles})
+				join(', ', @{$system_status->{$host}->{roles}}),
+				join(', ', @{$agent->roles})
 			);
 			$status = 0;
 			last;
@@ -495,6 +495,7 @@ sub _process_commands($) {
 		# Execute command
 		if    ($command eq 'ping'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::ping();			}
 		elsif ($command eq 'show'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::show();			}
+		elsif ($command eq 'mode'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::mode();			}
 		elsif ($command eq 'set_active'		&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_active();	}
 		elsif ($command eq 'set_passive'	&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_passive();	}
 		elsif ($command eq 'set_online'		&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_online ($args[0]);	}

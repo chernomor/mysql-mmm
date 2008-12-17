@@ -116,7 +116,7 @@ sub get_status_info($) {
 	foreach my $host (sort(keys(%$self))) {
 		my $agent = $self->{$host};
 		next unless $agent;
-		$res .= sprintf("  %s(%s) %s/%s. Roles: %s\n", $host, $agent->ip, $agent->mode, $agent->state, join(',', sort(@{$agent->roles})));
+		$res .= sprintf("  %s(%s) %s/%s. Roles: %s\n", $host, $agent->ip, $agent->mode, $agent->state, join(', ', sort(@{$agent->roles})));
 	}
 	return $res;
 }

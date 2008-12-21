@@ -26,6 +26,7 @@ our $SELF_DIR = dirname(dirname(Cwd::abs_path(__FILE__)));
 
 # Include parts of the system
 require $SELF_DIR . '/lib/Common/Config.pm';
+require $SELF_DIR . '/lib/Common/Log.pm';
 require $SELF_DIR . '/lib/Common/PidFile.pm';
 require $SELF_DIR . '/lib/Common/Role.pm';
 require $SELF_DIR . '/lib/Common/Socket.pm';
@@ -41,10 +42,17 @@ require $SELF_DIR . '/lib/Monitor/NetworkChecker.pm';
 require $SELF_DIR . '/lib/Monitor/Role.pm';
 require $SELF_DIR . '/lib/Monitor/Roles.pm';
 
+MMM::Common::Log::init('mmm_mon_log.conf');
+
 # Read configuration
 our $config = new MMM::Common::Config::;
 $config->read('mmm_mon');
 $config->check('MONITOR');
+
+my $debug = 0;
+$debug = 1 unless ($config->{debug} =~ /^(false|off|no|0)$/i);
+
+MMM::Common::Log::debug() if ($debug);
 
 our $monitor	= new MMM::Monitor::();
 
@@ -61,7 +69,7 @@ LOGDIE	"Can't run second copy of ", $PROGRAM_NAME	if ($pidfile->is_running());
 WARN	"Unclean start - found stale pid file!"		if ($pidfile->exists());
 
 # Go to background
-Proc::Daemon::Init if (0); # TODO
+Proc::Daemon::Init unless ($debug);
 $pidfile->create();
 
 our $shutdown :shared = 0;		# Shutdown flag

@@ -2,7 +2,7 @@ package MMM::Agent::Role;
 use base 'MMM::Common::Role';
 
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 
 our $VERSION = '0.01';
 

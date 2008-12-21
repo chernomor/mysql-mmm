@@ -1,7 +1,7 @@
 package MMM::Common::Uptime;
 
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use English qw( OSNAME );
 use Log::Log4perl qw(:easy);
 

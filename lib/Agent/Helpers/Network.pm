@@ -1,7 +1,7 @@
 package MMM::Agent::Helpers::Network;
 
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use English qw( OSNAME );
 
 our $VERSION = '0.01';

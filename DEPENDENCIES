@@ -4,6 +4,8 @@ Algorithm::Diff libalgorithm-diff-perl
 Class:Singleton	libclass-singleton-perl
 Time::HighRes
 Net::Ping && fping (root && non-root)
+Mail::Send		libmailtools-perl
+Log::Dispatch	liblog-dispatch-perl
 
 Cwd
 File::Basename

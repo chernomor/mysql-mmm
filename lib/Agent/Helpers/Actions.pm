@@ -1,7 +1,7 @@
 package MMM::Agent::Helpers::Actions;
 
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 
 our $VERSION = '0.01';
 

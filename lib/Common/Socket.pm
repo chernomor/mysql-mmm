@@ -1,7 +1,7 @@
 package MMM::Common::Socket;
 
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
 use IO::Socket::INET;
 

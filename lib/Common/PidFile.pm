@@ -1,7 +1,7 @@
 package MMM::Common::PidFile;
 
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use English qw( PROCESS_ID );
 use Log::Log4perl qw(:easy);
 

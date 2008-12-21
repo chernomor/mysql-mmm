@@ -1,7 +1,7 @@
 package MMM::Common::Config;
 
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use English qw( NR );
 use Log::Log4perl qw(:easy);
 

@@ -42,12 +42,19 @@ require $SELF_DIR . '/lib/Monitor/NetworkChecker.pm';
 require $SELF_DIR . '/lib/Monitor/Role.pm';
 require $SELF_DIR . '/lib/Monitor/Roles.pm';
 
-MMM::Common::Log::init('mmm_mon_log.conf');
+MMM::Common::Log::init('mmm_mon_log.conf', 'mmmd_mon');
 
 # Read configuration
 our $config = new MMM::Common::Config::;
 $config->read('mmm_mon');
 $config->check('MONITOR');
+
+
+# Status path is relative to SELF_DIR, if it's relative at all
+if ($config->{monitor}->{status_path} !~ /^\/.*/) {
+	$config->{monitor}->{status_path} = $SELF_DIR . '/' . $config->{monitor}->{status_path};
+}
+
 
 my $debug = 0;
 $debug = 1 unless ($config->{debug} =~ /^(false|off|no|0)$/i);
@@ -62,6 +69,7 @@ if (!MMM::Monitor::NetworkChecker->initial_check()) {
 
 
 my $pidfilename = $config->{monitor}->{pid_path};
+$pidfilename = $SELF_DIR . '/' . $pidfilename unless ($pidfilename =~ /^\/.*/);
 my $pidfile = new MMM::Common::PidFile:: $pidfilename;
 
 # Check pid file
@@ -72,7 +80,7 @@ unless ($debug) {
 	# Go to background
 	Proc::Daemon::Init();
 	# Init logging again to re-open fds
-	MMM::Common::Log::init('mmm_mon_log.conf');
+	MMM::Common::Log::init('mmm_mon_log.conf', 'mmmd_mon');
 }
 $pidfile->create();
 

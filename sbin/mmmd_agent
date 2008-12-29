@@ -28,7 +28,7 @@ require $SELF_DIR . '/lib/Agent/Agent.pm';
 require $SELF_DIR . '/lib/Agent/Helpers.pm';
 require $SELF_DIR . '/lib/Agent/Role.pm';
 
-MMM::Common::Log::init('mmm_agent_log.conf');
+MMM::Common::Log::init('mmm_agent_log.conf', 'mmmd_agent');
 
 # Read configuration
 our $config = new MMM::Common::Config::;
@@ -48,6 +48,7 @@ our $agent	= new MMM::Agent::(
 $agent->from_config($config);
 
 my $pidfilename = $config->{host}->{ $config->{this} }->{pid_path};
+$pidfilename = $SELF_DIR . '/' . $pidfilename unless ($pidfilename =~ /^\/.*/);
 my $pidfile = new MMM::Common::PidFile:: $pidfilename;
 
 # Check pid file
@@ -58,7 +59,7 @@ unless ($debug) {
 	# Go to background
 	Proc::Daemon::Init();
 	# Init logging again to re-open fds
-	MMM::Common::Log::init('mmm_mon_log.conf');
+	MMM::Common::Log::init('mmm_agent_log.conf', 'mmmd_agent');
 }
 $pidfile->create();
 

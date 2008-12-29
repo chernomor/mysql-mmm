@@ -99,7 +99,7 @@ sub cmd_get_agent_status($) {
 sub cmd_get_system_status($) {
 	my $self	= shift;
 
-	# TODO determine and send master info if we are a slave host.
+	# TODO maybe determine and send master info if we are a slave host.
 
 	my @roles;
 	foreach my $role (keys(%{$main::config->{role}})) {

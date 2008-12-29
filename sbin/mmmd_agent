@@ -28,10 +28,17 @@ require $SELF_DIR . '/lib/Agent/Agent.pm';
 require $SELF_DIR . '/lib/Agent/Helpers.pm';
 require $SELF_DIR . '/lib/Agent/Role.pm';
 
+MMM::Common::Log::init('mmm_agent_log.conf');
+
 # Read configuration
 our $config = new MMM::Common::Config::;
 $config->read('mmm_agent');
 $config->check('AGENT');
+
+my $debug = 0;
+$debug = 1 unless ($config->{debug} =~ /^(false|off|no|0)$/i);
+
+MMM::Common::Log::debug() if ($debug);
 
 our $agent	= new MMM::Agent::(
 	protocol_version	=> 1,
@@ -47,8 +54,12 @@ my $pidfile = new MMM::Common::PidFile:: $pidfilename;
 LOGDIE	"Can't run second copy of ", $PROGRAM_NAME	if ($pidfile->is_running());
 WARN	"Unclean start - found stale pid file!"		if ($pidfile->exists());
 
-# Go to background
-Proc::Daemon::Init if (0); # TODO
+unless ($debug) {
+	# Go to background
+	Proc::Daemon::Init();
+	# Init logging again to re-open fds
+	MMM::Common::Log::init('mmm_mon_log.conf');
+}
 $pidfile->create();
 
 # Shutdown flag
@@ -63,10 +74,11 @@ $agent->main();
 # Remove pid file
 $pidfile->remove();
 
+INFO 'END';
 exit(0);
 
 #-----------------------------------------------------------------
 sub SignalHandler() {
-	DEBUG "Signal received: exiting...";
+	INFO "Signal received: exiting...";
 	$shutdown = 1;
 }

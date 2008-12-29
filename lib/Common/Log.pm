@@ -8,9 +8,27 @@ our $VERSION = '0.01';
 
 
 sub init($) {
-	my $filename = shift;
+	my $file = shift;
 
-	# TODO look for config file in several paths, if not present use default config.
+	my @paths = qw(/etc /etc/mmm /etc/mysql-mmm);
+	push @paths, $main::SELF_DIR if defined($main::SELF_DIR);
+
+	# Determine filename
+	my $fullname;
+	foreach my $path (@paths) {
+		if (-r "$path/$file") {
+			$fullname = "$path/$file";
+			last;
+		}
+	}
+
+	# Read configuration from file
+	if ($fullname) {
+		Log::Log4perl->init($fullname);
+		return;
+	}
+
+	# Use default configuration
 	my $conf = q(
 		log4perl.logger = INFO, FileInfo, FileWarn, FileError, FileFatal, MailFatal
 
@@ -57,3 +75,5 @@ sub debug() {
 	Log::Log4perl::Logger->get_root_logger()->add_appender($stdout_appender);
 	Log::Log4perl::Logger->get_root_logger()->level($DEBUG);
 }
+
+1;

@@ -68,8 +68,12 @@ my $pidfile = new MMM::Common::PidFile:: $pidfilename;
 LOGDIE	"Can't run second copy of ", $PROGRAM_NAME	if ($pidfile->is_running());
 WARN	"Unclean start - found stale pid file!"		if ($pidfile->exists());
 
-# Go to background
-Proc::Daemon::Init unless ($debug);
+unless ($debug) {
+	# Go to background
+	Proc::Daemon::Init();
+	# Init logging again to re-open fds
+	MMM::Common::Log::init('mmm_mon_log.conf');
+}
 $pidfile->create();
 
 our $shutdown :shared = 0;		# Shutdown flag

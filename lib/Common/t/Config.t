@@ -50,11 +50,6 @@ isa_ok($config, 'MMM::Common::Config');
 my $test_conf = "$SELF_DIR/mmm_common_config_test.conf";
 write_config_file($test_conf, '');
 
-#$config->read('mmm_common_config_test');
-#$config->check();
-#print Data::Dumper->Dump([$config]);
-#exit(1);
-
 `touch $SELF_DIR/resolv.conf`;
 is($config->_get_filename('mmm_common_config_test'), $test_conf, '_get_filename finds ./mmm_common_config_test.conf');
 stderr_like 

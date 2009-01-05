@@ -23,6 +23,7 @@ our $RULESET = {
 		'ip'					=> { 'required' => ['MONITOR', 'CONTROL'] },
 		'port'					=> { 'default' => '9988' },
 		'pid_path'				=> { 'required' => ['MONITOR'] },
+		'pid_path'				=> { 'required' => ['MONITOR'] },
 		'status_path'			=> { 'required' => ['MONITOR'] },
 		'ping_interval'			=> { 'default' => 1 },
 		'ping_ips'				=> { 'required' => ['MONITOR'], 'multiple' => 1 }
@@ -186,7 +187,7 @@ sub _get_filename($$) {
 
 	$file .= '.conf' unless ($file =~ /\.conf$/);
 	my @paths = qw(/etc /etc/mmm /etc/mysql-mmm);
-	push @paths, $main::SELF_DIR if defined($main::SELF_DIR);
+
 	my $fullname;
 	foreach my $path (@paths) {
 		if (-r "$path/$file") {

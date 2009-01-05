@@ -3,30 +3,19 @@
 use strict;
 use warnings FATAL => 'all';
 use English qw( PROGRAM_NAME );
+use Proc::Daemon;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($INFO);
-
-use Cwd;
-use File::Basename;
-use Proc::Daemon;
 
 # Define protocol version
 use constant MMM_PROTOCOL_VERSION => 1;
 
-# Determine installation dir name
-our $SELF_DIR = dirname(dirname(Cwd::abs_path(__FILE__)));
-
 
 # Include parts of the system
-require $SELF_DIR . '/lib/Common/Config.pm';
-require $SELF_DIR . '/lib/Common/PidFile.pm';
-require $SELF_DIR . '/lib/Common/Role.pm';
-require $SELF_DIR . '/lib/Common/Socket.pm';
-require $SELF_DIR . '/lib/Common/Uptime.pm';
-
-require $SELF_DIR . '/lib/Agent/Agent.pm';
-require $SELF_DIR . '/lib/Agent/Helpers.pm';
-require $SELF_DIR . '/lib/Agent/Role.pm';
+use MMM::Common::Config;
+use MMM::Common::Log;
+use MMM::Common::PidFile;
+use MMM::Agent::Agent;
 
 MMM::Common::Log::init('mmm_agent_log.conf', 'mmmd_agent');
 
@@ -48,7 +37,6 @@ our $agent	= new MMM::Agent::(
 $agent->from_config($config);
 
 my $pidfilename = $config->{host}->{ $config->{this} }->{pid_path};
-$pidfilename = $SELF_DIR . '/' . $pidfilename unless ($pidfilename =~ /^\/.*/);
 my $pidfile = new MMM::Common::PidFile:: $pidfilename;
 
 # Check pid file

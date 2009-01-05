@@ -3,16 +3,8 @@
 # Use mandatory external modules
 use strict;
 use warnings FATAL => 'all';
-use Cwd;
-use File::Basename;
-
-# Determine installation dir name
-our $SELF_DIR = dirname(dirname(dirname(Cwd::abs_path(__FILE__))));
-
-# Include parts of the system
-require $SELF_DIR . '/lib/Common/Config.pm';
-require $SELF_DIR . '/lib/Agent/Helpers/Actions.pm';
-require $SELF_DIR . '/lib/Agent/Helpers/Network.pm';
+use MMM::Common::Config;
+use MMM::Agent::Helpers::Actions;
 
 # Check arguments
 if (scalar(@ARGV) != 0) {

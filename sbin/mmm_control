@@ -7,16 +7,9 @@ use English qw( PROGRAM_NAME );
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($INFO);
 
-use Cwd;
-use File::Basename;
-
-# Determine installation dir name
-our $SELF_DIR = dirname(dirname(Cwd::abs_path(__FILE__)));
-
-
 # Include parts of the system
-require $SELF_DIR . '/lib/Common/Config.pm';
-require $SELF_DIR . '/lib/Common/Socket.pm';
+use MMM::Common::Config;
+use MMM::Common::Socket;
 
 # Read configuration
 our $config = new MMM::Common::Config::;

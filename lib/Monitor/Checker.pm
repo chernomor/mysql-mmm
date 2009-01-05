@@ -128,7 +128,7 @@ sub spawn($) {
 	INFO "Spawning checker '$name'...";
 
 	# TODO cluster
-	my $pid = open2($reader, $writer, "$main::SELF_DIR/bin/monitor/checker $name");
+	my $pid = open2($reader, $writer, $main::config->{monitor}->{bin_path} . "/monitor/checker $name");
 	if (!$pid) {
 		LOGDIE "Can't spawn checker! Error: $!";
 	}

@@ -291,16 +291,20 @@ Determine path of fping binary
 =cut
 
 sub _determine_fping_path() {
-	my @paths = qw(/usr/sbin/ /sbin /usr/bin /bin);
-	push @paths, $main::SELF_DIR . '/bin/sys/' if defined($main::SELF_DIR);
-
-	foreach my $path (@paths) {
-		if (-f "$path/fping" && -x "$path/fping") {
-			$fping_path = "$path/fping";
-			return;
-		}
-	}
+	$fping_path = _determine_path('fping');
 }
 
+sub _determine_path($) {
+	my $program = shift;
+	my @paths = qw(/usr/sbin/ /sbin /usr/bin /bin);
+
+	foreach my $path (@paths) {
+		my $fullpath = "$path/$program";
+		if (-f $fullpath && -x $fullpath) {
+			return $fullpath;
+		}
+	}
+	return undef;
+}
 
 1;

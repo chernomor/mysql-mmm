@@ -7,12 +7,9 @@ use threads::shared;
 use Config;
 use English qw( PROGRAM_NAME );
 use POSIX ':sys_wait_h';
+use Proc::Daemon;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($INFO);
-
-use Cwd;
-use File::Basename;
-use Proc::Daemon;
 
 # Define protocol version
 use constant MMM_PROTOCOL_VERSION => 1;
@@ -20,27 +17,15 @@ use constant MMM_PROTOCOL_VERSION => 1;
 # Check perl for threads support
 $Config{useithreads} or die "Recompile Perl with threads to run this program.";
 
-# Determine installation dir name
-our $SELF_DIR = dirname(dirname(Cwd::abs_path(__FILE__)));
-
 
 # Include parts of the system
-require $SELF_DIR . '/lib/Common/Config.pm';
-require $SELF_DIR . '/lib/Common/Log.pm';
-require $SELF_DIR . '/lib/Common/PidFile.pm';
-require $SELF_DIR . '/lib/Common/Role.pm';
-require $SELF_DIR . '/lib/Common/Socket.pm';
+use MMM::Common::Config;
+use MMM::Common::Log;
+use MMM::Common::PidFile;
+use MMM::Monitor::Monitor;
+use MMM::Monitor::NetworkChecker;
 
-require $SELF_DIR . '/lib/Monitor/Agent.pm';
-require $SELF_DIR . '/lib/Monitor/Agents.pm';
-require $SELF_DIR . '/lib/Monitor/Checker.pm';
-require $SELF_DIR . '/lib/Monitor/CheckResult.pm';
-require $SELF_DIR . '/lib/Monitor/ChecksStatus.pm';
-require $SELF_DIR . '/lib/Monitor/Commands.pm';
-require $SELF_DIR . '/lib/Monitor/Monitor.pm';
-require $SELF_DIR . '/lib/Monitor/NetworkChecker.pm';
-require $SELF_DIR . '/lib/Monitor/Role.pm';
-require $SELF_DIR . '/lib/Monitor/Roles.pm';
+chdir('/');
 
 MMM::Common::Log::init('mmm_mon_log.conf', 'mmmd_mon');
 
@@ -50,10 +35,6 @@ $config->read('mmm_mon');
 $config->check('MONITOR');
 
 
-# Status path is relative to SELF_DIR, if it's relative at all
-if ($config->{monitor}->{status_path} !~ /^\/.*/) {
-	$config->{monitor}->{status_path} = $SELF_DIR . '/' . $config->{monitor}->{status_path};
-}
 
 
 my $debug = 0;
@@ -69,7 +50,6 @@ if (!MMM::Monitor::NetworkChecker->initial_check()) {
 
 
 my $pidfilename = $config->{monitor}->{pid_path};
-$pidfilename = $SELF_DIR . '/' . $pidfilename unless ($pidfilename =~ /^\/.*/);
 my $pidfile = new MMM::Common::PidFile:: $pidfilename;
 
 # Check pid file

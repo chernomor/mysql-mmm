@@ -5,15 +5,12 @@ use strict;
 use warnings FATAL => 'all';
 use English qw( OUTPUT_AUTOFLUSH );
 use Log::Log4perl qw(:easy);
-use Cwd;
-use File::Basename;
 
-# Determine installation dir name
-our $SELF_DIR = dirname(dirname(dirname(Cwd::abs_path(__FILE__))));
+# TODO configurable logging via MMM::Common::Log
 
 # Include parts of the system
-require $SELF_DIR . '/lib/Common/Config.pm';
-require $SELF_DIR . '/lib/Monitor/Checker/Checks.pm';
+use MMM::Common::Config;
+use MMM::Monitor::Checker::Checks;
 
 # Disable output buffering
 $OUTPUT_AUTOFLUSH = 1;

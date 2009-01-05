@@ -2,6 +2,7 @@ package MMM::Agent::Helpers::Actions;
 
 use strict;
 use warnings FATAL => 'all';
+use MMM::Agent::Helpers::Network;
 
 our $VERSION = '0.01';
 

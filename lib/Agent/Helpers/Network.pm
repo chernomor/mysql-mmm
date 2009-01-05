@@ -144,7 +144,7 @@ sub send_arp($$) {
 		$ipaddr =~ /netmask\s*([0-9a-f]+)\s*broadcast\s*([\d\.]+)/i;
 		my $if_bcast = $1;
 		my $if_mask = $2;
-		`$main::SELF_DIR/bin/sys/send_arp -i 100 -r 5 -p /tmp/send_arp $if $ip auto $if_bcast $if_mask`;
+		`/bin/send_arp -i 100 -r 5 -p /tmp/send_arp $if $ip auto $if_bcast $if_mask`;
 	}
 	else {
 		print "ERROR: Unsupported platform!\n";

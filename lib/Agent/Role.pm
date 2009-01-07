@@ -3,6 +3,7 @@ use base 'MMM::Common::Role';
 
 use strict;
 use warnings FATAL => 'all';
+use MMM::Agent::Helpers;
 
 our $VERSION = '0.01';
 

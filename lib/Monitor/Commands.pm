@@ -5,6 +5,11 @@ use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
 use threads;
 use threads::shared;
+use MMM::Common::Socket;
+use MMM::Monitor::Agents;
+use MMM::Monitor::ChecksStatus;
+use MMM::Monitor::Monitor;
+use MMM::Monitor::Roles;
 
 our $VERSION = '0.01';
 

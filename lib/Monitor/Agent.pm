@@ -3,6 +3,8 @@ package MMM::Monitor::Agent;
 use strict;
 use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
+use MMM::Common::Socket;
+use MMM::Monitor::ChecksStatus;
 
 our $VERSION = '0.01';
 

@@ -2,12 +2,17 @@ package MMM::Agent;
 
 use strict;
 use warnings FATAL => 'all';
-use Log::Log4perl qw(:easy);
 use Algorithm::Diff;
+use Class::Struct;
+use Log::Log4perl qw(:easy);
+use MMM::Common::Role;
+use MMM::Common::Socket;
+use MMM::Common::Uptime;
+use MMM::Agent::Helpers;
+use MMM::Agent::Role;
 
 our $VERSION = '0.01';
 
-use Class::Struct;
 
 struct 'MMM::Agent' => {
 	name				=> '$',

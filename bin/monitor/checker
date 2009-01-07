@@ -15,6 +15,13 @@ use MMM::Monitor::Checker::Checks;
 # Disable output buffering
 $OUTPUT_AUTOFLUSH = 1;
 
+# Check if cluster was passed
+my $postfix = "";
+if (scalar(@ARGV) && $ARGV[0] =~ /^@(.*)/) {
+    shift(@ARGV);
+    $postfix = "_$1";
+}
+
 # Check arguments
 if (scalar(@ARGV) != 1) {
 	print "Usage: $0 <check>\n\n";
@@ -27,7 +34,7 @@ my $check_name = shift;
 
 # Read config file
 our $config = new MMM::Common::Config::;
-$config->read('mmm_mon');
+$config->read("mmm_mon$postfix");
 $config->check('MONITOR');
 
 our $check;

@@ -4,6 +4,8 @@ use base 'Class::Singleton';
 use strict;
 use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
+use MMM::Monitor::Agents;
+use MMM::Monitor::Role;
 
 our $VERSION = '0.01';
 

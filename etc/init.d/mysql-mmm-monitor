@@ -1,0 +1,105 @@
+#!/bin/sh
+#
+# mmm_mon      This shell script takes care of starting and stopping
+#              the mmm monitoring daemon.
+#
+# chkconfig: - 64 36
+# description:  MMM Monitor.
+# processname: mmmd_mon
+# config: /etc/mmm_mon.conf
+# pidfile: /var/run/mmmd_mon.pid
+
+# Cluster name (it can be empty for default cases)
+CLUSTER=''
+
+# Paths
+ENABLED=0
+
+test -f /etc/default/mysql-mmm-monitor && . /etc/default/mysql-mmm-monitor
+
+if [ "$ENABLED" = "0" ]; then
+    echo "MMM Monitor disabled, see /etc/default/mysql-mmm-monitor"
+    exit 0
+fi
+
+
+#-----------------------------------------------------------------------
+if [ "$CLUSTER" != "" ]; then
+    MMMD_MON_BIN="/usr/sbin/mmmd_mon @$CLUSTER"
+    MMMD_MON_PIDFILE="/var/run/mmmd_mon-$CLUSTER.pid"
+else 
+    MMMD_MON_BIN="/usr/sbin/mmmd_mon"
+    MMMD_MON_PIDFILE="/var/run/mmmd_mon.pid"
+fi
+
+echo "Daemon bin: '$MMMD_MON_BIN'"
+echo "Daemon pid: '$MMMD_MON_PIDFILE'"
+
+#-----------------------------------------------------------------------
+# See how we were called.
+case "$1" in
+  start)
+        # Start daemon.
+        echo -n "Starting MMM Monitor daemon: "
+        if [ -s $MMMD_MON_PIDFILE ] && kill -0 `cat $MMMD_MON_PIDFILE` 2> /dev/null; then
+            echo " already running."
+        else
+            $MMMD_MON_BIN
+            RETVAL=$?
+            echo "Ok"
+        fi
+        ;;
+
+  stop)
+        # Stop daemon.
+        echo -n "Shutting down MMM Monitor daemon: "
+        if [ -s $MMMD_MON_PIDFILE ]; then
+            pid="$(cat $MMMD_MON_PIDFILE)"
+            cnt=0
+            kill "$pid"
+            while kill -0 "$pid" 2>/dev/null; do
+                RETCODE=$?
+                cnt=`expr "$cnt" + 1`
+                if [ "$cnt" -gt 15 ]; then
+                    kill -9 "$pid"
+                    RETCODE=$?
+                    break
+                fi
+                sleep 2
+                echo -n "."
+            done
+            RETVAL=$?
+            echo " Ok"
+        else
+            echo " not running."
+            RETVAL=0
+        fi
+        ;;
+
+  status)
+        echo -n "Checking MMM Monitor process:"
+        if [ ! -s $MMMD_MON_PIDFILE ]; then
+            echo " not running."
+            exit
+        fi
+        pid="$(cat $MMMD_MON_PIDFILE)"
+        if ! kill -0 "$pid" 2> /dev/null; then
+            echo " not running."
+            exit
+        fi
+        echo " running."
+        exit
+        ;;
+
+  restart|reload)
+        $0 stop
+        $0 start
+        ;;
+
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        RETVAL=1
+        ;;
+esac
+
+exit $RETVAL

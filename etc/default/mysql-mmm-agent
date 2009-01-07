@@ -1,0 +1,2 @@
+# Change to one to enable MMM agent
+ENABLED=0

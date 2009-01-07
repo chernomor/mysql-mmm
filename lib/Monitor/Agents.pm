@@ -5,6 +5,8 @@ use strict;
 use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
 use IO::Handle;
+use MMM::Monitor::Agent;
+use MMM::Monitor::Role;
 
 
 

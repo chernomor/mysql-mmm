@@ -27,11 +27,21 @@ use MMM::Monitor::NetworkChecker;
 
 chdir('/');
 
-MMM::Common::Log::init('mmm_mon_log.conf', 'mmmd_mon');
+our $cluster_name = '';
+my $postfix = '';
+if (scalar(@ARGV) && $ARGV[0] =~ /^@(.*)/) {
+    shift(@ARGV);
+    $cluster_name = $1;
+    $postfix = "_$cluster_name";
+}
+
+
+
+MMM::Common::Log::init("mmm_mon_log$postfix.conf", "mmmd_mon$postfix");
 
 # Read configuration
 our $config = new MMM::Common::Config::;
-$config->read('mmm_mon');
+$config->read("mmm_mon$postfix");
 $config->check('MONITOR');
 
 
@@ -60,7 +70,7 @@ unless ($debug) {
 	# Go to background
 	Proc::Daemon::Init();
 	# Init logging again to re-open fds
-	MMM::Common::Log::init('mmm_mon_log.conf', 'mmmd_mon');
+	MMM::Common::Log::init("mmm_mon_log$postfix.conf", "mmmd_mon$postfix");
 }
 $pidfile->create();
 

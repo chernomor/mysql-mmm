@@ -1,0 +1,91 @@
+#!/bin/sh
+#
+# mmm_agent    This shell script takes care of starting and stopping
+#              the mmm agent daemon.
+#
+# chkconfig: - 64 36
+# description:  MMM Agent.
+# processname: mmmd_agent
+# config: /etc/mmm_agent.conf
+# pidfile: /var/run/mmmd_agent.pid
+
+# Paths
+MMMD_AGENT_BIN="/usr/sbin/mmmd_agent"
+MMMD_AGENT_PIDFILE="/var/run/mmmd_agent.pid"
+ENABLED=0
+
+test -f /etc/default/mysql-mmm-agent && . /etc/default/mysql-mmm-agent
+
+if [ "$ENABLED" = "0" ]; then
+    echo "MMM Agent disabled, see /etc/default/mysql-mmm-agent"
+    exit 0
+fi
+
+#-----------------------------------------------------------------------
+# See how we were called.
+case "$1" in
+  start)
+        # Start daemon.
+        echo -n "Starting MMM Agent daemon... "
+        if [ -s $MMMD_AGENT_PIDFILE ] && kill -0 `cat $MMMD_AGENT_PIDFILE` 2> /dev/null; then
+            echo " already running."
+        else
+            $MMMD_AGENT_BIN
+            RETVAL=$?
+            echo "Ok"
+        fi
+        ;;
+
+  stop)
+        # Stop daemon.
+        echo -n "Shutting down MMM Agent daemon"
+        if [ -s $MMMD_AGENT_PIDFILE ]; then
+            pid="$(cat $MMMD_AGENT_PIDFILE)"
+            cnt=0
+            kill "$pid"
+            while kill -0 "$pid" 2>/dev/null; do
+                RETCODE=$?
+                cnt=`expr "$cnt" + 1`
+                if [ "$cnt" -gt 15 ]; then
+                    kill -9 "$pid"
+                    RETCODE=$?
+                    break
+                fi
+                sleep 2
+                echo -n "."
+            done
+            RETVAL=$?
+            echo " Ok"
+        else
+            echo " not running."
+            RETVAL=0
+        fi
+        ;;
+
+  status)
+        echo -n "Checking MMM Agent process:"
+        if [ ! -s $MMMD_AGENT_PIDFILE ]; then
+            echo " not running."
+            exit
+        fi
+        pid="$(cat $MMMD_AGENT_PIDFILE)"
+        if ! kill -0 "$pid" 2> /dev/null; then
+            echo " not running."
+            exit
+        fi
+        echo " running."
+        exit
+        ;;
+
+  restart|reload)
+        $0 stop
+        $0 start
+        ;;
+
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        RETVAL=1
+        ;;
+esac
+
+exit $RETVAL

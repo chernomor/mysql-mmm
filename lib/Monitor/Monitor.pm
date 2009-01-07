@@ -8,6 +8,13 @@ use Log::Log4perl qw(:easy);
 use Thread::Queue;
 use Data::Dumper;
 use Algorithm::Diff;
+use MMM::Monitor::Agents;
+use MMM::Monitor::Checker;
+use MMM::Monitor::ChecksStatus;
+use MMM::Monitor::Commands;
+use MMM::Monitor::NetworkChecker;
+use MMM::Monitor::Role;
+use MMM::Monitor::Roles;
 
 =head1 NAME
 

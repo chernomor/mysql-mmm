@@ -2,6 +2,7 @@
 MODULEDIR = $(DESTDIR)$(shell eval "`perl -V:installvendorlib`"; echo $$installvendorlib)/MMM
 BINDIR    = $(DESTDIR)/usr/bin/mysql-mmm
 SBINDIR   = $(DESTDIR)/usr/sbin/
+LOGDIR    = $(DESTDIR)/var/log/mysql-mmm
 
 
 blubb:
@@ -18,7 +19,7 @@ test-v:
 	cd lib/Common/t && prove -v
 
 install: 
-	mkdir -p $(DESTDIR) $(MODULEDIR) $(BINDIR) $(SBINDIR)
+	mkdir -p $(DESTDIR) $(MODULEDIR) $(BINDIR) $(SBINDIR) $(LOGDIR)
 	cp -r lib/* $(MODULEDIR)/
 	find $(MODULEDIR) -depth -type d -name '.svn' -exec rm -rf {} \;
 	find $(MODULEDIR) -depth -type d -name 't' -exec rm -rf {} \;

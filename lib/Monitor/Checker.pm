@@ -4,6 +4,7 @@ use strict;
 use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
 use IPC::Open2;
+use MMM::Monitor::CheckResult;
 
 our $VERSION = '0.01';
 
@@ -127,8 +128,8 @@ sub spawn($) {
 
 	INFO "Spawning checker '$name'...";
 
-	# TODO cluster
-	my $pid = open2($reader, $writer, $main::config->{monitor}->{bin_path} . "/monitor/checker $name");
+	my $cluster = ($main::cluster_name ? '@' . $main::cluster_name : '');
+	my $pid = open2($reader, $writer, $main::config->{monitor}->{bin_path} . "/monitor/checker $cluster $name");
 	if (!$pid) {
 		LOGDIE "Can't spawn checker! Error: $!";
 	}

@@ -45,14 +45,14 @@ our $RULESET = {
 		'agent_port'			=> { 'default' => 9989 },
 		'cluster_interface'		=> { 'required' => ['AGENT'] },
 		'mysql_port'			=> { 'default' => 3306 },
-		'lvm_user'				=> { 'required' => ['LVMTOOLS'] },
-		'lvm_password'			=> { 'required' => ['LVMTOOLS'] },
+		'lvm_user'				=> { 'required' => ['TOOLS'] },
+		'lvm_password'			=> { 'required' => ['TOOLS'] },
 		'agent_user'			=> { 'required' => ['AGENT'] },
 		'agent_password'		=> { 'required' => ['AGENT'] },
 		'monitor_user'			=> { 'required' => ['MONITOR'] },
 		'monitor_password'		=> { 'required' => ['MONITOR'] },
-		'replication_user'		=> { 'required' => ['AGENT', 'LVMTOOLS'] },
-		'replication_password'	=> { 'required' => ['AGENT', 'LVMTOOLS'] }
+		'replication_user'		=> { 'required' => ['AGENT', 'TOOLS'] },
+		'replication_password'	=> { 'required' => ['AGENT', 'TOOLS'] }
 		}
 	},
 	'check'					=> { 'create_if_empty' => ['MONITOR'], 'multiple' => 1, 'template' => 'default', 'values' => ['ping', 'mysql', 'rep_backlog', 'rep_threads'], 'section' => {

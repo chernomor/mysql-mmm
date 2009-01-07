@@ -1,4 +1,4 @@
-package MMM::Agent;
+package MMM::Agent::Agent;
 
 use strict;
 use warnings FATAL => 'all';
@@ -14,7 +14,7 @@ use MMM::Agent::Role;
 our $VERSION = '0.01';
 
 
-struct 'MMM::Agent' => {
+struct 'MMM::Agent::Agent' => {
 	name				=> '$',
 	ip					=> '$',
 	port				=> '$',
@@ -113,14 +113,15 @@ sub cmd_get_system_status($) {
 			my $res = MMM::Agent::Helpers::check_ip($self->interface, $ip);
 			my $ret = $? >> 8;
 			return "ERROR: Could not check if IP is configured: $res" if ($ret == 255);
-			next if ($ret == 1);
+			next unless ($ret == 0);
 			# IP is configured...
 			push @roles, new MMM::Common::Role::(name => $role, ip => $ip);
 		}
 	}
 	my $res = MMM::Agent::Helpers::may_write();
-	return "ERROR: Could not check if MySQL is writable: $res" if ($? == 255);
-	my $writable = $? == 0;
+	my $ret = $? >> 8;
+	return "ERROR: Could not check if MySQL is writable: $res" if ($ret == 255);
+	my $writable = ($ret == 1);
 
 	my $answer = join('|', ($writable, join(',', @roles)));
 	return "OK: Returning status!|$answer";

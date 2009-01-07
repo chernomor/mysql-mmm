@@ -88,7 +88,7 @@ sub set_online($) {
 
 	FATAL "Admin changed state of '$host' from $host_state to ONLINE";
 	$agents->set_state($host, 'ONLINE');
-	MMM::Monitor->instance()->send_agent_status($host);
+	MMM::Monitor::Monitor->instance()->send_agent_status($host);
 
     return "OK: State of '$host' changed to ONLINE. Now you can wait some time and check its new roles!";
 }
@@ -113,7 +113,7 @@ sub set_offline($) {
 	FATAL "Admin changed state of '$host' from $host_state to ADMIN_OFFLINE";
 	$agents->set_state($host, 'ADMIN_OFFLINE');
 	MMM::Monitor::Roles->instance()->clear_host_roles($host);
-	MMM::Monitor->instance()->send_agent_status($host);
+	MMM::Monitor::Monitor->instance()->send_agent_status($host);
 
     return "OK: State of '$host' changed to ADMIN_OFFLINE. Now you can wait some time and check all roles!";
 }
@@ -122,7 +122,7 @@ sub set_ip($$) {
 	my $ip		= shift;
 	my $host	= shift;
 
-	return "ERROR: This command is only allowed in passive mode" unless (MMM::Monitor->instance()->passive);
+	return "ERROR: This command is only allowed in passive mode" unless (MMM::Monitor::Monitor->instance()->passive);
 
 	my $agents	= MMM::Monitor::Agents->instance();
 	my $roles	= MMM::Monitor::Roles->instance();
@@ -151,7 +151,7 @@ sub move_role($$) {
 	my $role	= shift;
 	my $host	= shift;
 	
-	return "ERROR: This command is only allowed in active mode" if (MMM::Monitor->instance()->passive);
+	return "ERROR: This command is only allowed in active mode" if (MMM::Monitor::Monitor->instance()->passive);
 
 	my $agents	= MMM::Monitor::Agents->instance();
 	my $roles	= MMM::Monitor::Roles->instance();
@@ -180,13 +180,13 @@ sub move_role($$) {
 	$roles->assign($role, $host);
 
 	# Notify old host (if is_active_master_role($role) this will make the host non writable)
-	MMM::Monitor->instance()->send_agent_status($old_owner);
+	MMM::Monitor::Monitor->instance()->send_agent_status($old_owner);
 
 	# Notify old host (this will make them switch the master)
-	MMM::Monitor->instance()->notify_slaves($host) if ($roles->is_active_master_role($role));
+	MMM::Monitor::Monitor->instance()->notify_slaves($host) if ($roles->is_active_master_role($role));
 
 	# Notify new host (if is_active_master_role($role) this will make the host writable)
-	MMM::Monitor->instance()->send_agent_status($host);
+	MMM::Monitor::Monitor->instance()->send_agent_status($host);
 	
 	return "OK: Role '$role' has been moved from '$old_owner' to '$host'. Now you can wait some time and check new roles info!";
 	
@@ -200,7 +200,7 @@ Get information about current mode (active or passive)
 =cut
 
 sub mode() {
-	return "PASSIVE" if (MMM::Monitor->instance()->passive);
+	return "PASSIVE" if (MMM::Monitor::Monitor->instance()->passive);
 	return "ACTIVE";
 }
 
@@ -212,11 +212,11 @@ Switch to active mode.
 =cut
 
 sub set_active() {
-	return "OK: Already in active mode" unless (MMM::Monitor->instance()->passive);
+	return "OK: Already in active mode" unless (MMM::Monitor::Monitor->instance()->passive);
 
 
 	# Send status to agents
-	MMM::Monitor->instance()->send_status_to_agents();
+	MMM::Monitor::Monitor->instance()->send_status_to_agents();
 
 	# Clear 'bad' roles
 	my $agents	= MMM::Monitor::Agents->instance();
@@ -226,7 +226,7 @@ sub set_active() {
 	}
 
 
-	MMM::Monitor->instance()->passive(0);
+	MMM::Monitor::Monitor->instance()->passive(0);
 	return "OK: Switched into active mode.";
 }
 
@@ -238,10 +238,23 @@ Switch to passive mode.
 =cut
 
 sub set_passive() {
-	return "OK: Already in passive mode" if (MMM::Monitor->instance()->passive);
+	return "OK: Already in passive mode" if (MMM::Monitor::Monitor->instance()->passive);
 
-	MMM::Monitor->instance()->passive(1);
+	MMM::Monitor::Monitor->instance()->passive(1);
 	return "OK: Switched into passive mode.";
+}
+
+sub help() {
+	return: "Valid commands are:
+    show                         - show status
+    set_online <host>            - set host <host> online
+    set_offline <host>           - set host <host> offline
+    mode                         - print current mode.
+    set_active                   - switch into active mode.
+    set_passive                  - switch into passive mode.
+    move_role <role> <host>      - move exclusive role <role> to host <host>
+    set_ip <ip> <host>           - set role with ip <ip> to host <host>
+";
 }
 
 1;

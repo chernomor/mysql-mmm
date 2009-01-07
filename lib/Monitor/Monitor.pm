@@ -1,4 +1,4 @@
-package MMM::Monitor;
+package MMM::Monitor::Monitor;
 
 use strict;
 use warnings FATAL => 'all';
@@ -18,7 +18,7 @@ use MMM::Monitor::Roles;
 
 =head1 NAME
 
-MMM::Monitor - single instance class with monitor logic
+MMM::Monitor::Monitor - single instance class with monitor logic
 
 =cut
 
@@ -30,7 +30,7 @@ sub instance() {
 	return $main::monitor;
 }
 
-struct 'MMM::Monitor' => {
+struct 'MMM::Monitor::Monitor' => {
 	agents				=> 'MMM::Monitor::Agents',
 	checker_queue		=> 'Thread::Queue',
 	checks_status		=> 'MMM::Monitor::ChecksStatus',
@@ -509,7 +509,7 @@ sub _process_commands($) {
 		elsif ($command eq 'set_offline'	&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_offline($args[0]);	}
 		elsif ($command eq 'move_role'		&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::move_role($args[0], $args[1]);	}
 		elsif ($command eq 'set_ip'			&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::set_ip($args[0], $args[1]);		}
-		else { $res = "Invalid command '$cmdline'"; }
+		else { $res = "Invalid command '$cmdline'\n\n" . MMM::Monitor::Commands::help(); }
 
 		# Enqueue result
 		$self->result_queue->enqueue($res);

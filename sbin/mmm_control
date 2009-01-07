@@ -16,7 +16,7 @@ our $config = new MMM::Common::Config::;
 $config->read('mmm_mon');
 $config->check('CONTROL');
 
-die 'Usage: $0 command [params]' if (scalar(@ARGV) < 1);
+die "See '$0 help' for usage information" if (scalar(@ARGV) < 1);
 
 my $socket = MMM::Common::Socket::create_sender($config->{monitor}->{ip}, $config->{monitor}->{port}, 10);
 die "Can't connect to monitor daemon" unless ($socket && $socket->connected);

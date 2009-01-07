@@ -52,7 +52,7 @@ $debug = 1 unless ($config->{debug} =~ /^(false|off|no|0)$/i);
 
 MMM::Common::Log::debug() if ($debug);
 
-our $monitor	= new MMM::Monitor::();
+our $monitor	= new MMM::Monitor::Monitor::();
 
 if (!MMM::Monitor::NetworkChecker->initial_check()) {
 	LOGDIE "DIED: Network is unreachable";

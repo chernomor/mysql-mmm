@@ -54,8 +54,16 @@ sub ping() {
 
 
 sub show() {
-	my $agents = MMM::Monitor::Agents->instance();
-	return $agents->get_status_info();
+	my $agents	= MMM::Monitor::Agents->instance();
+	my $monitor	= MMM::Monitor::Monitor->instance();
+	my $ret = '';
+	if ($monitor->passive) {
+		$ret .= "--- Monitor is in PASSIVE MODE ---\n";
+		$ret .= sprintf("Cause: %s\n", $monitor->passive_info);
+		$ret =~ s/^/# /mg;
+	}
+	$ret .= $agents->get_status_info();
+	return $ret;
 }
 
 sub set_online($) {
@@ -144,6 +152,13 @@ sub set_ip($$) {
 	FATAL "Admin set role '$role($ip)' to host '$host'";
 
 	$roles->set_role($role, $ip, $host);
+
+	# Determine all roles and propagate them to agent objects.
+	foreach my $one_host (@{ $roles->get_valid_hosts($role) }) {
+		my $agent = $agents->get($one_host);
+		my @roles = sort($roles->get_host_roles($one_host));
+		$agent->roles(\@roles);
+	}
 	return "OK: Set role '$role($ip)' to host '$host'.";
 }
 
@@ -200,8 +215,8 @@ Get information about current mode (active or passive)
 =cut
 
 sub mode() {
-	return "PASSIVE" if (MMM::Monitor::Monitor->instance()->passive);
-	return "ACTIVE";
+	return 'PASSIVE' if (MMM::Monitor::Monitor->instance()->passive);
+	return 'ACTIVE';
 }
 
 
@@ -212,7 +227,7 @@ Switch to active mode.
 =cut
 
 sub set_active() {
-	return "OK: Already in active mode" unless (MMM::Monitor::Monitor->instance()->passive);
+	return 'OK: Already in active mode.' unless (MMM::Monitor::Monitor->instance()->passive);
 
 
 	# Send status to agents
@@ -227,7 +242,8 @@ sub set_active() {
 
 
 	MMM::Monitor::Monitor->instance()->passive(0);
-	return "OK: Switched into active mode.";
+	MMM::Monitor::Monitor->instance()->passive_info('');
+	return 'OK: Switched into active mode.';
 }
 
 
@@ -238,14 +254,17 @@ Switch to passive mode.
 =cut
 
 sub set_passive() {
-	return "OK: Already in passive mode" if (MMM::Monitor::Monitor->instance()->passive);
+	return 'OK: Already in passive mode.' if (MMM::Monitor::Monitor->instance()->passive);
 
 	MMM::Monitor::Monitor->instance()->passive(1);
-	return "OK: Switched into passive mode.";
+	MMM::Monitor::Monitor->instance()->passive_info('Admin switched to passive mode.');
+	return 'OK: Switched into passive mode.';
 }
 
 sub help() {
 	return: "Valid commands are:
+    help                         - show this message
+    ping                         - ping monitor
     show                         - show status
     set_online <host>            - set host <host> online
     set_offline <host>           - set host <host> offline

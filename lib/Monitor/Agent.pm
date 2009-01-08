@@ -36,8 +36,14 @@ sub _send_command {
 
 	DEBUG sprintf("Sending command '$cmd(%s)' to %s (%s:%s)", join(', ', @params), $self->host, $self->ip, $self->port);
 
-	my $socket = MMM::Common::Socket::create_sender($self->ip, $self->port, 10);
-	return 0 unless ($socket && $socket->connected);
+	my $socket;
+CONNECT: {
+	$socket = MMM::Common::Socket::create_sender($self->ip, $self->port, 10);
+	unless ($socket && $socket->connected) {
+		redo CONNECT if ($!{EINTR});
+		return 0;
+	}
+}
 
 
 	print $socket join('|', $cmd, main::MMM_PROTOCOL_VERSION, $self->host, @params), "\n";

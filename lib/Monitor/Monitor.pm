@@ -37,7 +37,8 @@ struct 'MMM::Monitor::Monitor' => {
 	command_queue		=> 'Thread::Queue',
 	result_queue		=> 'Thread::Queue',
 	roles				=> 'MMM::Monitor::Roles',
-	passive				=> '$'
+	passive				=> '$',
+	passive_info		=> '$'
 };
 
 
@@ -59,9 +60,12 @@ sub init($) {
 	$self->command_queue(new Thread::Queue::);
 	$self->result_queue(new Thread::Queue::);
 	$self->roles(MMM::Monitor::Roles->instance());
+	$self->passive_info('');
 
 	# Go into passive mode if we have no network connection at startup
 	$self->passive(!$main::have_net);
+	$self->passive_info('No network connection during start up.') unless ($main::have_net);
+
 
 	# Figure out current status. Go into passive mode if there are discrepancies
 	$agents->load_status();
@@ -75,7 +79,14 @@ sub init($) {
 		$res = $agent->cmd_get_agent_status();
 		if ($res =~ /^OK/) {
 			my ($msg, $state, $roles_str, $master) = split('\|', $res);
-			my @roles = sort(split(/\,/, $roles_str));
+			my @roles_str_arr = sort(split(/\,/, $roles_str));
+			my @roles;
+			foreach my $role_str (@roles_str_arr) {
+				my $role = MMM::Monitor::Role->from_string($role_str);
+				if (defined($role)) {
+					push @roles, $role;
+				}
+			}
 			$agent_status->{$host} = {
 				state	=> $state,
 				roles	=> \@roles,
@@ -141,7 +152,34 @@ sub init($) {
 
 	unless ($status) {
 		$self->passive(1);
-		FATAL "Switching to PASSIVE MODE!!!\nStored status:\n", $agents->get_status_info(), "\n", Data::Dumper->Dump([$agent_status, $system_status], ['Agent status', 'System status']);
+		my $agent_status_str = '';
+		foreach my $host (sort(keys(%{$agent_status}))) {
+			$agent_status_str .= sprintf(
+				"  %s %s. Roles: %s. Master: %s\n",
+				$host,
+				$agent_status->{$host}->{state},
+				scalar(@{$agent_status->{$host}->{roles}}) > 0 ? join(', ', sort(@{$agent_status->{$host}->{roles}})) : 'none',
+				$agent_status->{$host}->{master} ? $agent_status->{$host}->{master} : 'unknown'
+			);
+		}
+		my $system_status_str = '';
+		foreach my $host (sort(keys(%{$system_status}))) {
+			$system_status_str .= sprintf(
+				"  %s %s. Roles: %s\n",
+				$host,
+				$system_status->{$host}->{writable} ? 'writable' : 'readonly',
+				scalar(@{$system_status->{$host}->{roles}}) > 0 ? join(', ', sort(@{$system_status->{$host}->{roles}})) : 'none'
+			);
+		}
+		my $status_str = sprintf("\nStored status:\n%s\nAgent status:\n%s\nSystem status:\n%s", $agents->get_status_info(), $agent_status_str, $system_status_str);
+		$self->passive_info("Discrepancies between stored status, agent status and system status during startup.\n" . $status_str);
+		FATAL "Switching to PASSIVE MODE!!! $status_str";
+		foreach my $host (keys(%{$main::config->{host}})) {
+			my $agent = $agents->get($host);
+
+			# Set unknown hosts to AWAITING_RECOVERY
+			$agent->state('AWAITING_RECOVERY') if ($agent->state eq 'UNKNOWN');
+		}
 		return;
 	}
 
@@ -206,9 +244,9 @@ sub main($) {
 		$self->_distribute_roles();
 		$self->send_status_to_agents();
 
-		# sleep 1 second, wake up if command queue gets filled
+		# sleep 3 seconds, wake up if command queue gets filled
 		lock($command_queue);
-		cond_timedwait($command_queue, time() + 1); 
+		cond_timedwait($command_queue, time() + 3); 
 	}
 
 	foreach my $thread (@threads) {

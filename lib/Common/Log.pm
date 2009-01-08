@@ -33,35 +33,40 @@ sub init($$) {
 	my $conf = "
 		log4perl.logger = INFO, FileInfo, FileWarn, FileError, FileFatal, MailFatal
 
-		log4perl.appender.FileInfo            = Log::Log4perl::Appender::File
-		log4perl.appender.FileInfo.filename   = /var/log/mysql-mmm/$progam.info
-		log4perl.appender.FileInfo.layout     = SimpleLayout
-		log4perl.appender.FileInfo.Threshold  = INFO 
-		log4perl.appender.FileInfo.recreate   = 1
+		log4perl.appender.FileInfo                          = Log::Log4perl::Appender::File
+		log4perl.appender.FileInfo.Threshold                = INFO 
+		log4perl.appender.FileInfo.filename                 = /var/log/mysql-mmm/$progam.info
+		log4perl.appender.FileInfo.recreate                 = 1
+		log4perl.appender.FileInfo.layout                   = PatternLayout
+		log4perl.appender.FileInfo.layout.ConversionPattern = %d %m%n
 
-		log4perl.appender.FileWarn            = Log::Log4perl::Appender::File
-		log4perl.appender.FileWarn.filename   = /var/log/mysql-mmm/$progam.warn
-		log4perl.appender.FileWarn.layout     = SimpleLayout
-		log4perl.appender.FileWarn.Threshold  = WARN 
-		log4perl.appender.FileWarn.recreate   = 1
+		log4perl.appender.FileWarn                          = Log::Log4perl::Appender::File
+		log4perl.appender.FileWarn.Threshold                = WARN 
+		log4perl.appender.FileWarn.filename                 = /var/log/mysql-mmm/$progam.warn
+		log4perl.appender.FileWarn.recreate                 = 1
+		log4perl.appender.FileWarn.layout                   = PatternLayout
+		log4perl.appender.FileWarn.layout.ConversionPattern = %d %m%n
 
-		log4perl.appender.FileError           = Log::Log4perl::Appender::File
-		log4perl.appender.FileError.filename  = /var/log/mysql-mmm/$progam.error
-		log4perl.appender.FileError.layout    = SimpleLayout
-		log4perl.appender.FileError.Threshold = ERROR 
-		log4perl.appender.FileError.recreate  = 1
+		log4perl.appender.FileError                         = Log::Log4perl::Appender::File
+		log4perl.appender.FileError.Threshold               = ERROR 
+		log4perl.appender.FileError.filename                = /var/log/mysql-mmm/$progam.error
+		log4perl.appender.FileError.recreate                = 1
+		log4perl.appender.FileError.layout                  = PatternLayout
+		log4perl.appender.FileError.layout.ConversionPattern= %d %m%n
 
-		log4perl.appender.FileFatal           = Log::Log4perl::Appender::File
-		log4perl.appender.FileFatal.filename  = /var/log/mysql-mmm/$progam.fatal
-		log4perl.appender.FileFatal.layout    = SimpleLayout
-		log4perl.appender.FileFatal.Threshold = FATAL 
-		log4perl.appender.FileFatal.recreate  = 1
+		log4perl.appender.FileFatal                         = Log::Log4perl::Appender::File
+		log4perl.appender.FileFatal.Threshold               = FATAL 
+		log4perl.appender.FileFatal.filename                = /var/log/mysql-mmm/$progam.fatal
+		log4perl.appender.FileFatal.recreate                = 1
+		log4perl.appender.FileFatal.layout                  = PatternLayout
+		log4perl.appender.FileFatal.layout.ConversionPattern= %d %m%n
 
-		log4perl.appender.MailFatal           = Log::Dispatch::Email::MailSend
-		log4perl.appender.MailFatal.to        = root
-		log4perl.appender.MailFatal.subject   = FATAL error in $progam
-		log4perl.appender.MailFatal.layout    = SimpleLayout
-		log4perl.appender.MailFatal.Threshold = FATAL 
+		log4perl.appender.MailFatal                         = Log::Dispatch::Email::MailSend
+		log4perl.appender.MailFatal.Threshold               = FATAL 
+		log4perl.appender.MailFatal.to                      = root
+		log4perl.appender.MailFatal.subject                 = FATAL error in $progam
+		log4perl.appender.MailFatal.layout                  = PatternLayout
+		log4perl.appender.MailFatal.layout.ConversionPattern= %d %m%n
 	";
 	Log::Log4perl->init(\$conf);
 

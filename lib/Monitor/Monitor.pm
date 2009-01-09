@@ -324,7 +324,7 @@ sub _check_host_states($) {
 			}
 
 			# ONLINE -> REPLICATION_FAIL
-			if ($ping && $mysql && !$rep_threads && $peer_state eq 'ONLINE') {
+			if ($ping && $mysql && !$rep_threads && $peer_state eq 'ONLINE' && $checks->ping($peer) && $checks->mysql($peer)) {
 				FATAL "State of host '$host' changed from $state to REPLICATION_FAIL";
 				$agent->state('REPLICATION_FAIL');
 				$self->roles->clear_host_roles($host);
@@ -333,7 +333,7 @@ sub _check_host_states($) {
 			}
 
 			# ONLINE -> REPLICATION_DELAY
-			if ($ping && $mysql && !$rep_backlog && $rep_threads && $peer_state eq 'ONLINE') {
+			if ($ping && $mysql && !$rep_backlog && $rep_threads && $peer_state eq 'ONLINE' && $checks->ping($peer) && $checks->mysql($peer)) {
 				FATAL "State of host '$host' changed from $state to REPLICATION_DELAY";
 				$agent->state('REPLICATION_DELAY');
 				$self->roles->clear_host_roles($host);

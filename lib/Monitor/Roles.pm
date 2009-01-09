@@ -150,6 +150,24 @@ sub get_exclusive_role_owner($$) {
 }
 
 
+=item get_exclusive_role_ip($role)
+
+Get the ip of an exclusive role $role
+
+=cut
+
+sub get_exclusive_role_ip($$) {
+	my $self	= shift;
+	my $role	= shift;
+
+	my $role_info = $self->{$role};
+	return undef unless $role_info;
+
+	my @ips = keys( %{ $role_info->{ips} } );
+	return $ips[0];
+}
+
+
 =item clear_host_roles($host)
 
 Remove all roles from host $host.

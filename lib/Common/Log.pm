@@ -75,9 +75,11 @@ sub init($$) {
 sub debug() {
 	my $stdout_appender =  Log::Log4perl::Appender->new(
 		'Log::Log4perl::Appender::Screen',
-		name      => "screenlog",
+		name      => 'screenlog',
 		stderr    => 0
 	);
+	my $layout = Log::Log4perl::Layout::PatternLayout->new('%d %m%n');
+	$stdout_appender->layout($layout);
 	Log::Log4perl::Logger->get_root_logger()->add_appender($stdout_appender);
 	Log::Log4perl::Logger->get_root_logger()->level($DEBUG);
 }

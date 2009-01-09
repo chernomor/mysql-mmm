@@ -188,11 +188,14 @@ sub move_role($$) {
 	my $agent = MMM::Monitor::Agents->instance()->get($host);
 	return "ERROR: Can't reach agent daemon on '$host'! Can't move roles there!" unless ($agent->cmd_ping());
 
+	my $ip = $roles->get_exclusive_role_ip($role);
+	return "Error: Role $role has no IP." unless ($ip);
 
 	FATAL "Admin moved role '$role' from '$old_owner' to '$host'";
 
-	# Assign role new host
-	$roles->assign($role, $host);
+	# Assign role to new host
+	my $role_obj = new MMM::Common::Role(name => $role, ip => $ip);
+	$roles->assign($role_obj, $host);
 
 	# Notify old host (if is_active_master_role($role) this will make the host non writable)
 	MMM::Monitor::Monitor->instance()->send_agent_status($old_owner);

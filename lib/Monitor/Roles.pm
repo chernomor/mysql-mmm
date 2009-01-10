@@ -327,7 +327,7 @@ sub move_one_ip($$$$) {
 		my $ip_info = $self->{$role}->{ips}->{$ip};
 		next unless ($ip_info->{assigned_to} eq $host1);
 
-		INFO sprintf("Moving role '$role' with ip '$ip' from host '$host1' to host '$host2'", $role, $ip, $host1);
+		FATAL "Moving role '$role' with ip '$ip' from host '$host1' to host '$host2'";
 		$ip_info->{assigned_to} = $host2;
 		return 1;
 	}

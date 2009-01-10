@@ -358,8 +358,11 @@ sub _check_host_states($) {
 			if ($ping && $mysql && $rep_backlog && $rep_threads) {
 				my $uptime_diff = $agent->uptime - $agent->last_uptime;
 				next unless ($agent->last_uptime > 0 && $uptime_diff > 0 && $uptime_diff < 60);
-				next unless ($agent->mode eq 'master' && $peer_state eq 'ONLINE' && $checks->rep_backlog($peer) && $checks->rep_threads($peer));
-				FATAL "State of host '$host' changed from $state to ONLINE";
+				next if ($agent->flapping);
+				if ($agent->mode eq 'master') {
+					next unless ($peer_state eq 'ONLINE' && $checks->rep_backlog($peer) && $checks->rep_threads($peer));
+				}
+				FATAL "State of host '$host' changed from $state to ONLINE because it was down for only $uptime_diff seconds";
 				$agent->state('ONLINE');
 				$self->send_agent_status($host);
 				next;
@@ -405,6 +408,12 @@ sub _check_host_states($) {
 			# REPLICATION_DELAY || REPLICATION_FAIL -> ONLINE
 			if ($ping && $mysql && (($rep_backlog && $rep_threads) || $peer_state ne 'ONLINE')
 			) {
+				if ($agent->flapping) {
+					FATAL "State of host '$host' changed from $state to AWAITING_RECOVERY (because it's flapping)";
+					$agent->state('AWAITING_RECOVERY');
+					$self->send_agent_status($host);
+					next;
+				}
 				FATAL "State of host '$host' changed from $state to ONLINE";
 				$agent->state('ONLINE');
 				$self->send_agent_status($host);

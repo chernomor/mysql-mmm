@@ -60,7 +60,7 @@ sub main($$) {
 			# If success
 			if ($res =~ /^OK/) {
 				next if ($failures->{$host_name}->{state} == 1);
-				FATAL "Check '$check_name' on '$host_name' is ok!";
+				INFO "Check '$check_name' on '$host_name' is ok!";
 				$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 1));
 				$failures->{$host_name}->{time}		= 0;
 				$failures->{$host_name}->{state}	= 1;
@@ -79,7 +79,7 @@ sub main($$) {
 				
 				next if ($failure_age < $options->{trap_period});
 
-				FATAL "Check '$check_name' on '$host_name' has failed for $failure_age seconds!";
+				ERROR "Check '$check_name' on '$host_name' has failed for $failure_age seconds!";
 				$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 0));
 				$failures->{$host_name}->{state}	= 0;
 				next;

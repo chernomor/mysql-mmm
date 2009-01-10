@@ -96,6 +96,7 @@ sub set_online($) {
 
 	FATAL "Admin changed state of '$host' from $host_state to ONLINE";
 	$agents->set_state($host, 'ONLINE');
+	$agent->flapping(0);
 	MMM::Monitor::Monitor->instance()->send_agent_status($host);
 
     return "OK: State of '$host' changed to ONLINE. Now you can wait some time and check its new roles!";

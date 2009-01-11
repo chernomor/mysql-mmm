@@ -405,15 +405,18 @@ sub _check_host_states($) {
 		########################################################################
 
 		if ($state eq 'REPLICATION_DELAY' || $state eq 'REPLICATION_FAIL') {
-			# REPLICATION_DELAY || REPLICATION_FAIL -> ONLINE
 			if ($ping && $mysql && (($rep_backlog && $rep_threads) || $peer_state ne 'ONLINE')
 			) {
+
+				# REPLICATION_DELAY || REPLICATION_FAIL -> AWAITING_RECOVERY
 				if ($agent->flapping) {
 					FATAL "State of host '$host' changed from $state to AWAITING_RECOVERY (because it's flapping)";
 					$agent->state('AWAITING_RECOVERY');
 					$self->send_agent_status($host);
 					next;
 				}
+
+				# REPLICATION_DELAY || REPLICATION_FAIL -> ONLINE
 				FATAL "State of host '$host' changed from $state to ONLINE";
 				$agent->state('ONLINE');
 				$self->send_agent_status($host);

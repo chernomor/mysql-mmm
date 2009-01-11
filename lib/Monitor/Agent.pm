@@ -33,26 +33,25 @@ sub state {
 	if (@_) {
 		my $new_state = shift;
 		my $old_state = $self->{'MMM::Monitor::Agent::state'};
-		unless ($old_state eq $new_state) {
+
+		if ($old_state ne $new_state && $main::config->{monitor}->{flap_count}) {
 			if ($old_state eq 'ONLINE' and $new_state ne 'ADMIN_OFFLINE') {
-				if (!$self->{'MMM::Monitor::Agent::flapstart'}
-				|| $self->{'MMM::Monitor::Agent::flapstart'} < time() - 60 * 60 * 1
-				) {
-					$self->{'MMM::Monitor::Agent::flapstart'} = time();
-					$self->{'MMM::Monitor::Agent::flapcount'} = 1;
+				if (!$self->flapstart || $self->flapstart < time() - $main::config->{monitor}->{flap_duration}) {
+					$self->flapstart(time());
+					$self->flapcount(1);
 				}
 				else {
 					$self->{'MMM::Monitor::Agent::flapcount'}++;
-					if ($self->{'MMM::Monitor::Agent::flapcount'} >= 3) {
-						$self->{'MMM::Monitor::Agent::flapping'} = 1;
-						$self->{'MMM::Monitor::Agent::flapstart'} = 0;
+					if ($self->flapcount > $main::config->{monitor}->{flap_count}) {
+						$self->flapping(1);
+						$self->flapstart(0);
 						FATAL sprintf('Host %s is flapping!', $self->host);
 					}
 				}
 			}
 		}
 		$self->{'MMM::Monitor::Agent::state'} = $new_state;
-		warn "Too many args to state" if @_;
+		warn 'Too many args to state' if @_;
 	}
 	return $self->{'MMM::Monitor::Agent::state'};
 }
@@ -69,7 +68,7 @@ sub _send_command {
 		return 0;
 	}
 
-	DEBUG sprintf("Sending command '$cmd(%s)' to %s (%s:%s)", join(', ', @params), $self->host, $self->ip, $self->port);
+	DEBUG sprintf("Sending command '%s(%s)' to %s (%s:%s)", $cmd, join(', ', @params), $self->host, $self->ip, $self->port);
 
 	my $socket;
 CONNECT: {

@@ -11,9 +11,15 @@ Log::Log4perl->easy_init($INFO);
 use MMM::Common::Config;
 use MMM::Common::Socket;
 
+my $postfix = '';
+if (scalar(@ARGV) && $ARGV[0] =~ /^@(.*)/) {
+    shift(@ARGV);
+    $postfix = "_$1";
+}
+
 # Read configuration
 our $config = new MMM::Common::Config::;
-$config->read('mmm_mon');
+$config->read("mmm_mon$postfix");
 $config->check('CONTROL');
 
 die "See '$0 help' for usage information" if (scalar(@ARGV) < 1);

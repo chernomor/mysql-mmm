@@ -397,7 +397,7 @@ sub _check_host_states($) {
 		}
 		if ($state eq 'REPLICATION_DELAY') {
 	        # REPLICATION_DELAY -> REPLICATION_FAIL
-			if ($ping && $mysql && $rep_backlog && !$rep_threads) {
+			if ($ping && $mysql && !$rep_threads) {
 				FATAL "State of host '$host' changed from $state to REPLICATION_FAIL";
 				$agent->state('REPLICATION_FAIL');
 				next;

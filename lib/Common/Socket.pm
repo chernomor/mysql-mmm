@@ -32,7 +32,7 @@ sub create_listener($$) {
 	my $socket_class = 'IO::Socket::INET';
 	my %socket_opts;
 	my $err = sub {''};
-	if (defined($main::config->{'socket'}) && $main::config->{'socket'}->{type} eq "ssl") {
+	if (defined($main::config->{'socket'}) && $main::config->{'socket'}->{type} eq 'ssl') {
  		require IO::Socket::SSL;
 		$socket_class = 'IO::Socket::SSL';
 		%socket_opts = (

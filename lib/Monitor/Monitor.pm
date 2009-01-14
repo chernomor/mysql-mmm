@@ -287,6 +287,8 @@ sub _check_host_states($) {
 	my $checks	= $self->checks_status;
 	my $agents	= MMM::Monitor::Agents->instance();
 
+	my $active_master = $self->roles->get_active_master();
+
 	foreach my $host (keys(%{$main::config->{host}})) {
 
 		$agents->save_status() unless ($self->passive);
@@ -300,7 +302,7 @@ sub _check_host_states($) {
 
 		my $peer	= $main::config->{host}->{$host}->{peer};
 		if (!$peer && $agent->mode eq 'slave') {
-			$peer	= $self->roles->get_active_master();
+			$peer	= $active_master
 		}
 
 		my $peer_state = '';
@@ -322,6 +324,9 @@ sub _check_host_states($) {
 				# TODO kill host (remove ips, drop connections, iptable connections, ...) if sending state was not ok
 				next;
 			}
+
+			# replication failure on active master is irrelevant.
+			next if ($host eq $active_master);
 
 			# ONLINE -> REPLICATION_FAIL
 			if ($ping && $mysql && !$rep_threads && $peer_state eq 'ONLINE' && $checks->ping($peer) && $checks->mysql($peer)) {
@@ -359,9 +364,6 @@ sub _check_host_states($) {
 				my $uptime_diff = $agent->uptime - $agent->last_uptime;
 				next unless ($agent->last_uptime > 0 && $uptime_diff > 0 && $uptime_diff < 60);
 				next if ($agent->flapping);
-				if ($agent->mode eq 'master') {
-					next unless ($peer_state eq 'ONLINE' && $checks->rep_backlog($peer) && $checks->rep_threads($peer));
-				}
 				FATAL "State of host '$host' changed from $state to ONLINE because it was down for only $uptime_diff seconds";
 				$agent->state('ONLINE');
 				$self->send_agent_status($host);

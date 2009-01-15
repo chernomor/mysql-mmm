@@ -32,5 +32,6 @@ release-archives:
 release-debs: release-archives
 	cp $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION).tar.gz $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION).orig.tar.gz
 	cp -r debian $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/
+	rm -rf $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/debian/.svn/
 	-cd $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/ && dpkg-buildpackage -rfakeroot
 	

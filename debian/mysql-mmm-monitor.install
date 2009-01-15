@@ -1,4 +1,5 @@
-lib/Monitor usr/share/perl5/MMM/
 bin/monitor usr/bin/mysql-mmm/
-sbin/mmmd_mon usr/sbin/
+etc/mysql-mmm/mmm_mon.conf etc/mysql-mmm/
+lib/Monitor usr/share/perl5/MMM/
 sbin/mmm_control usr/sbin/
+sbin/mmmd_mon usr/sbin/

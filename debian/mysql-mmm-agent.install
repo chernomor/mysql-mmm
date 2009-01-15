@@ -1,3 +1,4 @@
-lib/Agent usr/share/perl5/MMM/
 bin/agent usr/bin/mysql-mmm/
+etc/mysql-mmm/mmm_agent.conf etc/mysql-mmm/
+lib/Agent usr/share/perl5/MMM/
 sbin/mmmd_agent usr/sbin/

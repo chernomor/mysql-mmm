@@ -1,1 +1,2 @@
+etc/mysql-mmm/mmm_common.conf  etc/mysql-mmm/
 lib/Common usr/share/perl5/MMM/

@@ -1,4 +1,9 @@
-MODULEDIR = $(DESTDIR)$(shell eval "`perl -V:installvendorlib`"; echo $$installvendorlib)/MMM/
+
+ifndef INSTALLDIR
+INSTALLDIR = installvendorlib
+endif
+
+MODULEDIR = $(DESTDIR)$(shell eval "`perl -V:${INSTALLDIR}`"; echo "$$${INSTALLDIR}")/MMM/
 BINDIR    = $(DESTDIR)/usr/bin/mysql-mmm/
 SBINDIR   = $(DESTDIR)/usr/sbin/
 LOGDIR    = $(DESTDIR)/var/log/mysql-mmm/
@@ -10,6 +15,4 @@ install:
 		cp -r bin/agent $(BINDIR)
 		cp -r bin/monitor $(BINDIR)
 		cp -r etc/init.d $(ETCDIR)
-		[ -f $(DESTDIR)/etc/default/mysql-mmm-agent   ] || cp -r etc/default/mysql-mmm-agent   $(DESTDIR)/etc/default/mysql-mmm-agent
-		[ -f $(DESTDIR)/etc/default/mysql-mmm-monitor ] || cp -r etc/default/mysql-mmm-monitor $(DESTDIR)/etc/default/mysql-mmm-monitor
 		cp sbin/mmm* $(SBINDIR)

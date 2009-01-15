@@ -1,0 +1,35 @@
+@node Internals
+@chapter Internals
+@cindex internals
+
+@node Monitor Internals
+@section Monitor
+@cindex Monitor, mmmd_mon
+
+The monitor consists of several threads, which are:
+@enumerate
+@item
+Ping thread
+@item
+Checker threads
+@item
+Main thread
+@end enumerate
+
+@node Ping thread
+@subsection Ping thread
+
+The ping thread checks if the network connection of the monitor is working.
+It pings all @var{ping_ips} defined in the @var{monitor} section of the config file 
+and sleeps @var{ping_interval} seconds before pinging them again. If at least one 
+ip is reachable, the network is considered to be working.
+
+@node Checker threads
+@subsection Checker threads
+
+There are four checker threads - one for each check (@pxref{Checks}). They execute the checks on all hosts continuously, sleeping @var{check_period} seconds between each round. If a check does not succeed for @var{trap_period} or more seconds it is considered as failed and the main thread will be informed.
+
+-icmp echo request - fping || net::ping if super user
+-mysql connect and SELECT NOW()
+-(@code{Slave_IO_Running} and @code{Slave_SQL_Running} from @code{SHOW SLAVE STATUS}.)
+-(@code{Seconds_Behind_Master} from @code{SHOW SLAVE STATUS}.) 

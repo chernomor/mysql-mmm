@@ -12,6 +12,14 @@
 # Paths
 MMMD_AGENT_BIN="/usr/sbin/mmmd_agent"
 MMMD_AGENT_PIDFILE="/var/run/mmmd_agent.pid"
+ENABLED=0
+
+test -f /etc/default/mysql-mmm-agent && . /etc/default/mysql-mmm-agent
+
+if [ "$ENABLED" = "0" ]; then
+    echo "MMM Agent disabled, see /etc/default/mysql-mmm-agent"
+    exit 0
+fi
 
 #-----------------------------------------------------------------------
 # See how we were called.

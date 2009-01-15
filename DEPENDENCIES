@@ -1,14 +1,32 @@
-Log::Log4perl	liblog-log4perl-perl
-Proc::Daemon	libproc-daemon-perl
-Algorithm::Diff libalgorithm-diff-perl
-Class:Singleton	libclass-singleton-perl
-Time::HighRes
-Net::Ping && fping (root && non-root)
-Mail::Send		libmailtools-perl
-Log::Dispatch	liblog-dispatch-perl
 
-Cwd
-File::Basename
 
-Test::More
-Test::Output	dh-make-perl (libsub-exporter-perl libtest-tester-perl)
+Common:
+	Log::Log4perl	liblog-log4perl-perl
+	Mail::Send		libmailtools-perl
+	Log::Dispatch	liblog-dispatch-perl
+
+Monitor:
+	Time::HiRes		perl
+	Net::Ping | fping (root || non-root) perl-modules
+	Class:Singleton	libclass-singleton-perl
+	Proc::Daemon	libproc-daemon-perl
+	Algorithm::Diff libalgorithm-diff-perl
+	Thread::Queue	perl-modules
+
+Agent:
+	Proc::Daemon	libproc-daemon-perl
+	Algorithm::Diff libalgorithm-diff-perl
+	DBI				libdbi-perl
+	DBD::mysql		libdbd-mysql-perl
+	arping | iputils-arping
+	iproute
+
+Tests:
+	Cwd
+	File::Basename	perl-modules
+	Test::More		perl-modules
+	Test::Output	dh-make-perl (libsub-exporter-perl libtest-tester-perl)
+
+Docs:
+	SVG				libsvg-perl
+	inkscape

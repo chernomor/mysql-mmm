@@ -1,0 +1,40 @@
+/var/log/mysql-mmm/mmmd_mon.info {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+}
+/var/log/mysql-mmm/mmmd_mon.warn {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+}
+/var/log/mysql-mmm/mmmd_mon.error {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+}
+/var/log/mysql-mmm/mmmd_mon.fatal {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+}

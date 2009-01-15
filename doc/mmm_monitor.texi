@@ -1,0 +1,139 @@
+@node Monitor
+@chapter Monitor
+@cindex Monitor
+
+@node States
+@section States
+@cindex States
+
+@multitable @columnfractions .30 .80
+
+@item @code{ONLINE}				@tab Host is online.
+
+@item @code{ADMIN_OFFLINE}		@tab Admin set host to offline
+
+@item @code{HARD_OFFLINE}		@tab Host is offline (Check @code{ping} and/or @code{mysql} failed)
+
+@item @code{AWAITING_RECOVERY}	@tab Host is awaiting recovery
+
+@item @code{REPLICATION_DELAY}	@tab replication backlog is too big (Check @code{rep_backlog} failed)
+
+@item @code{REPLICATION_FAIL}	@tab replication threads are not running (Check @code{rep_threads} failed)
+
+@end multitable
+
+@itemize
+@item Only hosts with state @code{ONLINE} may have roles. When a host switches 
+from @code{ONLINE} to any other state, all roles will be removed from it.
+
+@item A host that was in state @code{REPLICATION_DELAY} or 
+@code{REPLICATION_FAIL} will be switched back to @code{ONLINE} if everything 
+is OK again, unless it is flapping (see @pxref{Flapping}).
+
+@item A host that was in state @code{HARD_OFFLINE} will be switched to 
+@code{AWAITING_RECOVERY} if everything is OK again. If its downtime was shorter 
+than 60 seconds and it wasn't rebooted, it will be switched back to @code{ONLINE} 
+automatically, unless it is flapping (see @pxref{Flapping} again).
+
+@item Replication backlog or failure on the active master isn't considered 
+to be a problem, so the active master will never be in state 
+@code{REPLICATION_DELAY} or @code{REPLICATION_FAIL}.
+
+@item If both checks @code{rep_backlog} and @code{rep_threads} fail, the state will change to @code{REPLICATION_FAIL}.
+
+@end itemize
+
+@node Roles
+@section Roles
+@cindex Roles
+
+exclusive 1 ip
+balanced several ips
+
+
+@node Status file
+@section Status file
+@cindex Status file
+information about host state and roles @file{@var{status_path}}
+
+
+@node Checks
+@section Checks
+@cindex Checks
+
+mmmd_mon performs four different checks on each host to determine if it is OK. These checks are:
+
+@multitable @columnfractions .20 .80
+@item ping
+@tab host is pingable
+@item mysql
+@tab MySQL server on the host is alive
+@item rep_threads
+@tab replication threads are running
+@item rep_backlog
+@tab replication backlog is not too big
+@end multitable
+
+@node Network check
+@section Network check
+@cindex Network check
+
+mmmd_mon has the ability to detect a non-functioning network connection. It 
+regularly pings all @var{ping_ips} defined in the config. If at least one 
+ip is reachable, the network is considered to be working.
+
+Without working network connection mmmd_mon will... 
+@itemize
+@item ... ignore failed checks.
+@item ... not change the state of hosts.
+@item ... not send anything to the agents.
+@end itemize
+
+
+If the network connection doesn't work during startup, mmmd_mon will switch into passive mode (@pxref{Passive mode}).
+
+
+@node Flapping
+@section Flapping
+@cindex Flapping, flap detection
+
+mmmd_mon supports the detection of hosts that are "flapping". Flapping occurs 
+if a host which is ONLINE changes its state to HARD_OFFLINE / REPLICATION_FAIL 
+/ REPLICATION_DELAY too often and each time gets switched back to ONLINE 
+because it has been down for less than 60 seconds. This may lead to roles 
+getting switched between hosts very often.
+
+To prevent this mmmd_mon has a built in flap-detection which can be tuned in 
+the configuration file. If a host goes down for more than @var{flap_count} 
+times within @var{flap_duration} seconds it is considered as 
+flapping and will not be set ONLINE automatically. It will stay in state 
+AWAITING_RECOVERY until it gets set online (with @command{mmm_control set_online @var{host}}).
+
+@node Passive mode
+@section Passive mode
+@cindex passive mode
+
+entered if no network connection during startup
+entered if discrepancies are detected during startup
+entered with set_passive
+
+roles can be changed (unclean) with set_ip
+changed to active with set_active
+
+roles get never changed automatically
+nothing is send to agents
+status file won't be updated
+
+@node Startup
+@section Startup
+@cindex Startup
+
+performs initial network check
+performs initial host checks
+reads information from
+... status file
+... agents (agent info)
+... hosts (system info)
+if that matches -> ok
+if not matches -> passive mode
+if no network -> passive mode

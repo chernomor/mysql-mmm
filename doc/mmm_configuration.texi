@@ -1,0 +1,96 @@
+@node Configuration
+@chapter Configuration
+@cindex Configuration
+
+@node Config files
+@section Config files
+@cindex Config files
+
+node Config files
+section Config files
+cindex Config files
+
+@node Global variables
+@subsection Global variables
+
+@multitable @columnfractions 0.2 0.1 0.8
+@headitem Variable @tab Default @tab Description
+@item this					@tab -		@tab name of @var{this} host (for agents only)
+@item debug					@tab 0		@tab Enable debug mode. Allowed values: true/yes/1/on false/no/0/off
+@item active_master_role	@tab -		@tab name of the role for which identifies the active master
+@end multitable
+
+@node Monitor section
+@subsection Monitor section
+The @code{monitor} section is required by mmmd_mon and mmmd_control.
+
+@multitable @columnfractions 0.2 0.1 0.8
+@headitem Variable @tab Default @tab Description
+@item ip				@tab -		@tab IP on which mmmd_mon listens
+@item port				@tab 9988	@tab Port on which mmmd_mon listens
+@item pid_path			@tab -		@tab Location of pid-file
+@item bin_path			@tab -		@tab Path to directory containing MMM binaries
+@item status_path		@tab -		@tab Location of of status file
+@item ping_interval		@tab 1		@tab Break between network checks
+@item ping_ips			@tab -		@tab IPs used for network checks
+@item flap_duration		@tab 3600	@tab Duration in seconds for flap detection. See @code{flap_count}
+@item flap_count		@tab 3		@tab Maximum number of downtimes within @code{flap_duration} seconds after which a host is considered to be flapping.
+@end multitable
+
+@node Host sections
+@subsection Host sections
+
+@multitable @columnfractions 0.2 0.1 0.8
+@headitem Variable @tab Default @tab Description
+@item ip					@tab -		@tab IP of host
+@item mode					@tab -		@tab Mode of host. Either @code{master} or @code{slave}.
+@item peer					@tab -		@tab Name of peer host (if mode is master)
+@item pid_path				@tab -		@tab Location of pid-file
+@item bin_path				@tab -		@tab Path to directory containing MMM binaries
+@item agent_port			@tab 9989	@tab Port on which mmmd_agent listens
+@item cluster_interface		@tab -		@tab network interface on which the IPs of the roles should be configured
+@item mysql_port			@tab 3306	@tab Port on which mysqld is listening
+@item tools_user			@tab -		@tab mysql user for MMM Tools
+@item tools_password		@tab -		@tab mysql password for MMM Tools
+@item agent_user			@tab -		@tab mysql user for MMM Agent
+@item agent_password		@tab -		@tab mysql password for MMM Agent
+@item monitor_user			@tab -		@tab mysql user for MMM Monitor
+@item monitor_password		@tab -		@tab mysql password for MMM Monitor
+@item replication_user		@tab -		@tab mysql user used for replication
+@item replication_password	@tab -		@tab mysql password used for replication
+@end multitable
+
+
+@node Role sections
+@subsection Role sections
+
+@multitable @columnfractions 0.2 0.1 0.8
+@headitem Variable @tab Default @tab Description
+@item mode				@tab -		@tab Mode of role. Either @code{balanced} or @code{exclusive} (see @pxref{Roles}).
+@item hosts				@tab -		@tab Hosts which may take over the role
+@item ips				@tab -		@tab One or multiple IPs associated with the role
+@end multitable
+
+
+@node Check sections
+@subsection Check sections
+
+@multitable @columnfractions 0.2 0.1 0.8
+@headitem Variable @tab Default @tab Description
+@item check_period		@tab 5		@tab Perform check every 5 seconds
+@item trap_period		@tab 10		@tab Check is considered as failed if it doesn't succeed for at least @var{trap_period} seconds.
+@item timeout			@tab 2		@tab Check times out after @var{timeout} seconds
+@item restart_after		@tab 10000	@tab Restart checker process after @var{restart_after} checks
+@item max_backlog		@tab 60		@tab Maximum backlog for check @code{rep_backlog}.
+@end multitable
+
+@node Socket section
+@subsection Socket section
+
+@multitable @columnfractions 0.2 0.1 0.8
+@headitem Variable @tab Default @tab Description
+@item type				@tab -		@tab Socket type to use. Either @code{plain} or @code{ssl}
+@item cert_file			@tab -		@tab location of SSL certificate (if type is ssl)
+@item key_file			@tab -		@tab location of RSA private key  (if type is ssl)
+@item ca_file			@tab -		@tab location of file containing certificate(s) of the reputable certificate authorities  (if type is ssl)
+@end multitable

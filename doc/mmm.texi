@@ -1,0 +1,66 @@
+\input texinfo @c -*- texinfo -*-
+@setfilename mmm.info
+@settitle MMM Manual 0.1
+@set language en
+
+@copying
+Copyright @copyright{} 2008 Pascal Hofmann
+@end copying
+
+@titlepage
+@title MMM
+@subtitle MySQL Master-Master Replication Manager
+@author Pascal Hofmann
+
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@c print Table of Contents
+@contents
+
+
+@ifnottex
+@node Top
+@top MMM
+     
+This manual is for MMM version 2.
+@end ifnottex
+
+     
+@menu
+@end menu
+
+@node Overview
+@chapter Overview
+@cindex Overview
+
+MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts to perform monitoring/failover and management of MySQL Master-Master replication configurations (with only one node writable at any time). The toolset also has the ability to read balance standard master/slave configurations with any number of slaves, so you can use it to move virtual IP addresses around a group of servers depending on whether they are behind in replication. 
+
+@node Typical use-cases
+@chapter Typical use-cases
+
+@cindex typical use-cases
+
+@itemize @bullet
+@item
+Master-Slave
+
+@item
+Master-Master (active-passive) with n Slaves
+@end itemize
+
+
+@include mmm_monitor.texi
+@include mmm_configuration.texi
+@include mmm_internals.texi
+
+
+@node Index
+@unnumbered Index
+
+@printindex cp
+
+
+@bye

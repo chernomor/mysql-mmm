@@ -1,0 +1,3 @@
+lib/Agent usr/share/perl5/MMM/
+bin/agent usr/bin/mysql-mmm/
+sbin/mmmd_agent usr/sbin/

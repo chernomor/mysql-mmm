@@ -1,0 +1,40 @@
+/var/log/mysql-mmm/mmmd_agent.info {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+}
+/var/log/mysql-mmm/mmmd_agent.warn {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+}
+/var/log/mysql-mmm/mmmd_agent.error {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+}
+/var/log/mysql-mmm/mmmd_agent.fatal {
+	daily
+	missingok
+	rotate 7
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+}

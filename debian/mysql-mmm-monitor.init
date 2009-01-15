@@ -12,6 +12,15 @@
 # Cluster name (it can be empty for default cases)
 CLUSTER=''
 
+ENABLED=0
+
+test -f /etc/default/mysql-mmm-monitor && . /etc/default/mysql-mmm-monitor
+
+if [ "$ENABLED" = "0" ]; then
+    echo "MMM Monitor disabled, see /etc/default/mysql-mmm-monitor"
+    exit 0
+fi
+
 
 #-----------------------------------------------------------------------
 # Paths

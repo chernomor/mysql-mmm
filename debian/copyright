@@ -1,0 +1,18 @@
+This package was debianized by Pascal Hofmann <mail@pascalhofmann.de> on
+Thu, 15 Jan 2009 13:11:31 +0200.
+
+It was downloaded from http://code.google.com/p/mysql-master-master/
+
+Upstream Author(s): 
+
+    Pascal Hofmann <mail@pascalhofmann.de>
+
+Copyright: 
+
+    Copyright (C) 2008-2009 Pascal Hofmann
+
+License:
+    GPL version 2
+
+On Debian systems, the complete text of the GNU General Public License version 2
+can be found in `/usr/share/common-licenses/GPL-2'.

@@ -1,0 +1,49 @@
+Source: mysql-mmm
+Section: misc
+Priority: optional
+Maintainer: Pascal Hofmann <mail@pascalhofmann.de>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+
+Package: mysql-mmm-common
+Architecture: all
+Depends: ${perl:Depends}, ${misc:Depends}, liblog-log4perl-perl, libmailtools-perl, liblog-dispatch-perl
+Description: MySQL Multi-Master Replication Manager common files.
+ MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts 
+ to perform monitoring/failover and management of MySQL Master-Master 
+ replication configurations (with only one node writable at any time). 
+ The toolset also has the ability to read balance standard master/slave 
+ configurations with any number of slaves, so you can use it to move virtual 
+ IP addresses around a group of servers depending on whether they are behind 
+ in replication. 
+ .
+ This package includes files needed by the agent, the monitor and the lvmtools.
+
+Package: mysql-mmm-agent
+Architecture: all
+Depends: ${perl:Depends}, ${misc:Depends}, mysql-mmm-common, arping | iputils-arping, iproute, libproc-daemon-perl, libalgorithm-diff-perl, libdbi-perl, libdbd-mysql-perl
+Description: MySQL Multi-Master Replication Manager Agent.
+ MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts 
+ to perform monitoring/failover and management of MySQL Master-Master 
+ replication configurations (with only one node writable at any time). 
+ The toolset also has the ability to read balance standard master/slave 
+ configurations with any number of slaves, so you can use it to move virtual 
+ IP addresses around a group of servers depending on whether they are behind 
+ in replication. 
+ .
+ This package includes the MMM agent.
+
+Package: mysql-mmm-monitor
+Architecture: all
+Depends: ${perl:Depends}, ${misc:Depends}, mysql-mmm-common, libclass-singleton-perl, libproc-daemon-perl, libalgorithm-diff-perl
+Recommends: fping
+Description: MySQL Multi-Master Replication Manager Monitor.
+ MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts 
+ to perform monitoring/failover and management of MySQL Master-Master 
+ replication configurations (with only one node writable at any time). 
+ The toolset also has the ability to read balance standard master/slave 
+ configurations with any number of slaves, so you can use it to move virtual 
+ IP addresses around a group of servers depending on whether they are behind 
+ in replication. 
+ .
+ This package includes the MMM monitor.

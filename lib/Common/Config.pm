@@ -9,11 +9,15 @@ use List::Util qw(first);
 
 our $VERSION = '0.01';
 
+
+# TODO boolean => 1 dann werte übersetzen auf 0 / 1
+
 our $RULESET = {
-	'this'					=> { 'required' => ['AGENT'], 'refvalues' => 'host' },
+	'this'					=> { 'required' => ['AGENT', 'TOOLS'], 'refvalues' => 'host' },
 	'debug'					=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
 	'active_master_role'	=> { 'required' => ['AGENT', 'MONITOR'], 'refvalues' => 'role' },
-	'role'					=> { 'required' => ['AGENT', 'CONTROL', 'MONITOR'], 'multiple' => 1, 'section' => {
+	'default_copy_method'	=> { 'required' => ['TOOLS'], 'refvalues' => 'copy_method' },
+	'role'					=> { 'required' => ['AGENT', 'MONITOR'], 'multiple' => 1, 'section' => {
 		'mode'					=> { 'required' => ['MONITOR'], 'values' => ['balanced', 'exclusive'] },
 		'hosts'					=> { 'required' => ['MONITOR'], 'refvalues' => 'host', 'multiple' => 1 },
 		'ips'					=> { 'required' => ['AGENT', 'MONITOR'], 'multiple' => 1 }
@@ -38,23 +42,54 @@ our $RULESET = {
 		'ca_file'				=> { 'deprequired' => { 'type' => 'ssl' }, 'required' => [ 'AGENT', 'MONITOR'] }
 		}
 	},
+	'copy_method'			=> { 'required' => ['TOOLS'], 'multiple' => 1, 'section' => {
+		'backup_command'		=> { 'required' => 1 },
+		'restore_command'		=> { 'required' => 1 },
+		'incremental_command'	=> { 'deprequired' => { 'incremental' => 1 } },
+		'incremental'			=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
+		'single_run'			=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
+		}
+	},
 	'host'					=> { 'required' => 1, 'multiple' => 1, 'template' => 'default', 'section' => {
 		'ip'					=> { 'required' => 1 },
-		'mode'					=> { 'required' => ['AGENT', 'CONTROL', 'MONITOR'], 'values' => ['master', 'slave'] },
+		'mode'					=> { 'required' => ['AGENT', 'MONITOR'], 'values' => ['master', 'slave'] },
 		'peer'					=> { 'deprequired' => { 'mode' => 'master' }, 'refvalues' => 'host' },
+
 		'pid_path'				=> { 'required' => ['AGENT'] },
 		'bin_path'				=> { 'required' => ['AGENT'] },
 		'agent_port'			=> { 'default' => 9989 },
 		'cluster_interface'		=> { 'required' => ['AGENT'] },
+
 		'mysql_port'			=> { 'default' => 3306 },
-		'tools_user'			=> { 'required' => ['TOOLS'] },
-		'tools_password'		=> { 'required' => ['TOOLS'] },
+		'mysql_pidfile'			=> { 'default' => '/var/run/mysqld/mysqld.pid' },
+		'mysql_rcscript'		=> { 'default' => '/etc/init.d/mysql' },
+		'mysql_cnf'				=> { 'default' => '/etc/my.cnf' },
+
 		'agent_user'			=> { 'required' => ['AGENT'] },
 		'agent_password'		=> { 'required' => ['AGENT'] },
+
 		'monitor_user'			=> { 'required' => ['MONITOR'] },
 		'monitor_password'		=> { 'required' => ['MONITOR'] },
+
 		'replication_user'		=> { 'required' => ['AGENT', 'TOOLS'] },
-		'replication_password'	=> { 'required' => ['AGENT', 'TOOLS'] }
+		'replication_password'	=> { 'required' => ['AGENT', 'TOOLS'] },
+
+		'ssh_user'				=> { 'required' => ['TOOLS'] },
+		'tools_user'			=> { 'required' => ['TOOLS'] },
+		'tools_password'		=> { 'required' => ['TOOLS'] },
+
+		'backup_dir'			=> { 'required' => ['TOOLS'] },
+		'restore_dir'			=> { 'required' => ['TOOLS'] },
+		'clone_dirs'			=> { 'required' => ['TOOLS'], 'multiple' => 1 },
+#		'clone_base'			=> { 'required' => ['TOOLS'] },
+
+		'lvm_bin_lvcreate'		=> { 'default' => 'lvcreate' },
+		'lvm_bin_lvremove'		=> { 'default' => 'lvremove' },
+		'lvm_snapshot_size'		=> { 'required' => ['TOOLS'] },
+		'lvm_logical_volume'	=> { 'required' => ['TOOLS'] },
+		'lvm_volume_group'		=> { 'required' => ['TOOLS'] },
+		'lvm_mount_dir'			=> { 'required' => ['TOOLS'] },
+		'lvm_mount_opts'		=> { 'required' => ['TOOLS'] },
 		}
 	},
 	'check'					=> { 'create_if_empty' => ['MONITOR'], 'multiple' => 1, 'template' => 'default', 'values' => ['ping', 'mysql', 'rep_backlog', 'rep_threads'], 'section' => {
@@ -66,6 +101,7 @@ our $RULESET = {
 		}
 	}
 };
+
 
 #-------------------------------------------------------------------------------
 sub new($) {
@@ -138,7 +174,7 @@ sub parse(\%\%$*) {
 			next;
 		}
 		# start tag - named section
-		if ($line =~/^\s*<\s*(\w+)\s+(\w+)\s*>\s*$/) {
+		if ($line =~/^\s*<\s*(\w+)\s+([\w\-_]+)\s*>\s*$/) {
 			my $type = $1;
 			my $name = $2;
 			if (!defined($ruleset->{$type}) || !defined($ruleset->{$type}->{section})) {

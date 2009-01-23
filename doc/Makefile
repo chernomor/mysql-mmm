@@ -1,5 +1,5 @@
 mmm.pdf: mmm.texi mmm_configuration.texi mmm_monitor.texi mmm_internals.texi Makefile
-	rm -r tmp/
+	-rm -r tmp/
 	mkdir -p tmp/
 	cp mmm*.texi tmp/
 	cd tmp && up_menus --nodetail mmm.texi

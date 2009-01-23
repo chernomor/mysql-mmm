@@ -286,7 +286,7 @@ sub set_active_master($) {
 	_exit_error('SQL Query Error: ' . $this_dbh->errstr) unless($res);
 
 	# Stop slave
-	$res = $this_dbh->do("STOP SLAVE");
+	$res = $this_dbh->do('STOP SLAVE');
 	_exit_error('SQL Query Error: ' . $this_dbh->errstr) unless($res);
 	
 	# Connect to new peer

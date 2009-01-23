@@ -15,6 +15,7 @@ install:
 		cp -r lib/* $(MODULEDIR)
 		cp -r bin/agent $(BINDIR)
 		cp -r bin/monitor $(BINDIR)
+		cp -r bin/tools $(BINDIR)
 		cp -r etc/init.d $(ETCDIR)
 		cp sbin/mmm* $(SBINDIR)
 		[ -f $(CONFDIR)/mmm_common.conf ] || cp etc/mysql-mmm/mmm_common.conf $(ETCDIR)/mysql-mmm/

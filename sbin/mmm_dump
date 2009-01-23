@@ -1,0 +1,62 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings FATAL => 'all';
+use English qw( PROGRAM_NAME );
+use Log::Log4perl qw(:easy);
+use Getopt::Long;
+Log::Log4perl->easy_init($INFO);
+
+# Include parts of the system
+use MMM::Common::Config;
+use MMM::Tools::Tools;
+
+my $config_file	= '';
+my $host_name	= '';
+my $copy_method	= '';
+my $dest_dir	= '';
+
+GetOptions( "config=s"      => \$config_file,
+            "host=s"        => \$host_name,
+            "copy-method=s" => \$copy_method,
+            "dest-dir=s"    => \$dest_dir);
+
+$config_file = 'mmm_tools' if ($config_file eq '');
+
+# Read configuration
+our $config = new MMM::Common::Config::;
+$config->read("mmm_tools");
+$config->check('TOOLS');
+
+unless (defined($config->{host}->{$host_name})) {
+	print "Invalid host name '$host_name'\n";
+	print_usage();
+}
+
+my $host = $config->{host}->{$host_name};
+
+$copy_method	= $config->{default_copy_method}	if ($copy_method eq '');
+$dest_dir		= $host->{backup_dir}				if ($dest_dir    eq '');
+
+unless (defined($config->{copy_method}->{$copy_method})) {
+	print "Invalid copy method '$copy_method'\n";
+	print_usage();
+}
+
+die unless (MMM::Tools::Tools::check_backup_destination($dest_dir));
+die unless (MMM::Tools::Tools::check_ssh_connection($host_name));
+die unless (MMM::Tools::Tools::create_remote_snapshot($host_name));
+die unless (MMM::Tools::Tools::copy_clone_dirs($host_name, $copy_method, $dest_dir));
+die unless (MMM::Tools::Tools::copy_from_remote($host_name, 'scp', $dest_dir, '_mmm'));
+die unless (MMM::Tools::Tools::save_copy_method($dest_dir, $copy_method));
+die unless (MMM::Tools::Tools::remove_remote_snapshot($host_name));
+
+exit 0;
+
+sub print_usage {
+	print "Usage: $0 [--config <config file>] --host <host> [--copy-method <copy method>] [--dest-dir <dir>]\n";
+	print "Where:\n";
+	printf("  host       : %s\n", join(' | ', sort(keys(%{$main::config->{host}}))));
+	printf("  copy method: %s (default: %s)\n\n", join(' | ', sort(keys(%{$main::config->{copy_method}}))), $config->{default_copy_method});
+	exit(1);
+}

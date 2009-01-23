@@ -2,7 +2,6 @@
 
 use strict;
 use warnings FATAL => 'all';
-use Config;
 use English qw( PROGRAM_NAME );
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($INFO);

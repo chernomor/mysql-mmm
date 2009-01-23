@@ -21,6 +21,11 @@ Agent:
 	arping | iputils-arping
 	iproute
 
+Tools:
+	Path::Class		libpath-class-perl
+	Data::Dumper	perl
+
+
 Tests:
 	Cwd
 	File::Basename	perl-modules

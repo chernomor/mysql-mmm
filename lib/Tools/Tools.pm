@@ -39,12 +39,12 @@ sub check_backup_destination {
 
 	system("mkdir -p $dir");
 	unless (-d $dir && -x _ && -r _ && -w _) {
-		ERROR "ERROR: Destination dir '$dir' has invalid permissions (should be readable/writeable/executable)!";
+		ERROR "Destination dir '$dir' has invalid permissions (should be readable/writeable/executable)!";
 		return 0;
 	}
 
 	if ($should_be_empty && scalar(glob("$dir/*"))) {
-		ERROR "ERROR: Destination dir '$dir' is not empty!";
+		ERROR "Destination dir '$dir' is not empty!";
 		return 0;
 	}
 
@@ -58,23 +58,23 @@ sub check_restore_source($) {
 	INFO "Checking restore source directory '$dir'...";
 
 	unless (-d $dir && -x _ && -r _) {
-		ERROR "ERROR: Source dir '$dir' has invalid permissions (should be readable/executable)!";
+		ERROR "Source dir '$dir' has invalid permissions (should be readable/executable)!";
 		return 0;
 	}
 	unless (scalar(glob("$dir/*"))) {
-		ERROR "ERROR: Source dir '$dir' is empty!";
+		ERROR "Source dir '$dir' is empty!";
 		return 0;
 	}
 	unless (-d "$dir/_mmm" && -r _ && -x _) {
-		ERROR "ERROR: Source dir doesn't contain _mmm sub-directory!";
+		ERROR "Source dir doesn't contain _mmm sub-directory!";
 		return 0;
 	}
 	unless (-f "$dir/_mmm/status.txt" && -r _) {
-		ERROR "ERROR: $dir/_mmm/status.txt doesn't exist or isn't readable!";
+		ERROR "$dir/_mmm/status.txt doesn't exist or isn't readable!";
 		return 0;
 	}
 	unless (-f "$dir/_mmm/copy_method.txt" && -r _) {
-		ERROR "ERROR: $dir/_mmm/copy_method.txt doesn't exist or isn't readable!";
+		ERROR "$dir/_mmm/copy_method.txt doesn't exist or isn't readable!";
 		return 0;
 	}
 
@@ -89,7 +89,7 @@ sub check_restore_destination($) {
 
 	system("mkdir -p $dir");
 	unless (-d $dir && -x _ && -r _ && -w _) {
-		ERROR "ERROR: Destination dir '$dir' has invalid permissions (should be readable/writeable/executable)!";
+		ERROR "Destination dir '$dir' has invalid permissions (should be readable/writeable/executable)!";
 		return 0;
 	}
 
@@ -181,12 +181,12 @@ sub save_copy_method($$) {
 
 	# Check config option
 	if (! -d $dir) {
-		ERROR "ERROR: Directory _mmm doesn't exist!";
+		ERROR "Directory _mmm doesn't exist!";
 		return 0;
 	}
 	
 	unless (open(F, ">$dir/copy_method.txt")) {
-		ERROR "ERROR: I/O Error while saving copy method!";
+		ERROR "I/O Error while saving copy method!";
 		return 0;
 	}
 	print F $copy_method;
@@ -205,7 +205,7 @@ sub load_status($) {
 
 	my $status_file = $dir . '/_mmm/status.txt';
 	unless (-f $status_file && -r _) {
-		ERROR "ERROR: Status file '$status_file' doesn't exist or isn't readable!";
+		ERROR "Status file '$status_file' doesn't exist or isn't readable!";
 		return undef;
 	}
 	
@@ -214,7 +214,7 @@ sub load_status($) {
 	my $VAR1;
 	eval($status_data);
 	if ($@) {
-		ERROR "ERROR: Can't parse status info: $@";
+		ERROR "Can't parse status info: $@";
 		return undef;
 	}
 	

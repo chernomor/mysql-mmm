@@ -5,7 +5,7 @@ use warnings FATAL => 'all';
 use English qw( PROGRAM_NAME FORMAT_NAME );
 use Log::Log4perl qw(:easy);
 use Getopt::Long;
-Log::Log4perl->easy_init($INFO);
+Log::Log4perl->easy_init( { level => $INFO, layout => '%p: %m%n' });
 
 # Include parts of the system
 use MMM::Common::Config;
@@ -70,6 +70,22 @@ if ($version eq 'list') {
 
 # Load information from status file
 my $status = MMM::Tools::Tools::load_status($src_dir);
+die unless (defined($status));
+
+
+# Check copy method of backup
+unless (defined($config->{copy_method}->{$status->{copy_method}})) {
+	ERROR "Backup was created with unknown copy-method '$status->{copy_method}' - can't restore it";
+	die;
+}
+
+# Check if backup is incremental and we were called with version
+if ($config->{copy_method}->{$status->{copy_method}}->{incremental} && $version eq '') {
+	ERROR "'$src_dir' contains an incremental backup, but no version was specified";
+	MMM::Tools::Tools::list_increments($src_dir, 'rdiff');
+	die;
+}
+
 
 # Determine replication peer
 $restore_mode =~ /(\w+)\-(\w+)/;

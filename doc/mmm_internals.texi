@@ -30,6 +30,6 @@ ip is reachable, the network is considered to be working.
 There are four checker threads - one for each check (@pxref{Checks}). They execute the checks on all hosts continuously, sleeping @var{check_period} seconds between each round. If a check does not succeed for @var{trap_period} or more seconds it is considered as failed and the main thread will be informed.
 
 -icmp echo request - fping || net::ping if super user
--mysql connect and SELECT NOW()
+-mysql connect and SELECT NOW() - no error on "too many connections"-error from mysql
 -(@code{Slave_IO_Running} and @code{Slave_SQL_Running} from @code{SHOW SLAVE STATUS}.)
 -(@code{Seconds_Behind_Master} from @code{SHOW SLAVE STATUS}.) 

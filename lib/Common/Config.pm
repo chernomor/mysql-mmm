@@ -11,12 +11,14 @@ our $VERSION = '0.01';
 
 
 # TODO boolean => 1 dann werte übersetzen auf 0 / 1
+# TODO remember which config file was read
 
 our $RULESET = {
 	'this'					=> { 'required' => ['AGENT', 'TOOLS'], 'refvalues' => 'host' },
 	'debug'					=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
 	'active_master_role'	=> { 'required' => ['AGENT', 'MONITOR'], 'refvalues' => 'role' },
 	'default_copy_method'	=> { 'required' => ['TOOLS'], 'refvalues' => 'copy_method' },
+	'clone_dirs'			=> { 'required' => ['TOOLS'], 'multiple' => 1 },
 	'role'					=> { 'required' => ['AGENT', 'MONITOR'], 'multiple' => 1, 'section' => {
 		'mode'					=> { 'required' => ['MONITOR'], 'values' => ['balanced', 'exclusive'] },
 		'hosts'					=> { 'required' => ['MONITOR'], 'refvalues' => 'host', 'multiple' => 1 },
@@ -80,8 +82,6 @@ our $RULESET = {
 
 		'backup_dir'			=> { 'required' => ['TOOLS'] },
 		'restore_dir'			=> { 'required' => ['TOOLS'] },
-		'clone_dirs'			=> { 'required' => ['TOOLS'], 'multiple' => 1 },
-#		'clone_base'			=> { 'required' => ['TOOLS'] },
 
 		'lvm_bin_lvcreate'		=> { 'default' => 'lvcreate' },
 		'lvm_bin_lvremove'		=> { 'default' => 'lvremove' },

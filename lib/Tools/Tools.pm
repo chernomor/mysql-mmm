@@ -2,6 +2,7 @@ package MMM::Tools::Tools;
 
 use strict;
 use warnings FATAL => 'all';
+use English qw(FORMAT_NAME);
 use Path::Class qw(dir);
 use Log::Log4perl qw(:easy);
 
@@ -13,6 +14,13 @@ our $VERSION = '0.01';
 MMM::Tools::Tools - functions for the mmm-tools.
 
 =cut
+
+
+our @CLONE_MODES = qw(
+	master-master
+	master-slave
+	slave-slave
+);
 
 
 =over 4
@@ -44,7 +52,7 @@ sub check_backup_destination {
 	return 1;
 }
 
-sub check_restore_source {
+sub check_restore_source($) {
 	my $dir = shift;
 	
 	INFO "Checking restore source directory '$dir'...";
@@ -70,9 +78,24 @@ sub check_restore_source {
 		return 0;
 	}
 
+	INFO 'Directory is ok';
 	return 1;
 }
 
+sub check_restore_destination($) {
+	my $dir = shift;
+	
+	INFO "Checking destination directory '$dir'...";
+
+	system("mkdir -p $dir");
+	unless (-d $dir && -x _ && -r _ && -w _) {
+		ERROR "ERROR: Destination dir '$dir' has invalid permissions (should be readable/writeable/executable)!";
+		return 0;
+	}
+
+	INFO 'Directory is ok';
+	return 1;
+}
 =item check_ssh_connection($host)
 
 Check SSH connection to host $host.
@@ -210,7 +233,7 @@ sub copy_clone_dirs($$$) {
 	my $copy_method	= shift;
 	my $dest_dir	= shift;
 
-	my @clone_dirs = @{$main::config->{host}->{$host}->{clone_dirs}};
+	my @clone_dirs = @{$main::config->{clone_dirs}};
 
 	if  ($main::config->{copy_method}->{$copy_method}->{single_run}) {
 		return copy_from_remote_single_run($host, $copy_method, $dest_dir, \@clone_dirs);
@@ -245,11 +268,11 @@ sub copy_from_remote($$$$) {
 	$command =~ s/%IP%/$host_info->{ip}/ig;
 	$command =~ s/%SNAPSHOT%/$host_info->{lvm_mount_dir}/ig;
 	$command =~ s/%DEST_DIR%/$dest_dir/ig;
+	$command =~ s/%BACKUP_DIR%/$dest_dir/ig;
 	$command =~ s/%CLONE_DIR%/$sub_dir/ig;
 
 	INFO "Executing command $command";
-	my $res = system($command);
-	if ($res) {
+	if (system($command)) {
 		ERROR "Can't copy $sub_dir: $!";
 		return 0;
 	}
@@ -257,8 +280,6 @@ sub copy_from_remote($$$$) {
 	INFO "Copied directory $sub_dir!";
 	return 1;
 }
-
-#copy_from_remote_single_run
 
 sub copy_from_remote_single_run($$$$) {
 	my $host		= shift;
@@ -277,6 +298,7 @@ sub copy_from_remote_single_run($$$$) {
 	$command =~ s/%IP%/$host_info->{ip}/ig;
 	$command =~ s/%SNAPSHOT%/$host_info->{lvm_mount_dir}/ig;
 	$command =~ s/%DEST_DIR%/$dest_dir/ig;
+	$command =~ s/%BACKUP_DIR%/$dest_dir/ig;
 
 	if ($command =~ /!(.*)!/) {
 		my $sub_tmpl = $1;
@@ -292,8 +314,7 @@ sub copy_from_remote_single_run($$$$) {
 	
 	INFO "Executing command $command";
 	
-	my $res = system($command);
-	if ($res) {
+	if (system($command)) {
 # TODO New config entry "check command"?
 #		system("rdiff-backup --check-destination-dir '$config->{dest_dir}'");
 		ERROR "Can't copy from remote host: $!";
@@ -303,5 +324,191 @@ sub copy_from_remote_single_run($$$$) {
 	INFO sprintf("Copied directories '%s' from host '$host'!", join("', '", sort(@$clone_dirs)));
 	return 1;
 }
+
+
+=item restore($copy_method, $src_dir, $dest_dir)
+
+restore non-incremental backup
+
+=cut
+
+sub restore($$$) {
+	my $copy_method	= shift;
+	my $src_dir		= shift;
+	my $dest_dir	= shift;
+
+	# TODO check copy method
+
+	if ($main::config->{copy_method}->{$copy_method}->{incremental}) {
+		ERROR 'The backup directory contains an incremental backup! Use --version option to restore a specific version.';
+		return 0;
+	}
+
+	my $command = $main::config->{copy_method}->{$copy_method}->{restore_command};
+	
+	$command =~ s/%SRC_DIR%/$src_dir/ig;
+	$command =~ s/%BACKUP_DIR%/$src_dir/ig;
+	$command =~ s/%DEST_DIR%/$dest_dir/ig;
+	$command =~ s/%DATA_DIR%/$dest_dir/ig;
+	INFO "Executing command $command";
+	
+	if (system($command)) {
+		ERROR "Can't restore data: $!";
+		return 0;
+	}
+	INFO "Restored backup from '$src_dir' to '$dest_dir'";
+	return 1;
+}
+
+
+=item restore_incremental($copy_method, $src_dir, $dest_dir, $version)
+
+restore incremental backup
+
+=cut
+
+sub restore_incremental($$$$) {
+	my $copy_method	= shift;
+	my $src_dir		= shift;
+	my $dest_dir	= shift;
+	my $version		= shift;
+
+	# TODO check copy method
+
+	unless ($main::config->{copy_method}->{$copy_method}->{incremental}) {
+		ERROR 'The backup directory contains an non-incremental backup!';
+		return 0;
+	}
+
+	my $command = $main::config->{copy_method}->{$copy_method}->{restore_command};
+	
+	$command =~ s/%SRC_DIR%/$src_dir/ig;
+	$command =~ s/%BACKUP_DIR%/$src_dir/ig;
+	$command =~ s/%DEST_DIR%/$dest_dir/ig;
+	$command =~ s/%DATA_DIR%/$dest_dir/ig;
+	$command =~ s/%VERSION%/$version/ig;
+	INFO "Executing command $command";
+	
+	if (system($command)) {
+		ERROR "Can't restore data: $!";
+		return 0;
+	}
+	INFO "Restored backup version '$version' from '$src_dir' to '$dest_dir'";
+	return 1;
+}
+
+
+=item list_increments($backup_dir, $copy_method)
+
+list available backup increments
+
+=cut
+
+sub list_increments($$) {
+	my $backup_dir	= shift;
+	my $copy_method	= shift;
+
+	my $command = $main::config->{copy_method}->{$copy_method}->{incremental_command};
+
+	unless ($main::config->{copy_method}->{$copy_method}->{incremental}) {
+		ERROR 'Invalid backup directory for incremental operations';
+		exit(0);
+	}
+	
+	$command =~ s/%BACKUP_DIR%/$backup_dir/ig;
+	
+	# List versions
+	my $res = open(COMMAND, "$command|");
+	unless ($res) {
+		LogError("Can't read version info from backup!");
+		exit(1);
+	}
+
+	my $line;
+	if ($command =~ /rdiff-backup/ && $command =~ 'parsable-output') {
+		# Beautify rdiff-backup output
+		print "Following backup versions are available:\n";
+		print "     Version | Date\n";
+		print "-------------|---------------------------\n";
+
+		my $timestamp;
+format VERSION_LINE =
+ @>>>>>>>>>> | @<<<<<<<<<<<<<<<<<<<<<<<<
+ $timestamp,   scalar(localtime($timestamp))
+.
+		$FORMAT_NAME = 'VERSION_LINE';
+		while ($line = <COMMAND>) {
+			chomp $line;
+			($timestamp,) = split(/\s+/, $line);
+			write;
+		}
+	}
+	else {
+		while ($line = <COMMAND>) {
+			print $line;
+		}
+	}
+	close(COMMAND);
+}
+
+
+=item cleanup($status, $dir)
+
+clean up restore directory
+
+=cut
+sub cleanup($$) {
+
+	my $status	= shift;
+	my $dir		= shift;
+
+	INFO 'Cleaning dump from master.info and binary logs...';
+	
+	my $master_log = $status->{master}->{File};
+	unless ($master_log =~ /^(.*)\.(\d+)$/) {
+		ERROR "Unknown master binary log file name format '$master_log'!";
+		return 0;
+	}
+	
+	INFO "Deleting master binary logs: $1.*";
+	system("find $dir -name '$1.*' | xargs rm -vf");
+	
+	if ($status->{slave} && $status->{slave}->{Relay_Log_File} ne '') {
+		my $slave_log = $status->{slave}->{Relay_Log_File};
+		unless ($slave_log =~ /^(.*)\.(\d+)$/) {
+			ERROR "Unknown relay binary log file name format '$slave_log'!";
+			return 0;
+		}
+		INFO "Deleting relay binary logs: $1.*";
+		system("find $dir -name '$1.*' | xargs rm -vf");
+	}
+	
+	
+	INFO 'Deleting .info and .pid  files...';
+	system("find $dir -name master.info | xargs rm -vf");
+	system("find $dir -name relay-log.info | xargs rm -vf");
+	system("find $dir -name '*.pid' | xargs rm -vf");
+	
+	INFO 'Changing permissions on mysql data dir...';
+	system("chown -R mysql:mysql $dir");
+	
+	return 1;
+}
+
+
+=item get_host_by_ip($ip)
+
+get hostname of host with ip $ip.
+
+=cut
+
+sub get_host_by_ip($) {
+	my $ip = shift;
+	foreach my $host (keys(%{$main::config->{host}})) {
+		return $host if ($main::config->{host}->{$host}->{ip} eq $ip);
+	}
+	return '';
+}
+
 
 1;

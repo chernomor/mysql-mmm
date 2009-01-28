@@ -2,6 +2,7 @@ package MMM::Tools::MySQL;
 
 use strict;
 use warnings FATAL => 'all';
+use DBI;
 use Log::Log4perl qw(:easy);
 
 
@@ -30,7 +31,7 @@ sub is_running {
 		my $pidfile = $main::config->{host}->{$main::config->{this}}->{mysql_pidfile};
 		return 0 unless (-f $pidfile);
 		open(PID, $pidfile) || LOGDIE "ERROR: Can't read MySQL pid file '$pidfile'";
-		chomp(my $pid = <PID>);
+		chomp($pid = <PID>);
 		close(PID);
 	}
 
@@ -119,24 +120,23 @@ Optional params
 	master_pos
 
 =cut
+sub change_master_to {
+	my $args = shift;
 
-sub changer_master_to {
-	my %args = shift;
+	$args->{host} ||= $main::config->{this};
 
-	$args{host} ||= $main::config->{this};
-
-	INFO "Changing master of host $args{host}...";
 
 	LOGDIE 'Bad call of change_master_to()' unless (
-		defined($args{master_host}) && defined($args{master_port})
-	 && defined($args{master_user}) && defined($args{master_pass})
+		defined($args->{master_host}) && defined($args->{master_port})
+	 && defined($args->{master_user}) && defined($args->{master_pass})
 	);
 
+	INFO "Changing master of host $args->{host} to $args->{master_host} ...";
 
 	# Get connection information
-	my ($host, $port, $user, $password)	= _get_connection_info($args{host});
+	my ($host, $port, $user, $password)	= _get_connection_info($args->{host});
 	unless (defined($host)) {
-		ERROR "No connection info for host '$args{host}'";
+		ERROR "No connection info for host '$args->{host}'";
 		return 0;
 	}
 
@@ -165,15 +165,15 @@ sub changer_master_to {
 	}
 
 	# Change master
-    my $sql = sprintf(
+	my $sql = sprintf(
 		"CHANGE MASTER TO MASTER_HOST='%s', MASTER_PORT=%s, MASTER_USER='%s', MASTER_PASSWORD='%s'",
-		$args{master_host}, $args{master_port}, $args{master_user}, $args{master_pass}
+		$args->{master_host}, $args->{master_port}, $args->{master_user}, $args->{master_pass}
 	);
 
-    if ($args{master_log} && $args{master_pos}) {
-        $sql .= sprintf(", MASTER_LOG_FILE='%s', MASTER_LOG_POS=%s", $args{master_log}, $args{master_pos});
-    }
-    
+	if ($args->{master_log} && $args->{master_pos}) {
+		$sql .= sprintf(", MASTER_LOG_FILE='%s', MASTER_LOG_POS=%s", $args->{master_log}, $args->{master_pos});
+	}
+	
 	$res = $dbh->do($sql);
 	unless ($res) {
 		ERROR 'SQL Query Error: ', $dbh->errstr;
@@ -189,6 +189,9 @@ sub changer_master_to {
 	
 	# Disconnect
 	$dbh->disconnect;
+
+	INFO "Successfully changed master.";
+
 	return 1;
 }
 

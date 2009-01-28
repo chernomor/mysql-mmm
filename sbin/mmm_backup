@@ -40,7 +40,8 @@ $copy_method	= $config->{default_copy_method}	if ($copy_method eq '');
 $dest_dir		= $host->{backup_dir}				if ($dest_dir    eq '');
 
 print_usage("Invalid copy method '$copy_method'")	unless (defined($config->{copy_method}->{$copy_method}));
-print_usage("Invalid backup directory '$dest_dir'")	unless (MMM::Tools::Tools::check_backup_destination($dest_dir));
+my $should_be_empty = (!$config->{copy_method}->{$copy_method}->{incremental});
+print_usage("Invalid backup directory '$dest_dir'")	unless (MMM::Tools::Tools::check_backup_destination($dest_dir, $should_be_empty));
 
 die unless (MMM::Tools::Tools::check_ssh_connection($host_name));
 die unless (MMM::Tools::Tools::create_remote_snapshot($host_name));

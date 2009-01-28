@@ -110,6 +110,8 @@ sub mysql($$) {
 		
 		unless ($dbh) {
 			alarm(0);
+			# We don't want to trigger any action because of a simple 'too many connections' error
+			return "UNKNOWN: Too many connections! " . DBI::errstr if (DBI::err == 1040);
 			return "ERROR: Connect error (host = $peer_host:$peer_port, user = $peer_user)! " . DBI::errstr;
 		}
 	

@@ -50,6 +50,7 @@ our $RULESET = {
 		'incremental_command'	=> { 'deprequired' => { 'incremental' => 1 } },
 		'incremental'			=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
 		'single_run'			=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
+		'true_copy'				=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
 		}
 	},
 	'host'					=> { 'required' => 1, 'multiple' => 1, 'template' => 'default', 'section' => {

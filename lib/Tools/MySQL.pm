@@ -220,3 +220,30 @@ sub _connect($$$$) {
 	return DBI->connect($dsn, $user, $password, { PrintError => 0 });
 }
 
+sub get_master_host($) {
+	my $host_name = shift;
+
+	# Get connection information
+	my ($host, $port, $user, $password)	= _get_connection_info($host_name);
+	unless (defined($host)) {
+		ERROR "No connection info for host '$host_name'";
+		return undef;
+	}
+
+	# Connect to server
+	my $dbh = _connect($host, $port, $user, $password);
+	unless ($dbh) {
+		ERROR "Can't connect to MySQL (host = $host:$port, user = $user)!";
+		return undef;
+	}
+
+	# Get slave status
+	my $res = $dbh->selectrow_hashref('SHOW SLAVE STATUS');
+	return "ERROR: Can't get slave status for host '$host_name'! Error: " . $dbh->errstr unless ($res);
+
+	# Disconnect
+	$dbh->disconnect();	
+
+	return $res->{Master_Host};
+}
+

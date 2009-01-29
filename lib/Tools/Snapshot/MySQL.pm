@@ -37,8 +37,9 @@ sub get_pos_info($$) {
 	$pos_info->{master} = $res;
 
 	# Get slave status info
-	$res = $dbh->selectrow_hashref("SHOW SLAVE STATUS");
-	return "ERROR: Can't get slave status information! Error: " . $dbh->errstr unless ($res);
+	$res = $dbh->selectrow_hashref('SHOW SLAVE STATUS');
+	return "ERROR: Can't get slave status information! Error: " . $dbh->errstr if (defined($dbh->err));
+	$res = {} unless ($res);
 	$pos_info->{slave} = $res;
 
 	return 'OK: Got status info!';

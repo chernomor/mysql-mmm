@@ -15,14 +15,6 @@ MMM::Tools::Tools - functions for the mmm-tools.
 
 =cut
 
-
-our @CLONE_MODES = qw(
-	master-master
-	master-slave
-	slave-slave
-);
-
-
 =over 4
 
 =item check_backup_destination($path, [$should_be_empty])
@@ -473,7 +465,7 @@ sub cleanup($$) {
 	INFO "Deleting master binary logs: $1.*";
 	system("find $dir -name '$1.*' | xargs rm -vf");
 	
-	if ($status->{slave} && $status->{slave}->{Relay_Log_File} ne '') {
+	if ($status->{slave} && $status->{slave}->{Relay_Log_File}) {
 		my $slave_log = $status->{slave}->{Relay_Log_File};
 		unless ($slave_log =~ /^(.*)\.(\d+)$/) {
 			ERROR "Unknown relay binary log file name format '$slave_log'!";

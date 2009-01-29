@@ -163,7 +163,6 @@ unless ($skip_mysqld) {
 }
 
 
-
 # Check/Create destination directory
 die unless (MMM::Tools::Tools::check_restore_destination($dest_dir));
 
@@ -177,18 +176,14 @@ else {
 }
 
 
-
 # Cleanup
 die unless (MMM::Tools::Tools::cleanup($status, $dest_dir));
-
 
 
 unless ($skip_mysqld) {
 
 	# Start MySQL server
 	die unless (MMM::Tools::MySQL::start());
-
-
 
 
 	# Setup replication
@@ -220,7 +215,7 @@ unless ($skip_mysqld) {
 	}
 }
 
-INFO  'Restore finished!';
+INFO 'Restore operation finished!';
 
 exit 0;
 
@@ -230,12 +225,12 @@ sub print_usage {
 	print "$msg\n\n" if ($msg);
 	print "Usage: $0 [--config <config file>] [--mode <mode>] [--version <version | list>] [--src-dir <dir>] [--dest-dir <dir>] [--dry-run]\n";
 	print "Where:\n";
-	print "  src-dir: directory where backup resides\n";
+	print "  src-dir : directory where backup resides\n";
 	print "  dest-dir: directory where backup should be restored to\n";
-	print "  mode: " . join(', ', @RESTORE_MODES) . "\n";
-	print "  version: \n";
+	print "  mode    : " . join(', ', @RESTORE_MODES) . "\n";
+	print "  version : \n";
 	print "    - when run with 'list' parameter, displays available versions of incremental backups\n";
 	print "    - if version is specified, tries to restore backup for specified version\n";
-	print "  dry-run: check everything and exit without any changes\n\n";
+	print "  dry-run : check everything and exit without any changes\n\n";
 	exit(1);
 }

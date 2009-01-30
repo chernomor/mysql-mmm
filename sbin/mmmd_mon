@@ -47,8 +47,7 @@ $config->check('MONITOR');
 
 
 
-my $debug = 0;
-$debug = 1 unless ($config->{debug} =~ /^(false|off|no|0)$/i);
+my $debug = $config->{debug};
 
 MMM::Common::Log::debug() if ($debug);
 

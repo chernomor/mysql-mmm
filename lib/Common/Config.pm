@@ -9,13 +9,11 @@ use List::Util qw(first);
 
 our $VERSION = '0.01';
 
-
-# TODO boolean => 1 dann werte übersetzen auf 0 / 1
 # TODO remember which config file was read
 
 our $RULESET = {
 	'this'					=> { 'required' => ['AGENT', 'TOOLS'], 'refvalues' => 'host' },
-	'debug'					=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
+	'debug'					=> { 'default' => 0, 'boolean' => 1 },
 	'active_master_role'	=> { 'required' => ['AGENT', 'MONITOR'], 'refvalues' => 'role' },
 	'default_copy_method'	=> { 'required' => ['TOOLS'], 'refvalues' => 'copy_method' },
 	'clone_dirs'			=> { 'required' => ['TOOLS'], 'multiple' => 1 },
@@ -48,9 +46,9 @@ our $RULESET = {
 		'backup_command'		=> { 'required' => 1 },
 		'restore_command'		=> { 'required' => 1 },
 		'incremental_command'	=> { 'deprequired' => { 'incremental' => 1 } },
-		'incremental'			=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
-		'single_run'			=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
-		'true_copy'				=> { 'default' => 0, 'values' => ['true', 'false', 'yes', 'no', 1, 0, 'on', 'off'] },
+		'incremental'			=> { 'default' => 0, 'boolean' => 1 },
+		'single_run'			=> { 'default' => 0, 'boolean' => 1 },
+		'true_copy'				=> { 'default' => 0, 'boolean' => 1 },
 		}
 	},
 	'host'					=> { 'required' => 1, 'multiple' => 1, 'template' => 'default', 'section' => {
@@ -212,6 +210,15 @@ sub parse(\%\%$*) {
 			LOGDIE "'$var' should be a section instead of a variable in '$file' on line $INPUT_LINE_NUMBER!" if defined($ruleset->{$var}->{section});
 			@{$config->{$var}} = split(/\s*,\s*/, $val) if ($ruleset->{$var}->{multiple});
 			$config->{$var} = $val unless ($ruleset->{$var}->{multiple});
+			if ($ruleset->{$var}->{boolean}) {
+				$ruleset->{$var}->{values} = [0, 1];
+				if ($config->{$var} =~ /^(false|off|no|0)$/i) {
+					$config->{$var} = 0;
+				}
+				elsif ($config->{$var} =~ /^(true|on|yes|1)$/i) {
+					$config->{$var} = 1;
+				}
+			}
 			next;
 		}
 

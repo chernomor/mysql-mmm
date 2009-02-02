@@ -47,3 +47,18 @@ Description: MySQL Multi-Master Replication Manager Monitor.
  in replication. 
  .
  This package includes the MMM monitor.
+
+Package: mysql-mmm-tools
+Architecture: all
+Depends: ${perl:Depends}, ${misc:Depends}, mysql-mmm-common, libdbi-perl, libdbd-mysql-perl
+Description: MySQL Multi-Master Replication Manager Tools.
+ MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts 
+ to perform monitoring/failover and management of MySQL Master-Master 
+ replication configurations (with only one node writable at any time). 
+ The toolset also has the ability to read balance standard master/slave 
+ configurations with any number of slaves, so you can use it to move virtual 
+ IP addresses around a group of servers depending on whether they are behind 
+ in replication. 
+ .
+ This package includes the MMM tools mmm_backup, mmm_restore and mmm_clone.
+

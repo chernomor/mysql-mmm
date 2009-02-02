@@ -1,0 +1,6 @@
+bin/tools usr/bin/mysql-mmm/
+etc/mysql-mmm/mmm_tools.conf etc/mysql-mmm/
+lib/Tools usr/share/perl5/MMM/
+sbin/mmm_backup usr/sbin/
+sbin/mmm_restore usr/sbin/
+sbin/mmm_clone usr/sbin/

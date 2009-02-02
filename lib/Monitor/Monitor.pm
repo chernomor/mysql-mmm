@@ -386,7 +386,7 @@ sub _check_host_states($) {
 				my $uptime_diff = $agent->uptime - $agent->last_uptime;
 				next unless ($agent->last_uptime > 0 && $uptime_diff > 0 && $uptime_diff < 60);
 				next if ($agent->flapping);
-				FATAL "State of host '$host' changed from $state to ONLINE because it was down for only $uptime_diff seconds";
+				FATAL sprintf("State of host '%s' changed from %s to ONLINE because it was down for only %d seconds", $host, $state, $uptime_diff);
 				$agent->state('ONLINE');
 				$self->send_agent_status($host);
 				next;

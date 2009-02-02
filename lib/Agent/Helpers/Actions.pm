@@ -108,6 +108,7 @@ Allow writes on local MySQL server. Sets global read_only to 0.
 
 sub mysql_allow_write() {
 	_mysql_set_read_only(0);
+	_exit_ok();
 }
 
 
@@ -119,6 +120,8 @@ Deny writes on local MySQL server. Sets global read_only to 1.
 
 sub mysql_deny_write() {
 	_mysql_set_read_only(1);
+	stop_sql();
+	_exit_ok();
 }
 
 
@@ -134,7 +137,7 @@ sub _mysql_set_read_only($) {
 	# check old read_only state
 	(my $read_only_old) = $dbh->selectrow_array('select @@read_only');
 	_exit_error('SQL Query Error: ' . $dbh->errstr) unless (defined $read_only_old);
-	return 'OK' if ($read_only_old == $read_only_new);
+	return 1 if ($read_only_old == $read_only_new);
 
 	my $res = $dbh->do("set global read_only=$read_only_new");
 	_exit_error('SQL Query Error: ' . $dbh->errstr) unless($res);
@@ -142,7 +145,64 @@ sub _mysql_set_read_only($) {
 	$dbh->disconnect();
 	$dbh = undef;
 
-	return 'OK';
+	return 1;
+}
+
+
+=item stop_sql 
+
+kill all user threads to prevent further writes
+
+=cut
+
+sub stop_sql() {
+	
+	my ($host, $port, $user, $password)	= _get_connection_info();
+	_exit_error('No connection info') unless defined($host);
+
+	# Connect to server
+	my $dbh = _mysql_connect($host, $port, $user, $password);
+	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)!") unless ($dbh);
+
+	my $my_id = $dbh->{'mysql_thread_id'};
+
+	my $max_retries		= 10;
+	my $elapsed_retries	= 0;
+	my $retry			= 1;
+
+	while ($elapsed_retries <= $max_retries && $retry) {
+		$retry = 0;
+
+		# Fetch process list
+		my $processlist = $dbh->selectall_hashref('SHOW PROCESSLIST', 'Id');
+		
+		# Kill processes
+		foreach my $id (keys(%{$processlist})) {
+			# Skip ourselves
+			next if ($id == $my_id);
+	
+			# Skip non-client threads (i.e. I/O or SQL threads used on replication slaves, ...)
+			next if ($processlist->{$id}->{User} eq 'system user');
+	
+			# skip threads of replication clients
+			next if ($processlist->{$id}->{Command} eq 'Binlog Dump');
+
+			# Give threads a chance to finish if we're not on our last retry
+			if ($elapsed_retries < $max_retries
+			 && defined ($processlist->{$id}->{Info})
+			 && $processlist->{$id}->{Info} =~ /^\s*(\/\*.*?\*\/)?\s*(INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|REPAIR|OPTIMIZE|ANALYZE|CHECK)/si
+			) {
+				$retry = 1;
+				next;
+	        }
+
+			# Kill process
+			$dbh->do("KILL $id");
+		}
+
+		sleep(1) if ($elapsed_retries < $max_retries && $retry);
+		$elapsed_retries++;
+	}
 }
 
 

@@ -76,6 +76,8 @@ sub init($) {
 	my $res;
 	foreach my $host (keys(%{$main::config->{host}})) {
 		my $agent = $agents->get($host);
+
+		# Get AGENT status
 		$res = $agent->cmd_get_agent_status();
 		if ($res =~ /^OK/) {
 			my ($msg, $state, $roles_str, $master) = split('\|', $res);
@@ -87,17 +89,14 @@ sub init($) {
 					push @roles, $role;
 				}
 			}
-			$agent_status->{$host} = {
-				state	=> $state,
-				roles	=> \@roles,
-				master	=> $master
-			};
+			$agent_status->{$host} = { state => $state, roles => \@roles, master => $master };
 		}
 		else {
 			FATAL "Could not get agent status for host '$host'. Will switch to passive mode: $res";
 			$status = 0;
 		}
 		
+		# Get SYSTEM status
 		$res = $agent->cmd_get_system_status();
 		if ($res =~ /^OK/) {
 			my ($msg, $writable, $roles_str) = split('\|', $res);
@@ -121,6 +120,7 @@ sub init($) {
 		next unless (defined($agent_status->{$host}));
 		next unless (defined($system_status->{$host}));
 
+		# Compare agent and system status
 		if ($agent_status->{$host}->{state} ne 'UNKNOWN' && $agent_status->{$host}->{state} ne $agent->state) {
 			FATAL "Agent state '", $agent_status->{$host}->{state}, "' differs from stored one '", $agent->state, "' for host '$host'. Will switch to passive mode";
 			$status = 0;
@@ -150,7 +150,9 @@ sub init($) {
 
 	DEBUG "STATE INFO\n", Data::Dumper->Dump([$agents, $agent_status, $system_status], ['Stored status', 'Agent status', 'System status']);
 
+	# Maybe switch into passive mode?
 	unless ($status) {
+		# Enter PASSIVE MODE
 		$self->passive(1);
 		my $agent_status_str = '';
 		foreach my $host (sort(keys(%{$agent_status}))) {
@@ -174,15 +176,35 @@ sub init($) {
 		my $status_str = sprintf("\nStored status:\n%s\nAgent status:\n%s\nSystem status:\n%s", $agents->get_status_info(), $agent_status_str, $system_status_str);
 		$self->passive_info("Discrepancies between stored status, agent status and system status during startup.\n" . $status_str);
 		FATAL "Switching to PASSIVE MODE!!! $status_str";
+
 		foreach my $host (keys(%{$main::config->{host}})) {
 			my $agent = $agents->get($host);
 
-			# Set unknown hosts to AWAITING_RECOVERY
+			# Set all unknown hosts to AWAITING_RECOVERY
 			$agent->state('AWAITING_RECOVERY') if ($agent->state eq 'UNKNOWN');
+
+			next unless ($system_status->{$host});
+
+			# Set status restored from agent systems
+			$agent->state('ONLINE');
+			foreach my $role (@{$system_status->{$host}->{roles}}) {
+				next unless ($self->roles->exists_ip($role->name, $role->ip));
+				next unless ($self->roles->can_handle($role->name, $host));
+				$self->roles->set_role($role->name, $role->ip, $host);
+			}
 		}
+
+		# propagate roles to agents-objects
+		foreach my $host (keys(%{$main::config->{host}})) {
+			my $agent = $agents->get($host);
+			my @roles = sort($self->roles->get_host_roles($host));
+			$agent->roles(\@roles);
+		}
+
 		return;
 	}
 
+	# Stay in ACTIVE MODE
 	# Everything is okay, apply roles from status file.
 	foreach my $host (keys(%{$main::config->{host}})) {
 		my $agent = $agents->get($host);

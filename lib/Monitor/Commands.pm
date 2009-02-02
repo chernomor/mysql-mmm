@@ -157,8 +157,8 @@ sub set_ip($$) {
 	# Determine all roles and propagate them to agent objects.
 	foreach my $one_host (@{ $roles->get_valid_hosts($role) }) {
 		my $agent = $agents->get($one_host);
-		my @roles = sort($roles->get_host_roles($one_host));
-		$agent->roles(\@roles);
+		my @agent_roles = sort($roles->get_host_roles($one_host));
+		$agent->roles(\@agent_roles);
 	}
 	return "OK: Set role '$role($ip)' to host '$host'.";
 }

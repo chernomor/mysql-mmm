@@ -60,8 +60,10 @@ sub main($$) {
 			# If success
 			if ($res =~ /^OK/) {
 				next if ($failures->{$host_name}->{state} == 1);
-				INFO "Check '$check_name' on '$host_name' is ok!";
-				$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 1));
+				if ($failures->{$host_name}->{state} != -2) {
+					INFO "Check '$check_name' on '$host_name' is ok!";
+					$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 1));
+				}
 				$failures->{$host_name}->{time}		= 0;
 				$failures->{$host_name}->{state}	= 1;
 				next;

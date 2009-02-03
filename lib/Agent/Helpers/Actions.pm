@@ -120,7 +120,7 @@ Deny writes on local MySQL server. Sets global read_only to 1.
 
 sub mysql_deny_write() {
 	_mysql_set_read_only(1);
-	stop_sql();
+	kill_sql();
 	_exit_ok();
 }
 
@@ -149,13 +149,13 @@ sub _mysql_set_read_only($) {
 }
 
 
-=item stop_sql 
+=item kill_sql 
 
 kill all user threads to prevent further writes
 
 =cut
 
-sub stop_sql() {
+sub kill_sql() {
 	
 	my ($host, $port, $user, $password)	= _get_connection_info();
 	_exit_error('No connection info') unless defined($host);
@@ -166,7 +166,7 @@ sub stop_sql() {
 
 	my $my_id = $dbh->{'mysql_thread_id'};
 
-	my $max_retries		= 10;
+	my $max_retries		= $main::config->{max_kill_retries};
 	my $elapsed_retries	= 0;
 	my $retry			= 1;
 

@@ -13,95 +13,575 @@ Config files may resist in @file{/etc}, @file{/etc/mmm} or @file{/etc/mysql-mmm}
 @item mmmd_agent	@tab @file{mmm_agent.conf}
 @item mmmd_mon		@tab @file{mmm_mon.conf} or @file{mmm_mon_CLUSTER.conf}
 @item mmm_control	@tab @file{mmm_mon.conf} or @file{mmm_mon_CLUSTER.conf}
+@item mmm_backup	@tab @file{mmm_tools.conf}
+@item mmm_clone		@tab @file{mmm_tools.conf}
+@item mmm_restore	@tab @file{mmm_tools.conf}
 @end multitable
 
-node Config files
-section Config files
-cindex Config files
+@node Configuration syntax
+@section Configuration syntax
+@cindex Configuration syntax
+
+@subsection Comments
+@cindex Comments
+Lines which begin with the hash character @code{#} are considered comments, 
+and are ignored. Comments may not be included on a line after a configuration 
+directive. White space occuring before comments are ignored.
+@example
+# This is a comment
+debug	1 # this is no comment
+@end example
+
+@subsection Variables
+@cindex Variables
+asdsadasd
+@example
+debug   0
+@end example
+
+@subsection Specifying multiple values
+For some variables you may specify multiple values seperated by a comma:
+@example
+ips     192.168.0.51, 192.168.0.52, 192.168.0.53
+@end example
+
+@subsection Sections
+@cindex Sections
+The configuration is divided into two kinds of sections: unique and named.
+
+@subsubsection Unique sections
+@cindex Unique Sections
+Unique sections ... TODO
+@example
+<monitor>
+    ip     127.0.0.1
+</monitor>
+@end example
+@*
+It is also possible to define empty unique sections:
+@example
+<socket/>
+@end example
+
+@subsubsection Named sections
+@cindex Named sections
+Named sections ... TODO
+@example
+<host db1>
+    ip     192.168.0.31
+</host>
+@end example
+@*
+You may also define empty named sections:
+@example
+<check mysql/>
+@end example
+
+@subsubsection Default sections
+Values assigned in sections named @emph{default} will be used as default values for all other sections of this type.
+@example
+# Default mode of all hosts is 'slave'
+<host default>
+    mode	slave
+</host>
+@end example
+
+
+@subsection Includes
+It is possible to split up the configuration into several files and include them via @code{include}.
+@example
+include	common.conf
+@end example
+
+@node Configuration variables
+@section Configuration variables
+
 
 @node Global variables
 @subsection Global variables
 
-@multitable @columnfractions 0.2 0.1 0.7
-@headitem Variable @tab Default @tab Description
-@item this					@tab -		@tab name of @var{this} host (for agents only)
-@item debug					@tab 0		@tab Enable debug mode. Allowed values: true/yes/1/on false/no/0/off
-@item active_master_role	@tab -		@tab name of the role for which identifies the active master
+@itemize
+
+@item @strong{this}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab name of @var{this} host
+@item Default value:	@tab -
+@item Used by:			@tab agent, tools
 @end multitable
 
-@node Monitor section
-@subsection Monitor section
+@item @strong{debug}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Enable debug mode
+@item Allowed values:	@tab true/yes/1/on false/no/0/off
+@item Default value:	@tab 0
+@item Used by:			@tab agent, monitor
+@end multitable
+
+@item @strong{active_master_role}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab name of the role for which identifies the active master
+@item Default value:	@tab -
+@item Used by:			@tab agent, monitor
+@end multitable
+
+@item @strong{max_kill_retries}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Maximum number of retries when killing threads to prevent further writes during the removal of the @code{active_master_role}.
+@item Default value:	@tab 10
+@item Used by:			@tab agent
+@end multitable
+
+@item @strong{default_copy_method}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab name of the default copy method
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{clone_dirs}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab path(s) containing mysql data/logs (relative to mount point of logical volume)
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@end itemize
+
+
+@node monitor section
+@subsection @code{monitor} section
 The @code{monitor} section is required by mmmd_mon and mmmd_control.
 
-@multitable @columnfractions 0.2 0.1 0.7
-@headitem Variable @tab Default @tab Description
-@item ip				@tab -		@tab IP on which mmmd_mon listens
-@item port				@tab 9988	@tab Port on which mmmd_mon listens
-@item pid_path			@tab -		@tab Location of pid-file
-@item bin_path			@tab -		@tab Path to directory containing MMM binaries
-@item status_path		@tab -		@tab Location of of status file
-@item ping_interval		@tab 1		@tab Break between network checks
-@item ping_ips			@tab -		@tab IPs used for network checks
-@item flap_duration		@tab 3600	@tab Duration in seconds for flap detection. See @code{flap_count}
-@item flap_count		@tab 3		@tab Maximum number of downtimes within @code{flap_duration} seconds after which a host is considered to be flapping.
+@itemize
+
+@item @strong{ip}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab IP on which mmmd_mon listens
+@item Default value:	@tab -
+@item Used by:			@tab control, monitor
 @end multitable
 
-@node Host sections
-@subsection Host sections
-
-@multitable @columnfractions 0.2 0.1 0.7
-@headitem Variable @tab Default @tab Description
-@item ip					@tab -							@tab IP of host
-@item mode					@tab -							@tab Mode of host. Either @code{master} or @code{slave}.
-@item peer					@tab -							@tab Name of peer host (if mode is master)
-@item pid_path				@tab -							@tab Location of pid-file
-@item bin_path				@tab -							@tab Path to directory containing MMM binaries
-@item agent_port			@tab 9989						@tab Port on which mmmd_agent listens
-@item cluster_interface		@tab -							@tab network interface on which the IPs of the roles should be configured
-@item mysql_port			@tab 3306						@tab Port on which mysqld is listening
-@item mysql_pidfile			@tab /var/run/mysqld/mysqld.pid	@tab location of mysql pid-file
-@item mysql_rcscript		@tab /etc/init.d/mysql			@tab location of mysql rc-script
-@item tools_user			@tab -							@tab mysql user for MMM Tools
-@item tools_password		@tab -							@tab mysql password for MMM Tools
-@item agent_user			@tab -							@tab mysql user for MMM Agent
-@item agent_password		@tab -							@tab mysql password for MMM Agent
-@item monitor_user			@tab -							@tab mysql user for MMM Monitor
-@item monitor_password		@tab -							@tab mysql password for MMM Monitor
-@item replication_user		@tab -							@tab mysql user used for replication
-@item replication_password	@tab -							@tab mysql password used for replication
+@item @strong{port}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Port on which mmmd_mon listens
+@item Default value:	@tab 9988
+@item Used by:			@tab control, monitor
 @end multitable
 
-
-@node Role sections
-@subsection Role sections
-
-@multitable @columnfractions 0.2 0.1 0.7
-@headitem Variable @tab Default @tab Description
-@item mode				@tab -		@tab Mode of role. Either @code{balanced} or @code{exclusive} (see @pxref{Roles}).
-@item hosts				@tab -		@tab Hosts which may take over the role
-@item ips				@tab -		@tab One or multiple IPs associated with the role
+@item @strong{pid_path}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Location of pid-file
+@item Default value:	@tab -
+@item Used by:			@tab monitor
 @end multitable
 
-
-@node Check sections
-@subsection Check sections
-
-@multitable @columnfractions 0.2 0.1 0.7
-@headitem Variable @tab Default @tab Description
-@item check_period		@tab 5		@tab Perform check every 5 seconds
-@item trap_period		@tab 10		@tab Check is considered as failed if it doesn't succeed for at least @var{trap_period} seconds.
-@item timeout			@tab 2		@tab Check times out after @var{timeout} seconds
-@item restart_after		@tab 10000	@tab Restart checker process after @var{restart_after} checks
-@item max_backlog		@tab 60		@tab Maximum backlog for check @code{rep_backlog}.
+@item @strong{bin_path}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Path to directory containing MMM binaries
+@item Default value:	@tab -
+@item Used by:			@tab monitor
 @end multitable
 
-@node Socket section
-@subsection Socket section
-
-@multitable @columnfractions 0.2 0.1 0.7
-@headitem Variable @tab Default @tab Description
-@item type				@tab -		@tab Socket type to use. Either @code{plain} or @code{ssl}
-@item cert_file			@tab -		@tab location of SSL certificate (if type is ssl)
-@item key_file			@tab -		@tab location of RSA private key  (if type is ssl)
-@item ca_file			@tab -		@tab location of file containing certificate(s) of the reputable certificate authorities  (if type is ssl)
+@item @strong{status_path}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Location of of status file
+@item Default value:	@tab -
+@item Used by:			@tab monitor
 @end multitable
+
+@item @strong{ping_interval}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Break between network checks
+@item Default value:	@tab 1
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{ping_ips}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab IPs used for network checks
+@item Default value:	@tab -
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{flap_duration}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Duration in seconds for flap detection. See @code{flap_count}
+@item Default value:	@tab 3600
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{flap_count}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Maximum number of downtimes within @code{flap_duration} seconds after which a host is considered to be flapping.
+@item Default value:	@tab 3
+@item Used by:			@tab monitor
+@end multitable
+
+@end itemize
+
+
+@node host sections
+@subsection @code{host} sections
+
+@itemize
+
+@item @strong{ip}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab IP of host
+@item Default value:	@tab -
+@item Used by:			@tab agent, monitor, tools
+@end multitable
+
+@item @strong{mode}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Mode of host. Either @code{master} or @code{slave}.
+@item Default value:	@tab -
+@item Used by:			@tab agent, monitor
+@end multitable
+
+@item @strong{peer}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Name of peer host (if mode is master)
+@item Default value:	@tab -
+@item Used by:			@tab agent, monitor
+@end multitable
+
+@item @strong{pid_path}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Location of pid-file
+@item Default value:	@tab -
+@item Used by:			@tab agent
+@end multitable
+
+@item @strong{bin_path}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Path to directory containing MMM binaries
+@item Default value:	@tab -
+@item Used by:			@tab agent
+@end multitable
+
+@item @strong{agent_port}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Port on which mmmd_agent listens
+@item Default value:	@tab 9989
+@item Used by:			@tab agent, monitor
+@end multitable
+
+@item @strong{cluster_interface}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab network interface on which the IPs of the roles should be configured
+@item Default value:	@tab -
+@item Used by:			@tab agent
+@end multitable
+
+@item @strong{mysql_port}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Port on which mysqld is listening
+@item Default value:	@tab 3306
+@item Used by:			@tab agent, monitor, tools
+@end multitable
+
+@item @strong{mysql_pidfile}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab location of mysql pid-file
+@item Default value:	@tab /var/run/mysqld/mysqld.pid
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{mysql_rcscript}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab location of mysql rc-script
+@item Default value:	@tab /etc/init.d/mysql
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{mysql_cnf}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab location of my.cnf
+@item Default value:	@tab /etc/my.cnf
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{agent_user}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab mysql user for MMM Agent
+@item Default value:	@tab -
+@item Used by:			@tab agent
+@end multitable
+
+@item @strong{agent_password}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab mysql password for MMM Agent
+@item Default value:	@tab -
+@item Used by:			@tab agent
+@end multitable
+
+@item @strong{monitor_user}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab mysql user for MMM Monitor
+@item Default value:	@tab -
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{monitor_password}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab mysql password for MMM Monitor
+@item Default value:	@tab -
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{replication_user}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab mysql user used for replication
+@item Default value:	@tab -
+@item Used by:			@tab agent, tools
+@end multitable
+
+@item @strong{replication_password}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab mysql password used for replication
+@item Default value:	@tab -
+@item Used by:			@tab agent, tools
+@end multitable
+
+@item @strong{ssh_user}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab SSH user for MMM Tools
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{tools_user}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab mysql user for MMM Tools
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{tools_password}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab mysql password for MMM Tools
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{backup_dir}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Target directory for backups
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{restore_dir}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Directory where backups should be restored to
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{lvm_bin_lvcreate}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Path to lvcreate binary
+@item Default value:	@tab lvcreate
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{lvm_bin_lvremove}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Path to lvremove binary
+@item Default value:	@tab lvremove
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{lvm_snapshot_size}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Size of LVM snapshot
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{lvm_logical_volume}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Logical volume where mysql data and logs reside
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{lvm_volume_group}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Volume group of logical volume with mysql data and logs
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{lvm_mount_dir}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Mount point for LVM snapshot
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{lvm_mount_opts}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Mount options used when mounting LVM snapshot
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@end itemize
+
+
+@node role sections
+@subsection @code{role} sections
+
+@itemize
+
+@item @strong{mode}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Mode of role. Either @code{balanced} or @code{exclusive} (see @pxref{Roles}).
+@item Default value:	@tab -
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{hosts}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Hosts which may take over the role
+@item Default value:	@tab -
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{ips}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab One or multiple IPs associated with the role
+@item Default value:	@tab -
+@item Used by:			@tab agent, monitor
+@end multitable
+
+@end itemize
+
+
+@node check sections
+@subsection @code{check} sections
+
+@itemize
+
+@item @strong{check_period}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Perform check every 5 seconds
+@item Default value:	@tab 5
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{trap_period}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Check is considered as failed if it doesn't succeed for at least @var{trap_period} seconds.
+@item Default value:	@tab 10
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{timeout}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Check times out after @var{timeout} seconds
+@item Default value:	@tab 2
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{restart_after}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Restart checker process after @var{restart_after} checks
+@item Default value:	@tab 10000
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{max_backlog}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Maximum backlog for check @code{rep_backlog}.
+@item Default value:	@tab 60
+@item Used by:			@tab monitor
+@end multitable
+
+@end itemize
+
+@node socket section
+@subsection @code{socket} section
+
+@itemize
+
+@item @strong{type}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Socket type to use. Either @code{plain} or @code{ssl}
+@item Default value:	@tab -
+@item Used by:			@tab agent, control, monitor
+@end multitable
+
+@item @strong{cert_file}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab location of SSL certificate (if type is ssl)
+@item Default value:	@tab -
+@item Used by:			@tab agent, control, monitor
+@end multitable
+
+@item @strong{key_file}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab location of RSA private key  (if type is ssl)
+@item Default value:	@tab -
+@item Used by:			@tab agent, control, monitor
+@end multitable
+
+@item @strong{ca_file}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab location of file containing certificate(s) of the reputable certificate authorities  (if type is ssl)
+@item Default value:	@tab -
+@item Used by:			@tab agent, monitor
+@end multitable
+
+@end itemize
+
+@node copy_method sections
+@subsection @code{copy_method} sections
+
+@itemize
+
+@item @strong{backup_command}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Command used for creation of backup
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{restore_command}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Command used for restoring backup
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{incremental_command}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Command used for showing available increments
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{incremental}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Indicates whether the copy method supports incremental backups
+@item Default value:	@tab 0
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{single_run}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Indicates whether the copy method is able to copy all dirs in one single run
+@item Default value:	@tab 0
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{true_copy}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Indicates whether the copy method creates a 1:1 copy of the data
+@item Default value:	@tab 0
+@item Used by:			@tab tools
+@end multitable
+
+@end itemize

@@ -1,0 +1,155 @@
+@node mmm_control
+@chapter @command{mmm_control} - controlling the monitor
+@cindex mmm_control
+
+TODO short description of mmm_control
+
+@section @code{help}
+@cindex help
+Show help message.
+@section @code{ping}
+Ping the monitor deamon to check if it's still alive.
+
+@example
+# mmm_control ping
+OK: Pinged successfully!
+@end example
+
+@noindent
+When the monitor is down:
+
+@example
+# mmm_control ping
+ERROR: Can't connect to monitor daemon!
+@end example
+
+@section @code{show}
+@cindex show
+Show the current cluster status. See @ref{States} for an explanation of the different node states.
+
+@smallexample
+# mmm_control show
+  db1(192.168.0.31) master/ONLINE. Roles: writer(192.168.0.50), reader(192.168.0.51)
+  db2(192.168.0.32) master/AWAITING_RECOVERY. Roles:
+  db3(192.168.0.33) slave/ONLINE. Roles: reader(192.168.0.52), reader(192.168.0.53)
+@end smallexample
+
+
+@node set_online
+@section @code{set_online @var{host}}
+@cindex set_online
+@code{set_online} is used to recover a node from a failure when it's state is 
+@code{AWAITING_RECOVERY} or @code{ADMIN_OFFLINE}. In the following example, 
+the host db2 was rebooted. Here's the cluster status:
+
+@smallexample
+# mmm_control show
+  db1(192.168.0.31) master/ONLINE. Roles: writer(192.168.0.50), reader(192.168.0.51)
+  db2(192.168.0.32) master/AWAITING_RECOVERY. Roles:
+  db3(192.168.0.33) slave/ONLINE. Roles: reader(192.168.0.52), reader(192.168.0.53)
+@end smallexample
+
+@noindent
+All roles have been moved to hosts db1 and db3 as db2 has failed. Now that it's recovered, we should set it online:
+@smallexample
+# mmm_control set_online db2
+OK: State of 'db2' changed to ONLINE. Now you can wait some time and check its new roles!
+
+# mmm_control show
+  db1(192.168.0.31) master/ONLINE. Roles: writer(192.168.0.50), reader(192.168.0.51)
+  db2(192.168.0.32) master/ONLINE. Roles: reader(192.168.0.52)
+  db3(192.168.0.33) slave/ONLINE. Roles: reader(192.168.0.53)
+@end smallexample
+
+
+@node set_offline
+@section @code{set_offline @var{host}}
+@cindex set_offline
+@code{set_offline} is used to bring a node down manually for maintenance. This will remove all roles and stop replication.
+
+@smallexample
+# mmm_control show
+  db1(192.168.0.31) master/ONLINE. Roles: writer(192.168.0.50), reader(192.168.0.51)
+  db2(192.168.0.32) master/ONLINE. Roles: reader(192.168.0.52)
+  db3(192.168.0.33) slave/ONLINE. Roles: reader(192.168.0.53)
+
+# mmm_control set_offline db1
+OK: State of 'db1' changed to ADMIN_OFFLINE. Now you can wait some time and check all roles!
+
+mon:~# mmm_control show
+  db1(192.168.0.31) master/ADMIN_OFFLINE. Roles:
+  db2(192.168.0.32) master/ONLINE. Roles: writer(192.168.0.50), reader(192.168.0.52)
+  db3(192.168.0.33) slave/ONLINE. Roles: reader(192.168.0.51), reader(192.168.0.53)
+@end smallexample
+
+@noindent
+@code{set_online} is used to bring the node back online again. See @ref{set_online}.
+
+@section @code{mode}
+Print current mode. In the following example, the monitor is running in @code{ACTIVE} mode:
+
+@example
+# mmm_control mode
+ACTIVE
+@end example
+
+@noindent
+Here the monitor is in @code{PASSIVE} mode:
+
+@example
+# mmm_control mode
+PASSIVE
+@end example
+
+@noindent
+See @ref{Passive mode}.
+
+@section @code{set_active}
+Switch the monitor into @code{ACTIVE} mode:
+
+@example
+# mmm_control set_active
+OK: Switched into active mode.
+@end example
+
+@noindent
+See @ref{Passive mode}.
+
+@section @code{set_passive}
+Switch the monitor into @code{PASSIVE} mode:
+
+@example
+# mmm_control set_passive
+OK: Switched into passive mode.
+@end example
+
+@noindent
+See @ref{Passive mode}.
+
+@section @code{move_role @var{role} @var{host}}
+Used to move an exclusive role between the cluster nodes. This command is available in @code{ACTIVE} mode only. Lets assume the following situation:
+
+@smallexample
+# mmm_control show
+  db1(192.168.0.31) master/ONLINE. Roles: reader(192.168.0.51)
+  db2(192.168.0.32) master/ONLINE. Roles: writer(192.168.0.50), reader(192.168.0.52)
+  db3(192.168.0.33) slave/ONLINE. Roles: reader(192.168.0.53)
+@end smallexample
+
+@noindent
+We use move_role to move the role 'writer' to host db1:
+@smallexample
+# mmm_control move_role writer db1
+OK: Role 'writer' has been moved from 'db2' to 'db1'. Now you can wait some time and check new roles info!
+
+# mmm_control show
+  db1(192.168.0.31) master/ONLINE. Roles: writer(192.168.0.50), reader(192.168.0.51)
+  db2(192.168.0.32) master/ONLINE. Roles: reader(192.168.0.52)
+  db3(192.168.0.33) slave/ONLINE. Roles: reader(192.168.0.53)
+@end smallexample
+
+@section @code{set_ip @var{ip} @var{host}}
+set role with ip @var{ip} to host @var{host}
+
+
+

@@ -1,4 +1,4 @@
-mmm.pdf: mmm.texi mmm_configuration.texi mmm_monitor.texi mmm_internals.texi Makefile
+mmm.pdf: mmm.texi mmm_agent.texi mmm_configuration.texi mmm_control.texi mmm_monitor.texi mmm_internals.texi Makefile
 	-rm -r tmp/
 	mkdir -p tmp/
 	cp mmm*.texi tmp/

@@ -15,6 +15,7 @@ our $RULESET = {
 	'this'					=> { 'required' => ['AGENT', 'TOOLS'], 'refvalues' => 'host' },
 	'debug'					=> { 'default' => 0, 'boolean' => 1 },
 	'active_master_role'	=> { 'required' => ['AGENT', 'MONITOR'], 'refvalues' => 'role' },
+	'max_kill_retries'		=> { 'default' => 10, 'required' => ['AGENT'] },
 	'default_copy_method'	=> { 'required' => ['TOOLS'], 'refvalues' => 'copy_method' },
 	'clone_dirs'			=> { 'required' => ['TOOLS'], 'multiple' => 1 },
 	'role'					=> { 'required' => ['AGENT', 'MONITOR'], 'multiple' => 1, 'section' => {
@@ -35,14 +36,14 @@ our $RULESET = {
 		'flap_count'			=> { 'default' => 3 }
 		}
 	},
-	'socket'				=> { 'section' => {
-		'type'					=> { 'required' => 1, 'values' => [ 'plain', 'ssl' ] },
+	'socket'				=> { 'create_if_empty' => ['AGENT', 'CONTROL', 'MONITOR'], 'section' => {
+		'type'					=> { 'default' => 'plain', 'required' => ['AGENT', 'CONTROL', 'MONITOR'], 'values' => [ 'plain', 'ssl' ] },
 		'cert_file'				=> { 'deprequired' => { 'type' => 'ssl' }, 'required' => [ 'AGENT', 'CONTROL', 'MONITOR'] },
 		'key_file'				=> { 'deprequired' => { 'type' => 'ssl' }, 'required' => [ 'AGENT', 'CONTROL', 'MONITOR'] },
 		'ca_file'				=> { 'deprequired' => { 'type' => 'ssl' }, 'required' => [ 'AGENT', 'MONITOR'] }
 		}
 	},
-	'copy_method'			=> { 'required' => ['TOOLS'], 'multiple' => 1, 'section' => {
+	'copy_method'			=> { 'required' => ['TOOLS'], 'multiple' => 1, 'template' => 'default', 'section' => {
 		'backup_command'		=> { 'required' => 1 },
 		'restore_command'		=> { 'required' => 1 },
 		'incremental_command'	=> { 'deprequired' => { 'incremental' => 1 } },
@@ -52,7 +53,7 @@ our $RULESET = {
 		}
 	},
 	'host'					=> { 'required' => 1, 'multiple' => 1, 'template' => 'default', 'section' => {
-		'ip'					=> { 'required' => 1 },
+		'ip'					=> { 'required' => ['AGENT', 'MONITOR', 'TOOLS'] },
 		'mode'					=> { 'required' => ['AGENT', 'MONITOR'], 'values' => ['master', 'slave'] },
 		'peer'					=> { 'deprequired' => { 'mode' => 'master' }, 'refvalues' => 'host' },
 
@@ -189,7 +190,7 @@ sub parse(\%\%$*) {
 		}
 
 		# empty tag - named section
-		if ($line =~/^\s*<\s*(\w+)\s+(\w+)\s*\/>\s*$/) {
+		if ($line =~/^\s*<\s*(\w+)\s+([\w\-_]+)\s*\/>\s*$/) {
 			my $type = $1;
 			my $name = $2;
 			if (!defined($ruleset->{$type}) || !defined($ruleset->{$type}->{section})) {

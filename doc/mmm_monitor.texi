@@ -1,11 +1,13 @@
-@node Monitor
-@chapter Monitor
+@node mmmd_mon
+@chapter @command{mmmd_mon} - the monitor
+@cindex mmmd_mon
 @cindex Monitor
 
 @node States
 @section States
 @cindex States
 
+TODO: http://code.google.com/p/mysql-master-master/wiki/HowToUse
 @multitable @columnfractions .30 .80
 
 @item @code{ONLINE}				@tab Host is online.
@@ -98,16 +100,16 @@ If the network connection doesn't work during startup, mmmd_mon will switch into
 @cindex Flapping, flap detection
 
 mmmd_mon supports the detection of hosts that are "flapping". Flapping occurs 
-if a host which is ONLINE changes its state to HARD_OFFLINE / REPLICATION_FAIL 
-/ REPLICATION_DELAY too often and each time gets switched back to ONLINE 
+if a host which is @code{ONLINE} changes its state to @code{HARD_OFFLINE} / @code{REPLICATION_FAIL} 
+/ @code{REPLICATION_DELAY} too often and each time gets switched back to @code{ONLINE} 
 because it has been down for less than 60 seconds. This may lead to roles 
 getting switched between hosts very often.
 
 To prevent this mmmd_mon has a built in flap-detection which can be tuned in 
 the configuration file. If a host goes down for more than @var{flap_count} 
 times within @var{flap_duration} seconds it is considered as 
-flapping and will not be set ONLINE automatically. It will stay in state 
-AWAITING_RECOVERY until it gets set online (with @command{mmm_control set_online @var{host}}).
+flapping and will not be set @code{ONLINE} automatically. It will stay in state 
+@code{AWAITING_RECOVERY} until it gets set online (with @command{mmm_control set_online @var{host}}).
 
 @node Passive mode
 @section Passive mode
@@ -137,3 +139,4 @@ reads information from
 if that matches -> ok
 if not matches -> passive mode
 if no network -> passive mode
+

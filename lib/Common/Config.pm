@@ -296,7 +296,6 @@ sub _check_rule(\%$$\%\%$) {
 		}
 	}
 	elsif (defined($cur_rule->{required})) {
-		LOGDIE "Default value specified for required config entry '$posstr'" if defined($cur_rule->{default});
 		$cur_rule->{required} = _eval_program_condition($program, $cur_rule->{required}) if (ref($cur_rule->{required}) eq "ARRAY");
 		if (!defined($config->{$varname}) && $cur_rule->{required} == 1) {
 			# TODO better error message for sections
@@ -305,7 +304,6 @@ sub _check_rule(\%$$\%\%$) {
 		}
 	}
 	elsif (defined($cur_rule->{deprequired})) {
-		LOGDIE "Default value specified for required config entry '$posstr'" if defined($cur_rule->{default});
 		LOGDIE "Invalid ruleset '$posstr' - deprequired should be a hash" if (ref($cur_rule->{deprequired}) ne "HASH");
 		my ($var, $val) = %{ $cur_rule->{deprequired} };
 		# TODO WARN if field $var has a default value - this may not be evaluated yet.

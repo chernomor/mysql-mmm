@@ -479,6 +479,9 @@ sub _distribute_roles($) {
 	# Process orphaned roles
 	$self->roles->process_orphans();
 
+	# obey preferences
+	$self->roles->obey_preferences();
+
 	# Balance roles
 	$self->roles->balance();
 
@@ -486,10 +489,24 @@ sub _distribute_roles($) {
 
 	# notify slaves first, if master host has changed
 	unless ($new_active_master eq $old_active_master) {
+		$self->send_agent_status($old_active_master, $new_active_master) if ($old_active_master);
 		$self->notify_slaves($new_active_master);
 	}
 }
 
+# TODO
+# prefer host for exclusive role
+#
+# preferred host must be online
+# preferred host must not have any sign of flapping or downtime in the last minutes ($agent->may_get_flapping)
+# preferred host must be able to handle the role (maybe this should be assured when parsing the config
+# agent must be reachable (->ping)
+# 
+#	my $role_obj = new MMM::Common::Role(name => $role, ip => $ip);
+#	$roles->assign($role_obj, $host);
+# MMM::Monitor::Monitor->instance()->send_agent_status($old_owner);
+# MMM::Monitor::Monitor->instance()->notify_slaves($host) if ($roles->is_active_master_role($role));
+# MMM::Monitor::Monitor->instance()->send_agent_status($host);
 
 =item send_status_to_agents
 
@@ -551,7 +568,18 @@ sub send_agent_status($$$) {
 	$agent->roles(\@roles);
 
 	# Finally send command
-	return $agent->cmd_set_status($master);
+	my $ret = $agent->cmd_set_status($master);
+	unless ($ret) {
+		unless ($agent->agent_down()) {
+			FATAL "Can't reach agent on host '$host'";
+			$agent->agent_down(1);
+		}
+	}
+	elsif ($agent->agent_down()) {
+		FATAL "Agent on host '$host' is reachable again";
+		$agent->agent_down(0);
+	}
+	return $ret;
 }
 
 

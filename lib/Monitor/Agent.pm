@@ -25,7 +25,9 @@ struct 'MMM::Monitor::Agent' => {
 
 	flapping	=> '$',
 	flapstart	=> '$',
-	flapcount	=> '$'
+	flapcount	=> '$',
+
+	agent_down	=> '$'
 };
 
 sub state {
@@ -56,6 +58,18 @@ sub state {
 	return $self->{'MMM::Monitor::Agent::state'};
 }
 
+sub may_get_flapping($) {
+	my $self = shift;
+	if (	!$self->flapcount
+		||	$self->flapcount < 2
+		||	!$self->flapstart
+		||	$self->flapstart < time() - $main::config->{monitor}->{flap_duration}
+	) {
+		return 0;
+	}
+	
+	return 1;
+}
 
 sub _send_command {
 	my $self	= shift;

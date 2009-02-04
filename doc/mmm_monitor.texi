@@ -50,6 +50,7 @@ to be a problem, so the active master will never be in state
 
 exclusive 1 ip
 balanced several ips
+preferred hosts
 
 
 @node Status file

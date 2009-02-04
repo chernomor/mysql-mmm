@@ -32,6 +32,9 @@ sub _new_instance($) {
 			hosts	=> $role_info->{hosts},
 			ips		=> $ips
 		};
+		if ($role_info->{mode} eq 'exclusive' && $role_info->{prefer}) {
+			$self->{$role}->{prefer} = $role_info->{prefer};
+		}
 	}
 
 	return bless $self, $class; 
@@ -210,8 +213,18 @@ sub find_eligible_host($$) {
 
 	my $agents = MMM::Monitor::Agents->instance();
 
+	# Maybe role has a preferred hosts
+	if ($self->{$role}->{prefer}) {
+		my $host = $self->{$role}->{prefer};
+ 		if ($agents->{$host}->state eq 'ONLINE' && !$agents->{$host}->agent_down) {
+			return $host;
+		}
+	}
+
+	# Use host with fewest roles
 	foreach my $host ( @{ $self->{$role}->{hosts} } ) {
 		next unless ($agents->{$host}->state eq 'ONLINE');
+		next if ($agents->{$host}->agent_down);
 		my $cnt = $self->count_host_roles($host);
 		next unless ($cnt < $min_count || $min_host eq '');
 		$min_host	= $host;
@@ -238,6 +251,7 @@ sub find_eligible_hosts($$) {
 
 	foreach my $host ( @{ $self->{$role}->{hosts} } ) {
 		next unless ($agents->{$host}->state eq 'ONLINE');
+		next if ($agents->{$host}->agent_down);
 		my $cnt = $self->count_host_roles($host);
 		$hosts->{$host} = $cnt;
 	}
@@ -272,6 +286,40 @@ sub process_orphans($) {
 		}
 	}
 }
+
+
+=item obey_preferences
+
+Obey preferences by moving roles to preferred hosts
+
+=cut
+sub obey_preferences($) {
+	my $self	= shift;
+
+	my $agents	= MMM::Monitor::Agents->instance();
+
+	foreach my $role (keys(%$self)) {
+		my $role_info = $self->{$role};
+
+		next unless ($role_info->{prefer});
+
+		my $host = $role_info->{prefer};
+
+		next unless ($agents->{$host}->state eq 'ONLINE');
+		next if ($agents->{$host}->agent_down);
+		next if ($agents->{$host}->may_get_flapping);
+
+		my $ip			= $self->get_exclusive_role_ip($role);
+		my $ip_info		= $role_info->{ips}->{$ip};
+		my $old_host	= $ip_info->{assigned_to};
+
+		next if ($old_host eq $host);
+
+		$ip_info->{assigned_to} = $host;
+		INFO "Moving role '$role($ip)' from host '$old_host' to preferred host '$host'";
+	}
+}
+
 
 
 =item balance
@@ -327,7 +375,7 @@ sub move_one_ip($$$$) {
 		my $ip_info = $self->{$role}->{ips}->{$ip};
 		next unless ($ip_info->{assigned_to} eq $host1);
 
-		FATAL "Moving role '$role' with ip '$ip' from host '$host1' to host '$host2'";
+		INFO "Moving role '$role($ip)' from host '$host1' to host '$host2'";
 		$ip_info->{assigned_to} = $host2;
 		return 1;
 	}

@@ -21,7 +21,8 @@ our $RULESET = {
 	'role'					=> { 'required' => ['AGENT', 'MONITOR'], 'multiple' => 1, 'section' => {
 		'mode'					=> { 'required' => ['MONITOR'], 'values' => ['balanced', 'exclusive'] },
 		'hosts'					=> { 'required' => ['MONITOR'], 'refvalues' => 'host', 'multiple' => 1 },
-		'ips'					=> { 'required' => ['AGENT', 'MONITOR'], 'multiple' => 1 }
+		'ips'					=> { 'required' => ['AGENT', 'MONITOR'], 'multiple' => 1 },
+		'prefer'				=> { 'refvalues' => 'hosts' }
 		}
 	},
 	'monitor'				=> { 'required' => ['MONITOR', 'CONTROL'], 'section' => {
@@ -382,23 +383,39 @@ sub _check_rule(\%$$\%\%$) {
 		}
 		elsif (defined($cur_rule->{refvalues})) {
 			if (defined($ruleset->{ $cur_rule->{refvalues} })) {
-				return unless (ref($config->{ $cur_rule->{refvalues} }) eq "HASH");
-				LOGDIE "Could not find any $cur_rule->{refvalues}-sections" unless (ref($config->{ $cur_rule->{refvalues} }) eq "HASH");
 				# reference to section on current level
-				@allowed = keys( %{ $config->{ $cur_rule->{refvalues} } } );
-				# remove template section from list of valid values
-				if (defined($ruleset->{ $cur_rule->{refvalues} }->{template})) {
-					@allowed = grep { $_ ne $ruleset->{ $cur_rule->{refvalues} }->{template}} @allowed;
+				my $reftype = ref($config->{ $cur_rule->{refvalues} });
+				if ($reftype eq 'HASH') {
+					@allowed = keys( %{ $config->{ $cur_rule->{refvalues} } } );
+					# remove template section from list of valid values
+					if (defined($ruleset->{ $cur_rule->{refvalues} }->{template})) {
+						@allowed = grep { $_ ne $ruleset->{ $cur_rule->{refvalues} }->{template}} @allowed;
+					}
+				}
+				elsif ($reftype eq 'ARRAY') {
+					@allowed = @{ $config->{ $cur_rule->{refvalues} } };
+				}
+				else {
+					return unless (ref($config->{ $cur_rule->{refvalues} }) eq "HASH");
+#					LOGDIE "Could not find any $cur_rule->{refvalues}-sections";
 				}
 			}
 			elsif (defined($RULESET->{ $cur_rule->{refvalues} })) {
-				return unless (ref($self->{ $cur_rule->{refvalues} }) eq "HASH");
-				LOGDIE "Could not find any $cur_rule->{refvalues}-sections" unless (ref($self->{ $cur_rule->{refvalues} }) eq "HASH");
-				# reference to section on current level
-				@allowed = keys( %{ $self->{ $cur_rule->{refvalues} } } );
-				# remove template section from list of valid values
-				if (defined($RULESET->{ $cur_rule->{refvalues} }->{template})) {
-					@allowed = grep { $_ ne $RULESET->{ $cur_rule->{refvalues} }->{template}} @allowed;
+				# reference to section on top level
+				my $reftype = ref($self->{ $cur_rule->{refvalues} });
+				if ($reftype eq 'HASH') {
+					@allowed = keys( %{ $self->{ $cur_rule->{refvalues} } } );
+					# remove template section from list of valid values
+					if (defined($RULESET->{ $cur_rule->{refvalues} }->{template})) {
+						@allowed = grep { $_ ne $RULESET->{ $cur_rule->{refvalues} }->{template}} @allowed;
+					}
+				}
+				elsif ($reftype eq 'ARRAY') {
+					@allowed = @{ $self->{ $cur_rule->{refvalues} } };
+				}
+				else {
+					return unless (ref($self->{ $cur_rule->{refvalues} }) eq "HASH");
+#					LOGDIE "Could not find any $cur_rule->{refvalues}-sections" unless (ref($self->{ $cur_rule->{refvalues} }) eq "HASH");
 				}
 			}
 			else {

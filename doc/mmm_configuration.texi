@@ -457,6 +457,13 @@ The @code{monitor} section is required by mmmd_mon and mmmd_control.
 @item Used by:			@tab agent, monitor
 @end multitable
 
+@item @strong{prefer}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab The preferred host for this role. Only allowed for @code{exclusive} roles.
+@item Default value:	@tab -
+@item Used by:			@tab monitor
+@end multitable
+
 @end itemize
 
 

@@ -91,7 +91,7 @@ sub init($) {
 			}
 			$agent_status->{$host} = { state => $state, roles => \@roles, master => $master };
 		}
-		else {
+		elsif ($agent->state ne 'ADMIN_OFFLINE') {
 			FATAL "Could not get agent status for host '$host'. Will switch to passive mode: $res";
 			$status = 0;
 		}
@@ -113,7 +113,7 @@ sub init($) {
 				roles		=> \@roles
 			};
 		}
-		else {
+		elsif ($agent->state ne 'ADMIN_OFFLINE') {
 			FATAL "Could not get system status for host '$host'. Will switch to passive mode: $res";
 			$status = 0;
 		}
@@ -161,7 +161,7 @@ sub init($) {
 				$host,
 				$agent_status->{$host}->{state},
 				scalar(@{$agent_status->{$host}->{roles}}) > 0 ? join(', ', sort(@{$agent_status->{$host}->{roles}})) : 'none',
-				$agent_status->{$host}->{master} ? $agent_status->{$host}->{master} : 'unknown'
+				$agent_status->{$host}->{master} ? $agent_status->{$host}->{master} : '?'
 			);
 		}
 		my $system_status_str = '';
@@ -184,7 +184,7 @@ sub init($) {
 			$agent->state('AWAITING_RECOVERY') if ($agent->state eq 'UNKNOWN');
 
 			next unless ($system_status->{$host});
-
+			next unless (scalar(@{$system_status->{$host}->{roles}}));
 			# Set status restored from agent systems
 			$agent->state('ONLINE');
 			foreach my $role (@{$system_status->{$host}->{roles}}) {

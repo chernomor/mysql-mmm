@@ -80,10 +80,15 @@ sub set_online($) {
 		return "ERROR: Host '$host' is '$host_state' at the moment. It can't be switched to ONLINE.";
 	}
 
+	my $checks	= MMM::Monitor::ChecksStatus->instance();
+
+	if ((!$checks->ping($host) || !$checks->mysql($host))) {
+		return "ERROR: Checks ping and/or mysql are not ok for host '$host'. It can't be switched to ONLINE.";
+	}
+
 	# Check peer replication state
 	if ($main::config->{host}->{$host}->{peer}) {
 		my $peer = $main::config->{host}->{$host}->{peer};
-		my $checks	= MMM::Monitor::ChecksStatus->instance();
 		if ($agents->state($peer) eq 'ONLINE' && (!$checks->rep_threads($peer) || !$checks->rep_backlog($peer))) {
 			return "ERROR: Some replication checks failed on peer '$peer'. We can't set '$host' online now. Please, wait some time.";
 		}

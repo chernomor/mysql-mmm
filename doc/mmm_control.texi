@@ -2,7 +2,7 @@
 @chapter @command{mmm_control} - controlling the monitor
 @cindex mmm_control
 
-TODO short description of mmm_control
+The monitor daemon may be controlled with the help of @command{mmm_control}. If you have multiple clusters, you should always specify the name of the cluster you want to work with (i.e. to check C1 status, use "mmm_control @@C1 show"). Otherwise - if you have only one MMM cluster, it can be used without cluster name.
 
 @section @code{help}
 @cindex help
@@ -137,7 +137,7 @@ Used to move an exclusive role between the cluster nodes. This command is availa
 @end smallexample
 
 @noindent
-We use move_role to move the role 'writer' to host db1:
+We use move_role to move the role @code{writer} to host db1:
 @smallexample
 # mmm_control move_role writer db1
 OK: Role 'writer' has been moved from 'db2' to 'db1'. Now you can wait some time and check new roles info!
@@ -149,7 +149,93 @@ OK: Role 'writer' has been moved from 'db2' to 'db1'. Now you can wait some time
 @end smallexample
 
 @section @code{set_ip @var{ip} @var{host}}
-set role with ip @var{ip} to host @var{host}
+@code{set_ip} can be used to manipulate the roles in @code{PASSIVE} mode. The changes won't be applied until the monitor is switched into @code{ACTIVE} mode via @code{set_active}.
 
+@*
+Let's assume we have our cluster up and running with the following status:
 
+@smallexample
+# mmm_control show
+  db1(192.168.0.31) master/ONLINE. Roles: writer(192.168.0.50)
+  db2(192.168.0.32) master/ONLINE. Roles: reader(192.168.0.51)
+  db3(192.168.0.33) slave/ONLINE. Roles: reader(192.168.0.52), reader(192.168.0.53)
+@end smallexample
 
+@noindent
+Now, several bad thing happen:
+@enumerate
+@item network connection to db1 fails
+@item mmmd_mon detects that db1 has failed
+@item mmmd_mon moves the writer role to db2, but can't remove it from db1 (because it can't connect to it)
+@item mmmd_mon crashes and the status file gets corrupted.
+@item network connection to db1 recovers
+@item The admin restarts mmmd_mon
+@end enumerate
+
+mmmd_mon has no status information now, and two nodes report, that they have the 
+@code{writer} role, so mmmd_mon doesn't know what it should do and will switch 
+into @code{PASSIVE} mode.
+
+@smallexample
+# mmm_control mode
+PASSIVE
+
+# mmm_control show
+# --- Monitor is in PASSIVE MODE ---
+# Cause: Discrepancies between stored status, agent status and system status during startup.
+#
+# Stored status:
+#   db1(192.168.0.31) master/UNKNOWN. Roles:
+#   db2(192.168.0.32) master/UNKNOWN. Roles:
+#   db3(192.168.0.33) slave/UNKNOWN. Roles:
+#
+# Agent status:
+#   db1 ONLINE. Roles: writer(192.168.0.50). Master: ?
+#   db2 ONLINE. Roles: writer(192.168.0.50), reader(192.168.0.51). Master: ?
+#   db3 ONLINE. Roles: reader(192.168.0.52), reader(192.168.0.53). Master: db2
+#
+# System status:
+#   db1 writable. Roles: writer(192.168.0.50)
+#   db2 writable. Roles: writer(192.168.0.50), reader(192.168.0.51)
+#   db3 readonly. Roles: reader(192.168.0.52), reader(192.168.0.53)
+#
+  db1(192.168.0.31) master/ONLINE. Roles: writer(192.168.0.50)
+  db2(192.168.0.32) master/ONLINE. Roles: reader(192.168.0.51)
+  db3(192.168.0.33) slave/ONLINE. Roles: reader(192.168.0.52), reader(192.168.0.53)
+@end smallexample
+
+@noindent
+As you see, mmmd_mon tries to recover the status as well as possible. But in this situation it's wrong so one must move the writer role to db2 manually: 
+
+@smallexample
+# mmm_control set_ip 192.168.0.50 db2
+OK: Set role 'writer(192.168.0.50)' to host 'db2'.
+@end smallexample
+
+@noindent
+Now take a look at the status, everything looks ok:
+
+@smallexample
+# mmm_control show
+# --- Monitor is in PASSIVE MODE ---
+# [...]
+  db1(192.168.0.31) master/ONLINE. Roles:
+  db2(192.168.0.32) master/ONLINE. Roles: writer(192.168.0.50), reader(192.168.0.51)
+  db3(192.168.0.33) slave/ONLINE. Roles: reader(192.168.0.52), reader(192.168.0.53)
+@end smallexample
+
+@noindent
+Finally switch the monitor into active mode, so that it will apply the roles:
+
+@smallexample
+# mmm_control set_active
+OK: Switched into active mode.
+
+# mmm_control show
+  db1(192.168.0.31) master/ONLINE. Roles: reader(192.168.0.51)
+  db2(192.168.0.32) master/ONLINE. Roles: writer(192.168.0.50)
+  db3(192.168.0.33) slave/ONLINE. Roles: reader(192.168.0.52), reader(192.168.0.53)
+@end smallexample
+
+@*
+@strong{Note:} The role @code{reader(192.168.0.51)} has been moved to db1, because @code{reader} is a @code{balanced} role.

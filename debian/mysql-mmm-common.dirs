@@ -1,4 +1,3 @@
 usr/share/perl5/
-var/log/mysql-mmm
-var/run/
+var/log/mysql-mmm/
 etc/

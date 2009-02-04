@@ -25,7 +25,7 @@ die "See '$0 help' for usage information" if (scalar(@ARGV) < 1);
 
 my $socket = MMM::Common::Socket::create_sender($config->{monitor}->{ip}, $config->{monitor}->{port}, 10);
 unless ($socket && $socket->connected) {
-	print "ERROR: Can't connect to monitor daemon!";
+	print "ERROR: Can't connect to monitor daemon!\n";
 	exit(1);
 }
 

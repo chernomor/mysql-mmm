@@ -7,12 +7,11 @@
 @section States
 @cindex States
 
-TODO: http://code.google.com/p/mysql-master-master/wiki/HowToUse
 @multitable @columnfractions .30 .80
 
-@item @code{ONLINE}				@tab Host is online.
+@item @code{ONLINE}				@tab Host is running without any problems.
 
-@item @code{ADMIN_OFFLINE}		@tab Admin set host to offline
+@item @code{ADMIN_OFFLINE}		@tab host was set to offline manually.
 
 @item @code{HARD_OFFLINE}		@tab Host is offline (Check @code{ping} and/or @code{mysql} failed)
 
@@ -30,12 +29,12 @@ from @code{ONLINE} to any other state, all roles will be removed from it.
 
 @item A host that was in state @code{REPLICATION_DELAY} or 
 @code{REPLICATION_FAIL} will be switched back to @code{ONLINE} if everything 
-is OK again, unless it is flapping (see @pxref{Flapping}).
+is OK again, unless it is flapping (see @ref{Flapping}).
 
 @item A host that was in state @code{HARD_OFFLINE} will be switched to 
 @code{AWAITING_RECOVERY} if everything is OK again. If its downtime was shorter 
 than 60 seconds and it wasn't rebooted, it will be switched back to @code{ONLINE} 
-automatically, unless it is flapping (see @pxref{Flapping} again).
+automatically, unless it is flapping (see @ref{Flapping} again).
 
 @item Replication backlog or failure on the active master isn't considered 
 to be a problem, so the active master will never be in state 
@@ -88,7 +87,7 @@ Without working network connection mmmd_mon will...
 @itemize
 @item ... ignore failed checks.
 @item ... not change the state of hosts.
-@item ... not send anything to the agents.
+@item ... not send anything to agents.
 @end itemize
 
 

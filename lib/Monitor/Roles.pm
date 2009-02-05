@@ -286,11 +286,13 @@ Find orphaned roles and assign them to a host if possible.
 
 =cut
 
-sub process_orphans($) {
+sub process_orphans($$) {
 	my $self	= shift;
+	my $mode	= shift;
 	
 	foreach my $role (keys(%$self)) {
 		my $role_info = $self->{$role};
+		next if ($mode && $role_info->{mode} ne $mode);
 
 		foreach my $ip (keys(%{$role_info->{ips}})) {
 			my $ip_info = $role_info->{ips}->{$ip};

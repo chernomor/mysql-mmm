@@ -85,7 +85,8 @@ is($roles->count_host_roles('db2'), 2, 'balance roles (role count db2)');
 
 $agents->{db2}->state('HARD_OFFLINE');
 $roles->clear_host_roles('db2');
-$roles->process_orphans();
+$roles->process_orphans('exclusive');
+$roles->process_orphans('balanced');
 is($roles->count_host_roles('db1'), 4, 'process orphans assigns all orphaned roles');
 
 # XXX

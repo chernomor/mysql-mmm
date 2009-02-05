@@ -483,7 +483,8 @@ sub _distribute_roles($) {
 	my $old_active_master = $self->roles->get_active_master();
 	
 	# Process orphaned roles
-	$self->roles->process_orphans();
+	$self->roles->process_orphans('exclusive');
+	$self->roles->process_orphans('balanced');
 
 	# obey preferences
 	$self->roles->obey_preferences();

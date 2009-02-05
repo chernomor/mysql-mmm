@@ -3,6 +3,7 @@ use base 'MMM::Common::Role';
 
 use strict;
 use warnings FATAL => 'all';
+use Log::Log4perl qw(:easy);
 use MMM::Agent::Helpers;
 
 our $VERSION = '0.01';
@@ -26,12 +27,21 @@ Check (=assure) that the role is configured on the local host.
 sub check($) {
 	my $self = shift;
 
-	# TODO debug output
+	my $ret;
+
 	if ($self->name eq $main::agent->writer_role) {
-		MMM::Agent::Helpers::allow_write();
+		$ret = MMM::Agent::Helpers::allow_write();
+		if ($ret !~ /^OK/) {
+			FATAL "Couldn't allow writes: $ret";
+			return;
+		}
 	}
 
-	MMM::Agent::Helpers::configure_ip($main::agent->interface, $self->ip);
+	$ret = MMM::Agent::Helpers::configure_ip($main::agent->interface, $self->ip);
+	if ($ret !~ /^OK/) {
+		FATAL sprintf("Couldn't configure IP '%s' on interface '%s': %s", $self->ip, $main::agent->interface, $ret);
+		return;
+	}
 }
 
 =item add()
@@ -42,13 +52,26 @@ Add a role to the local host.
 sub add($) {
 	my $self = shift;
 	
-	# TODO debug output
+	my $ret;
+
 	if ($self->name eq $main::agent->writer_role) {
-		MMM::Agent::Helpers::sync_with_master();
-		MMM::Agent::Helpers::allow_write();
+		$ret = MMM::Agent::Helpers::sync_with_master();
+		if ($ret !~ /^OK/) {
+			FATAL "Couldn't sync with master: $ret";
+			return;
+		}
+		$ret = MMM::Agent::Helpers::allow_write();
+		if ($ret !~ /^OK/) {
+			FATAL "Couldn't allow writes: $ret";
+			return;
+		}
 	}
 
-	MMM::Agent::Helpers::configure_ip($main::agent->interface, $self->ip);
+	$ret = MMM::Agent::Helpers::configure_ip($main::agent->interface, $self->ip);
+	if ($ret !~ /^OK/) {
+		FATAL sprintf("Couldn't configure IP '%s' on interface '%s': %s", $self->ip, $main::agent->interface, $ret);
+		return;
+	}
 }
 
 =item del()
@@ -58,12 +81,20 @@ Delete a role from the local host.
 =cut
 sub del($) {
 	my $self = shift;
+
+	my $ret;
 	
-	# TODO debug output
-	MMM::Agent::Helpers::clear_ip($main::agent->interface, $self->ip);
+	$ret = MMM::Agent::Helpers::clear_ip($main::agent->interface, $self->ip);
+	if ($ret !~ /^OK/) {
+		FATAL sprintf("Couldn't clear IP '%s' from interface '%s': %s", $self->ip, $main::agent->interface, $ret);
+	}
 
 	if ($self->name eq $main::agent->writer_role) {
-		MMM::Agent::Helpers::deny_write();
+		$ret = MMM::Agent::Helpers::deny_write();
+		if ($ret !~ /^OK/) {
+			FATAL "Couldn't deny writes: $ret";
+			return;
+		}
 	}
 }
 

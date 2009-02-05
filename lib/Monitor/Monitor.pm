@@ -31,7 +31,6 @@ sub instance() {
 }
 
 struct 'MMM::Monitor::Monitor' => {
-	agents				=> 'MMM::Monitor::Agents',
 	checker_queue		=> 'Thread::Queue',
 	checks_status		=> 'MMM::Monitor::ChecksStatus',
 	command_queue		=> 'Thread::Queue',
@@ -328,7 +327,11 @@ sub _check_host_states($) {
 		}
 
 		my $peer_state = '';
-		$peer_state = $agents->state($peer) if ($peer);
+		my $peer_online_since = 0;
+		if ($peer) {
+			$peer_state			= $agents->state($peer);
+			$peer_online_since	= $agents->online_since($peer);
+		}
 
 		# Simply skip this host. It is offlined by admin
 		next if ($state eq 'ADMIN_OFFLINE');
@@ -349,6 +352,9 @@ sub _check_host_states($) {
 
 			# replication failure on active master is irrelevant.
 			next if ($host eq $active_master);
+
+			# ignore replication failure, if peer got online recently (60 seconds, default value of master-connect-retry)
+			next if ($peer_state eq 'ONLINE' && $peer_online_since >= time() - 60);
 
 			# ONLINE -> REPLICATION_FAIL
 			if ($ping && $mysql && !$rep_threads && $peer_state eq 'ONLINE' && $checks->ping($peer) && $checks->mysql($peer)) {
@@ -494,19 +500,6 @@ sub _distribute_roles($) {
 	}
 }
 
-# TODO
-# prefer host for exclusive role
-#
-# preferred host must be online
-# preferred host must not have any sign of flapping or downtime in the last minutes ($agent->may_get_flapping)
-# preferred host must be able to handle the role (maybe this should be assured when parsing the config
-# agent must be reachable (->ping)
-# 
-#	my $role_obj = new MMM::Common::Role(name => $role, ip => $ip);
-#	$roles->assign($role_obj, $host);
-# MMM::Monitor::Monitor->instance()->send_agent_status($old_owner);
-# MMM::Monitor::Monitor->instance()->notify_slaves($host) if ($roles->is_active_master_role($role));
-# MMM::Monitor::Monitor->instance()->send_agent_status($host);
 
 =item send_status_to_agents
 
@@ -569,8 +562,11 @@ sub send_agent_status($$$) {
 
 	# Finally send command
 	my $ret = $agent->cmd_set_status($master);
+
 	unless ($ret) {
-		unless ($agent->agent_down()) {
+		# If mysql or ping is down, nothing will be send to agent. So this doesn't indicate that the agent is down.
+		my $checks	= $self->checks_status;
+		if ($checks->ping($host) && $checks->mysql($host) && !$agent->agent_down()) {
 			FATAL "Can't reach agent on host '$host'";
 			$agent->agent_down(1);
 		}

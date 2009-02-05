@@ -23,6 +23,8 @@ struct 'MMM::Monitor::Agent' => {
 	uptime		=> '$',
 	last_uptime	=> '$',
 
+	online_since=> '$',
+
 	flapping	=> '$',
 	flapstart	=> '$',
 	flapcount	=> '$',
@@ -35,6 +37,10 @@ sub state {
 	if (@_) {
 		my $new_state = shift;
 		my $old_state = $self->{'MMM::Monitor::Agent::state'};
+
+		if ($old_state ne $new_state && $new_state eq 'ONLINE') {
+			$self->online_since(time());
+		}
 
 		if ($old_state ne $new_state && $main::config->{monitor}->{flap_count}) {
 			if ($old_state eq 'ONLINE' and $new_state ne 'ADMIN_OFFLINE') {
@@ -56,19 +62,6 @@ sub state {
 		warn 'Too many args to state' if @_;
 	}
 	return $self->{'MMM::Monitor::Agent::state'};
-}
-
-sub may_get_flapping($) {
-	my $self = shift;
-	if (	!$self->flapcount
-		||	$self->flapcount < 2
-		||	!$self->flapstart
-		||	$self->flapstart < time() - $main::config->{monitor}->{flap_duration}
-	) {
-		return 0;
-	}
-	
-	return 1;
 }
 
 sub _send_command {

@@ -171,6 +171,26 @@ sub get_exclusive_role_ip($$) {
 }
 
 
+=item assigned_to_preferred_host($role)
+
+Check if role is assigned to preferred host
+
+=cut
+
+sub assigned_to_preferred_host($$) {
+	my $self	= shift;
+	my $role	= shift;
+
+	my $role_info = $self->{$role};
+	return undef unless $role_info;
+	return undef unless ($role_info->{prefer});
+
+	my @ips = keys( %{ $role_info->{ips} } );
+	return ($role_info->{ips}->{$ips[0]}->{assigned_to} eq $role_info->{prefer});
+	
+}
+
+
 =item clear_host_roles($host)
 
 Remove all roles from host $host.
@@ -307,9 +327,9 @@ sub obey_preferences($) {
 
 		next unless ($agents->{$host}->state eq 'ONLINE');
 		next if ($agents->{$host}->agent_down);
-		next if ($agents->{$host}->may_get_flapping);
 
-		my $ip			= $self->get_exclusive_role_ip($role);
+		my @ips			= keys( %{ $role_info->{ips} } );
+		my $ip			= $ips[0];
 		my $ip_info		= $role_info->{ips}->{$ip};
 		my $old_host	= $ip_info->{assigned_to};
 

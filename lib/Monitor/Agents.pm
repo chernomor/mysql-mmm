@@ -88,6 +88,20 @@ sub state($$) {
 }
 
 
+=item online_since($host)
+
+Get time since host $host is online.
+
+=cut
+
+sub online_since($$) {
+	my $self	= shift;
+	my $host	= shift;
+	LOGDIE "Can't get time since invalid host '$host' is online" if (!defined($self->{$host}));
+	return $self->{$host}->online_since;
+}
+
+
 =item set_state($host, $state)
 
 Set state of host $host to $state.

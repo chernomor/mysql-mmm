@@ -194,6 +194,8 @@ sub move_role($$) {
 	my $agent = MMM::Monitor::Agents->instance()->get($host);
 	return "ERROR: Can't reach agent daemon on '$host'! Can't move roles there!" unless ($agent->cmd_ping());
 
+	return "ERROR: Role '$role' is assigned to preferred host '$old_owner'. Can't move it!" if ($roles->assigned_to_preferred_host($role));
+
 	my $ip = $roles->get_exclusive_role_ip($role);
 	return "Error: Role $role has no IP." unless ($ip);
 

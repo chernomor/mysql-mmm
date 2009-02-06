@@ -68,6 +68,15 @@ sub main($$) {
 				$failures->{$host_name}->{state}	= 1;
 				next;
 			}
+
+			# If unknown
+			if ($res =~ /^UNKNOWN/) {
+				next if ($failures->{$host_name}->{state} == -3);
+				$failures->{$host_name}->{time} = time();
+				$failures->{$host_name}->{state}= -3;
+				WARN "Check '$check_name' on '$host_name' is in unknown state! Message: $res";
+				next;
+			}
 			
 			# If failed
 			if ($res =~ /^ERROR/) {
@@ -81,7 +90,7 @@ sub main($$) {
 				
 				next if ($failure_age < $options->{trap_period});
 
-				ERROR "Check '$check_name' on '$host_name' has failed for $failure_age seconds!";
+				ERROR "Check '$check_name' on '$host_name' has failed for $failure_age seconds! Message: $res";
 				$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 0));
 				$failures->{$host_name}->{state}	= 0;
 				next;

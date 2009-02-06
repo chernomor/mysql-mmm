@@ -131,7 +131,7 @@ sub turn_off_slave() {
 =item sync_with_master( )
 
 Try to sync a (soon active) master up with his peer (old active master) when the
-I<active_writer_role> is moved. If peer is reachable sync with master log. If 
+I<active_master_role> is moved. If peer is reachable sync with master log. If 
 not reachable, sync with relay log.
 
 Calls B<bin/agent/sync_with_master>, which reads the config file.

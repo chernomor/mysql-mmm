@@ -233,7 +233,7 @@ sub toggle_slave($) {
 
 =item sync_with_master( )
 
-Try to sync up a (soon active) master with his peer (old active master) when the I<active_writer_role> is moved. If the peer is reachable it syncs with the master log. If not reachable, syncs with the relay log.
+Try to sync up a (soon active) master with his peer (old active master) when the I<active_master_role> is moved. If the peer is reachable it syncs with the master log. If not reachable, syncs with the relay log.
 
 =cut
 

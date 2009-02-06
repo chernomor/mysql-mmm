@@ -65,8 +65,9 @@ Balanced roles may have multiple ips. The ips will be balanced between the hosts
 no host has two roles more than another host. 
 @end table
 
-TODO describe active_writer_role
-
+TODO describe active_master_role
+allow writes
+change master of all hosts with mode=slave to this host
 
 @node Status file
 @section Status file
@@ -106,7 +107,7 @@ Without working network connection mmmd_mon will...
 @item ... not send anything to agents.
 @end itemize
 
-
+@noindent
 If the network connection doesn't work during startup, mmmd_mon will switch into passive mode (@pxref{Passive mode}).
 
 

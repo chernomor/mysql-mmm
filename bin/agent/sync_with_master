@@ -31,7 +31,7 @@ sync_with_master
 
 =head1 DESCRIPTION
 
-sync_with_master is a helper binary for B<mmmd_agent>. It tries to sync up a (soon active) master with his peer (old active master) when the I<active_writer_role> is moved. If the peer is reachable it syncs with the master log. If not reachable, syncs with the relay log.
+sync_with_master is a helper binary for B<mmmd_agent>. It tries to sync up a (soon active) master with his peer (old active master) when the I<active_master_role> is moved. If the peer is reachable it syncs with the master log. If not reachable, syncs with the relay log.
 
 =head1 USAGE
 

@@ -433,6 +433,9 @@ The @code{monitor} section is required by mmmd_mon and mmmd_control.
 
 @node role sections
 @subsection @code{role} sections
+This section defines what roles are in the cluster and which IPs will be used 
+for each role. Since roles are moved among servers each server needs an IP 
+(for the monitor to talk to it) and each role needs an IP. 
 
 @itemize
 
@@ -592,3 +595,4 @@ The @code{monitor} section is required by mmmd_mon and mmmd_control.
 @end multitable
 
 @end itemize
+

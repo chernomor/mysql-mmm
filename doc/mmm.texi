@@ -36,38 +36,105 @@ This manual is for MMM version 2.
 @chapter Overview
 @cindex Overview
 
-http://code.google.com/p/mysql-master-master/wiki/Introduction
+MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts to perform monitoring/failover and management of MySQL Master-Master replication configurations (with only one node writable at any time). The toolset also has the ability to read balance standard master/slave configurations with any number of slaves, so you can use it to move virtual IP addresses around a group of servers depending on whether they are behind in replication. In addition to that, it also has scripts for data backups, resynchronization between nodes etc.
 
-MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts to perform monitoring/failover and management of MySQL Master-Master replication configurations (with only one node writable at any time). The toolset also has the ability to read balance standard master/slave configurations with any number of slaves, so you can use it to move virtual IP addresses around a group of servers depending on whether they are behind in replication. 
-
+@*
 @node Typical use-cases
 @chapter Typical use-cases
 @cindex typical use-cases
-See google code wiki - TypicalUseCases  
-@itemize @bullet
-@item
-Master-Slave
 
-@item
-Master-Master (active-passive) with n Slaves
-@end itemize
+See google code wiki - TypicalUseCases  
+
+@section Two node setup
+@image{mmm-sample-setup-1}
+In two node master-master setup, MMM uses five IPs: single permanent IP for each node that is never changed, 2 reader IPs (read-only) and 1 writer IP (updates). Last three IPs are migrating between the nodes depending on node availability.
+
+Normally (no replication failures, no replication delay etc) active master has 2 IPs (reader and writer), standby master - 1 IP (reader). In case of a failure, both - writer and reader roles migrate to the working node. 
+
+@section Two masters + one/many slaves
+
+@image{mmm-sample-setup-2}
+
 
 
 @node Requirements
 @chapter Requirements
 @cindex Requirements
 
-n+1 hosts
-2n+1 ips (1n already configured)
-LVM for tools (backup/restore/clone)
-privileges
+For an MMM setup with @var{n} MySQL servers, you'll need
 
-SEE InternalsOverview
+@table @code
+@item @var{n} + 1 hosts
+One host for each MySQL server; one host for the MMM monitor.
+@item 2 * (@var{n} + 1) IPs
+One IP for each host (see above); one IP for the writer role; @var{n} IPs for one reader role per host.
+@item monitor user
+A MySQL user with privileges @code{REPLICATION CLIENT} for MMM monitor.
+@item agent user
+A MySQL user with privileges @code{SUPER, REPLICATION CLIENT, PROCESS} for MMM agent.
+@item replication user
+A MySQL user with privileges @code{REPLICATION SLAVE} used for replication.
+@item tools user
+A MySQL user with privileges @code{SUPER, REPLICATION CLIENT, RELOAD} for MMM tools.
+@end table
+
+
+@section Requirements - monitoring host
+
+@itemize
+@item fping (if you want to run @command{mmmd_mon} as non-root user)
+@item Perl modules:
+
+@itemize @minus
+@item Log::Log4perl
+@item Mail::Send
+@item Log::Dispatch
+@item Time::HiRes
+@item Net::Ping
+@item Class:Singleton
+@item Proc::Daemon
+@item Algorithm::Diff
+@item Thread::Queue
+@end itemize
+
+@end itemize
+
+
+@section Requirements - nodes
+One should set read-only=1 in the configuration of all MySQL servers, MMM will change that to read-only=0 on the host with the active_master_role.
+@itemize
+@item iproute
+@item arping or iputils-arping
+@item Perl modules:
+
+@itemize @minus
+@item Log::Log4perl
+@item Mail::Send
+@item Log::Dispatch
+@item Proc::Daemon
+@item Algorithm::Diff
+@item DBI and DBD::mysql
+@end itemize
+
+@end itemize
+
+
+@section Additional requirements for MMM tools
+If you want to use the MMM tools (mmm_backup, mmm_restore, mmm_clone) you have to use LVM for the partition on which your MySQL databases and logs reside. @strong{Note:} You'll need free physical extends for the snapshots undo space (see @url{http://www.mysqlperformanceblog.com/2008/06/09/estimating-undo-space-needed-for-lvm-snapshot/, Estimating Undo Space needed for LVM Snapshot}).
+
+@*
+You'll also need the following perl modules:
+@itemize
+@item Path::Class
+@item Data::Dumper
+@end itemize
+
 
 @include mmm_agent.texi
 @include mmm_monitor.texi
 @include mmm_control.texi
 @include mmm_configuration.texi
+@include mmm_logging.texi
 @include mmm_internals.texi
 
 

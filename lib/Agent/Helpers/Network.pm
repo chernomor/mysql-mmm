@@ -6,6 +6,11 @@ use English qw( OSNAME );
 
 our $VERSION = '0.01';
 
+if ($OSNAME eq 'linux') {
+	use Net::ARP;
+	use Time::HiRes qw( usleep );
+}
+
 =head1 NAME
 
 MMM::Agent::Helpers::Network - network related functions for the B<mmmd_agent> helper programs
@@ -108,33 +113,15 @@ sub send_arp($$) {
 
 	
 	if ($OSNAME eq 'linux') {
-		# Get path to arping
-		my $arp_util = `which arping`;
-		chomp($arp_util);
+		my $mac = '';
+		Net::ARP::get_mac('eth0', $mac);
+		return "ERROR: Couln't get mac adress of interface $if" unless ($mac);
 
-		if ($arp_util eq '') {
-			print "ERROR: Could not find arping!\n";
-			exit(1);
+		for (my $i = 0; $i < 5; $i++) {
+			Net::ARP::send_packet($if, $ip, $ip, $mac, 'ff:ff:ff:ff:ff:ff', 'reply');
+			Net::ARP::send_packet($if, $ip, $ip, $mac, 'ff:ff:ff:ff:ff:ff', 'request');
+			usleep(100);
 		}
-
-		# Get broadcast for arping
-		my $output = `/sbin/ifconfig $if`;
-		$output =~ /Bcast:\s*([\d\.]+)/i;	# TODO error check?
-		my $if_bcast = $1;
-
-		# Execute the arping command
-		my $arp_param = '';
-		# Check parameters for arping
-		if (`$arp_util 2>&1` =~ /\[ -S <host\/ip> \]/) {
-			$arp_param = "-i $if -S $ip";
-		}
-		elsif (`$arp_util 2>&1` =~ /\[-s source\]/) {
-			$arp_param = "-I $if -s $ip";
-		} else {
-			print "ERROR: Unknown arping version!\n";
-			exit(1);
-		}
-		`$arp_util -c 2 $arp_param $if_bcast`
 	}
 	elsif ($OSNAME eq 'solaris') {
 		# Get params for send_arp
@@ -163,3 +150,5 @@ sub _solaris_find_logical_if($) {
 	}
 	return undef;
 }
+
+1;

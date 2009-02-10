@@ -78,3 +78,5 @@ sub initial_check() {
 
 	return $state;
 }
+
+1;

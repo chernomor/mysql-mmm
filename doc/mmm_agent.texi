@@ -3,10 +3,4 @@
 @cindex mmmd_agent
 @cindex Agent
 
-TODO
-Document:
-- toggle_slave on ADMIN_OFFLINE
-- set_active_master
-- read_only
-- kill_sql
-- sync_with_master
+TODO short description

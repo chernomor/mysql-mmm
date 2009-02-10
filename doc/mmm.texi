@@ -39,11 +39,22 @@ This manual is for MMM version 2.
 MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts to perform monitoring/failover and management of MySQL Master-Master replication configurations (with only one node writable at any time). The toolset also has the ability to read balance standard master/slave configurations with any number of slaves, so you can use it to move virtual IP addresses around a group of servers depending on whether they are behind in replication. In addition to that, it also has scripts for data backups, resynchronization between nodes etc.
 
 @*
+The main functionality is provided through the following three scripts: 
+@table @command
+@item mmmd_mon
+monitoring daemon which does all monitoring work and makes all decisions about roles moving and so on.
+@item mmmd_agent
+agent daemon which runs on each MySQL server and provides monitoring node with simple set of remote services.
+@item mmm_control
+simple script dedicated to management of the mmmd_mon processes by commands. 
+@end table
+
+@*
 @node Typical use-cases
 @chapter Typical use-cases
 @cindex typical use-cases
 
-See google code wiki - TypicalUseCases  
+Typical use cases of MMM will be described in the following two sections.
 
 @section Two node setup
 @image{mmm-sample-setup-1}
@@ -52,6 +63,8 @@ In two node master-master setup, MMM uses five IPs: single permanent IP for each
 Normally (no replication failures, no replication delay etc) active master has 2 IPs (reader and writer), standby master - 1 IP (reader). In case of a failure, both - writer and reader roles migrate to the working node. 
 
 @section Two masters + one/many slaves
+
+TODO
 
 @image{mmm-sample-setup-2}
 
@@ -82,6 +95,7 @@ A MySQL user with privileges @code{SUPER, REPLICATION CLIENT, RELOAD} for MMM to
 @section Requirements - monitoring host
 
 @itemize
+@item perl with ithreads support
 @item fping (if you want to run @command{mmmd_mon} as non-root user)
 @item Perl modules:
 
@@ -103,17 +117,20 @@ A MySQL user with privileges @code{SUPER, REPLICATION CLIENT, RELOAD} for MMM to
 @section Requirements - nodes
 One should set read-only=1 in the configuration of all MySQL servers, MMM will change that to read-only=0 on the host with the active_master_role.
 @itemize
+@item perl
 @item iproute
-@item arping or iputils-arping
+@item send_arp (solaris)
 @item Perl modules:
 
 @itemize @minus
-@item Log::Log4perl
-@item Mail::Send
-@item Log::Dispatch
-@item Proc::Daemon
 @item Algorithm::Diff
 @item DBI and DBD::mysql
+@item Log::Dispatch
+@item Log::Log4perl
+@item Mail::Send
+@item Net::ARP (linux)
+@item Proc::Daemon
+@item Time::HiRes
 @end itemize
 
 @end itemize
@@ -135,7 +152,7 @@ You'll also need the following perl modules:
 @include mmm_control.texi
 @include mmm_configuration.texi
 @include mmm_logging.texi
-@include mmm_internals.texi
+@c @include mmm_internals.texi
 
 
 @node Index

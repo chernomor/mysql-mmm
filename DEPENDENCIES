@@ -18,7 +18,7 @@ Agent:
 	Algorithm::Diff libalgorithm-diff-perl
 	DBI				libdbi-perl
 	DBD::mysql		libdbd-mysql-perl
-	arping | iputils-arping
+	libnet-arp-perl
 	iproute
 
 Tools:

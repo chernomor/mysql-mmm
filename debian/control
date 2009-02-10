@@ -21,7 +21,7 @@ Description: MySQL Multi-Master Replication Manager common files.
 
 Package: mysql-mmm-agent
 Architecture: all
-Depends: ${perl:Depends}, ${misc:Depends}, mysql-mmm-common, arping | iputils-arping, iproute, libproc-daemon-perl, libalgorithm-diff-perl, libdbi-perl, libdbd-mysql-perl
+Depends: ${perl:Depends}, ${misc:Depends}, mysql-mmm-common, iproute, libnet-arp-perl, libproc-daemon-perl, libalgorithm-diff-perl, libdbi-perl, libdbd-mysql-perl
 Description: MySQL Multi-Master Replication Manager Agent.
  MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts 
  to perform monitoring/failover and management of MySQL Master-Master 

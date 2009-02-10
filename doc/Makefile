@@ -1,4 +1,4 @@
-mmm.pdf: mmm.texi mmm_agent.texi mmm_configuration.texi mmm_control.texi mmm_logging.texi mmm_monitor.texi mmm_internals.texi Makefile
+mysql-mmm.pdf: mmm.texi mmm_agent.texi mmm_configuration.texi mmm_control.texi mmm_logging.texi mmm_monitor.texi mmm_internals.texi Makefile
 	-rm -r tmp/
 	mkdir -p tmp/
 	cd illustrations && make
@@ -8,6 +8,10 @@ mmm.pdf: mmm.texi mmm_agent.texi mmm_configuration.texi mmm_control.texi mmm_log
 	cd tmp && pdftex --interaction=nonstopmode mmm.texi
 	cd tmp && texindex mmm.??
 	cd tmp && pdftex --interaction=nonstopmode mmm.texi
-	cp tmp/mmm.pdf .
+	cp tmp/mmm.pdf mysql-mmm.pdf
 	cd tmp && makeinfo mmm.texi
-	cp tmp/mmm.info .
+	cp tmp/mmm.info mysql-mmm.info
+
+clean:
+	rm -rf tmp
+	rm -f mysql-mmm.info mysql-mmm.pdf

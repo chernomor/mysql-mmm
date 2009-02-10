@@ -247,3 +247,4 @@ sub get_master_host($) {
 	return $res->{Master_Host};
 }
 
+1;

@@ -146,13 +146,47 @@ status file won't be updated
 @section Startup
 @cindex Startup
 
-performs initial network check
-performs initial host checks
-reads information from
-... status file
-... agents (agent info)
-... hosts (system info)
-if that matches -> ok
-if not matches -> passive mode
-if no network -> passive mode
+@itemize
+
+@item Initial network check
+@item Initial host checks
+@item reads status information from ...
+@itemize @minus
+@item status file
+@item agents (agent info)
+@item hosts (system info)
+@end itemize
+@item If status information doesn't match or network is down @code{PASSIVE} mode will be entered.
+@end itemize
+
+@node Role transition
+@section Role transition
+@cindex Role transition
+
+@subsection Standard role
+@itemize
+@item IP is removed from old host
+@item IP is configured on new host
+@item New host sends arp packets to inform other hosts that it now has the IP
+@end itemize
+
+@subsection Active master role
+@itemize
+@item Writer role is removed from old master:
+@enumerate
+@item MySQL is made read_only
+@item Active connections are removed
+@item IP is removed
+@end enumerate
+@item Slaves are informed. They:
+@enumerate
+@item Try to catch up with the old master as far as possible
+@item Change master to the new master
+@end enumerate
+@item Writer role is added to the new master:
+@enumerate
+@item MySQL is made writable
+@item IP is configured
+@end enumerate
+@end itemize
 

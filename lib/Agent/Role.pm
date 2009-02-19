@@ -84,17 +84,16 @@ sub del($) {
 
 	my $ret;
 	
-	$ret = MMM::Agent::Helpers::clear_ip($main::agent->interface, $self->ip);
-	if ($ret !~ /^OK/) {
-		FATAL sprintf("Couldn't clear IP '%s' from interface '%s': %s", $self->ip, $main::agent->interface, $ret);
-	}
-
 	if ($self->name eq $main::agent->writer_role) {
 		$ret = MMM::Agent::Helpers::deny_write();
 		if ($ret !~ /^OK/) {
 			FATAL "Couldn't deny writes: $ret";
-			return;
 		}
+	}
+
+	$ret = MMM::Agent::Helpers::clear_ip($main::agent->interface, $self->ip);
+	if ($ret !~ /^OK/) {
+		FATAL sprintf("Couldn't clear IP '%s' from interface '%s': %s", $self->ip, $main::agent->interface, $ret);
 	}
 }
 

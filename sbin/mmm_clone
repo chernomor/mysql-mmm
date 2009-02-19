@@ -190,8 +190,8 @@ sub print_usage {
 		print "Where:\n";
 		printf("  host       : %s\n", join(' | ', sort(keys(%{$main::config->{host}}))));
 		printf("  clone-mode : %s\n", join(' | ', sort(@CLONE_MODES)));
-		printf("  copy method: %s (default: %s)\n\n", join(' | ', sort(@allowed_methods)), $config->{default_copy_method});
-		print  "  dest-dir   : directory where data should be cloned to\n";
+		printf("  copy-method: %s (default: %s)\n", join(' | ', sort(@allowed_methods)), $config->{default_copy_method});
+		print  "  dest-dir   : directory where data should be cloned to\n\n";
 	}
 	exit(1);
 }

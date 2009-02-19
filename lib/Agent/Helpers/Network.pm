@@ -118,9 +118,10 @@ sub send_arp($$) {
 		return "ERROR: Couln't get mac adress of interface $if" unless ($mac);
 
 		for (my $i = 0; $i < 5; $i++) {
-			Net::ARP::send_packet($if, $ip, $ip, $mac, 'ff:ff:ff:ff:ff:ff', 'reply');
 			Net::ARP::send_packet($if, $ip, $ip, $mac, 'ff:ff:ff:ff:ff:ff', 'request');
-			usleep(100);
+			usleep(50);
+			Net::ARP::send_packet($if, $ip, $ip, $mac, 'ff:ff:ff:ff:ff:ff', 'reply');
+			usleep(50) if ($i < 4);
 		}
 	}
 	elsif ($OSNAME eq 'solaris') {

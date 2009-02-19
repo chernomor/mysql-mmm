@@ -1,0 +1,14 @@
+@node mmm_tools
+@chapter @command{mmm_backup}, @command{mmm_restore}, @command{mmm_clone} - MMM tools
+@cindex mmm_backup
+@cindex mmm_clone
+@cindex mmm_restore
+@cindex Tools
+
+TODO
+Document:
+- backup
+- restore
+- clone
+
+mmm_backup ...

@@ -61,7 +61,8 @@ sub print_usage {
 	if ($main::config) {
 		print "Where:\n";
 		printf("  host       : %s\n", join(' | ', sort(keys(%{$main::config->{host}}))));
-		printf("  copy method: %s (default: %s)\n\n", join(' | ', sort(keys(%{$main::config->{copy_method}}))), $config->{default_copy_method});
+		printf("  copy-method: %s (default: %s)\n", join(' | ', sort(keys(%{$main::config->{copy_method}}))), $config->{default_copy_method});
+		print  "  dest-dir   : directory where data should be backed up to\n\n";
 	}
 	exit(1);
 }

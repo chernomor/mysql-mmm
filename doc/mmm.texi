@@ -53,18 +53,15 @@ simple script dedicated to management of the mmmd_mon processes by commands.
 @node Typical use-cases
 @chapter Typical use-cases
 @cindex typical use-cases
-
 Typical use cases of MMM will be described in the following two sections.
-
 @section Two node setup
 @image{mmm-sample-setup-1}
 In two node master-master setup, MMM uses five IPs: single permanent IP for each node that is never changed, 2 reader IPs (read-only) and 1 writer IP (updates). Last three IPs are migrating between the nodes depending on node availability.
 
 Normally (no replication failures, no replication delay etc) active master has 2 IPs (reader and writer), standby master - 1 IP (reader). In case of a failure, both - writer and reader roles migrate to the working node. 
-
 @section Two masters + one/many slaves
 
-TODO
+@c TODO
 
 @image{mmm-sample-setup-2}
 

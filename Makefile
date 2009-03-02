@@ -3,7 +3,7 @@ PACKAGENAME=mysql-mmm
 VERSION= $(shell cat VERSION)
 RELEASEDIR=release
 
-.PHONY: release release-archives release-debs
+.PHONY: release release-archives release-debs release-docs
 
 test: 
 	cd lib/Agent/t && prove
@@ -15,7 +15,7 @@ test-v:
 	cd lib/Monitor/t && prove -v
 	cd lib/Common/t && prove -v
 
-release: release-archives release-debs
+release: release-archives release-debs release-docs
 
 release-archives:
 	rm -rf $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/
@@ -36,3 +36,6 @@ release-debs: release-archives
 	-cd $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/ && dpkg-buildpackage -rfakeroot
 	rm -rf $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/debian/
 	
+release-docs:
+	cd doc && make
+	cp doc/mysql-mmm.pdf release/mysql-mmm-$(VERSION)-0.pdf

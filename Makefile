@@ -38,4 +38,4 @@ release-debs: release-archives
 	
 release-docs:
 	cd doc && make
-	cp doc/mysql-mmm.pdf release/mysql-mmm-$(VERSION)-0.pdf
+	cp doc/mysql-mmm.pdf release/mysql-mmm-$(VERSION)-1.pdf

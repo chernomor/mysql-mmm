@@ -27,19 +27,19 @@ Check (=assure) that the role is configured on the local host.
 sub check($) {
 	my $self = shift;
 
-	my $ret;
+	my $res;
 
 	if ($self->name eq $main::agent->writer_role) {
-		$ret = MMM::Agent::Helpers::allow_write();
-		if ($ret !~ /^OK/) {
-			FATAL "Couldn't allow writes: $ret";
+		$res = MMM::Agent::Helpers::allow_write();
+		if (!defined($res) || $res !~ /^OK/) {
+			FATAL sprintf("Couldn't allow writes: %s", defined($res) ? $res : 'undef');
 			return;
 		}
 	}
 
-	$ret = MMM::Agent::Helpers::configure_ip($main::agent->interface, $self->ip);
-	if ($ret !~ /^OK/) {
-		FATAL sprintf("Couldn't configure IP '%s' on interface '%s': %s", $self->ip, $main::agent->interface, $ret);
+	$res = MMM::Agent::Helpers::configure_ip($main::agent->interface, $self->ip);
+	if (!defined($res) || $res !~ /^OK/) {
+		FATAL sprintf("Couldn't configure IP '%s' on interface '%s': %s", $self->ip, $main::agent->interface, defined($res) ? $res : 'undef');
 		return;
 	}
 }
@@ -52,24 +52,24 @@ Add a role to the local host.
 sub add($) {
 	my $self = shift;
 	
-	my $ret;
+	my $res;
 
 	if ($self->name eq $main::agent->writer_role) {
-		$ret = MMM::Agent::Helpers::sync_with_master();
-		if ($ret !~ /^OK/) {
-			FATAL "Couldn't sync with master: $ret";
+		$res = MMM::Agent::Helpers::sync_with_master();
+		if (!defined($res) || $res !~ /^OK/) {
+			FATAL sprintf("Couldn't sync with master: %s", defined($res) ? $res : 'undef');
 			return;
 		}
-		$ret = MMM::Agent::Helpers::allow_write();
-		if ($ret !~ /^OK/) {
-			FATAL "Couldn't allow writes: $ret";
+		$res = MMM::Agent::Helpers::allow_write();
+		if (!defined($res) || $res !~ /^OK/) {
+			FATAL sprintf("Couldn't allow writes: %s", defined($res) ? $res : 'undef');
 			return;
 		}
 	}
 
-	$ret = MMM::Agent::Helpers::configure_ip($main::agent->interface, $self->ip);
-	if ($ret !~ /^OK/) {
-		FATAL sprintf("Couldn't configure IP '%s' on interface '%s': %s", $self->ip, $main::agent->interface, $ret);
+	$res = MMM::Agent::Helpers::configure_ip($main::agent->interface, $self->ip);
+	if (!defined($res) || $res !~ /^OK/) {
+		FATAL sprintf("Couldn't configure IP '%s' on interface '%s': %s", $self->ip, $main::agent->interface, defined($res) ? $res : 'undef');
 		return;
 	}
 }
@@ -82,18 +82,18 @@ Delete a role from the local host.
 sub del($) {
 	my $self = shift;
 
-	my $ret;
+	my $res;
 	
 	if ($self->name eq $main::agent->writer_role) {
-		$ret = MMM::Agent::Helpers::deny_write();
-		if ($ret !~ /^OK/) {
-			FATAL "Couldn't deny writes: $ret";
+		$res = MMM::Agent::Helpers::deny_write();
+		if (!defined($res) || $res !~ /^OK/) {
+			FATAL sprintf("Couldn't deny writes: %s", defined($res) ? $res : 'undef');
 		}
 	}
 
-	$ret = MMM::Agent::Helpers::clear_ip($main::agent->interface, $self->ip);
-	if ($ret !~ /^OK/) {
-		FATAL sprintf("Couldn't clear IP '%s' from interface '%s': %s", $self->ip, $main::agent->interface, $ret);
+	$res = MMM::Agent::Helpers::clear_ip($main::agent->interface, $self->ip);
+	if (!defined($res) || $res !~ /^OK/) {
+		FATAL sprintf("Couldn't clear IP '%s' from interface '%s': %s", $self->ip, $main::agent->interface, defined($res) ? $res : 'undef');
 	}
 }
 

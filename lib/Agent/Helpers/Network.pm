@@ -114,7 +114,12 @@ sub send_arp($$) {
 	
 	if ($OSNAME eq 'linux') {
 		my $mac = '';
-		Net::ARP::get_mac('eth0', $mac);
+		if ($Net::ARP::VERSION < 1.0) {
+			Net::ARP::get_mac($if, $mac);
+		}
+		else {
+			$mac = Net::ARP::get_mac($if);
+		}
 		return "ERROR: Couln't get mac adress of interface $if" unless ($mac);
 
 		for (my $i = 0; $i < 5; $i++) {

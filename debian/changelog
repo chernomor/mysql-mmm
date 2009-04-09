@@ -1,3 +1,11 @@
+mysql-mmm (2.0.1-1) stable; urgency=low
+
+  * Support Net:ARP >= 1.0
+  * Fix Net::ARP usage (use interface from config instead hard coded 'eth0')
+  * Better error reporting/handling
+
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Thu, 15 Apr 2009 13:45:00 +0200
+
 mysql-mmm (2.0.0-1) stable; urgency=low
 
   * Initial release

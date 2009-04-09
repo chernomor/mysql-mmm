@@ -162,9 +162,12 @@ sub cmd_set_status($$) {
 	if ($new_master ne $self->active_master && $self->mode eq 'slave' && $new_state eq 'ONLINE' && $new_master ne '') {
 		INFO "Changing active master to '$new_master'";
 		my $res = MMM::Agent::Helpers::set_active_master($new_master);
-		DEBUG "Result: $res";
-		if ($res =~ /^OK/) {
+		DEBUG sprintf("Result: %s", defined($res) ? $res : 'undef');
+		if (defined($res) && $res =~ /^OK/) {
 			$self->active_master($new_master);
+		}
+		else {
+			FATAL sprintf("Failed to change master to '%s': %s", $new_master, defined($res) ? $res : 'undef');
 		}
 	}
 

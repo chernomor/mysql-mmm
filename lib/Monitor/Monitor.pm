@@ -53,7 +53,9 @@ Init queues, single instance classes, ... and try to determine status.
 
 sub init($) {
 	my $self = shift;
+
 	my $agents = MMM::Monitor::Agents->instance();
+
 	$self->checker_queue(new Thread::Queue::);
 	$self->checks_status(MMM::Monitor::ChecksStatus->instance());
 	$self->command_queue(new Thread::Queue::);
@@ -61,42 +63,69 @@ sub init($) {
 	$self->roles(MMM::Monitor::Roles->instance());
 	$self->passive_info('');
 
+
+	#___________________________________________________________________________
+	#
 	# Go into passive mode if we have no network connection at startup
+	#___________________________________________________________________________
+
 	$self->passive(!$main::have_net);
-	$self->passive_info('No network connection during start up.') unless ($main::have_net);
+	$self->passive_info('No network connection during startup.') unless ($main::have_net);
 
 
+	#___________________________________________________________________________
+	#
 	# Figure out current status. Go into passive mode if there are discrepancies
+	#___________________________________________________________________________
+
 	$agents->load_status();
 
 	my $system_status	= {};
 	my $agent_status	= {};
 	my $status			= 1;
 	my $res;
-	foreach my $host (keys(%{$main::config->{host}})) {
-		my $agent = $agents->get($host);
 
+	foreach my $host (keys(%{$main::config->{host}})) {
+
+		my $agent		= $agents->get($host);
+		my $host_status	= 1;
+
+
+		#_______________________________________________________________________
+		#
 		# Get AGENT status
-		$res = $agent->cmd_get_agent_status();
-		if ($res =~ /^OK/) {
+		#_______________________________________________________________________
+
+		$res = $agent->cmd_get_agent_status(2);
+
+		if ($res !~ /^OK/) {
+
 			my ($msg, $state, $roles_str, $master) = split('\|', $res);
 			my @roles_str_arr = sort(split(/\,/, $roles_str));
 			my @roles;
+
 			foreach my $role_str (@roles_str_arr) {
 				my $role = MMM::Monitor::Role->from_string($role_str);
 				if (defined($role)) {
 					push @roles, $role;
 				}
 			}
+
 			$agent_status->{$host} = { state => $state, roles => \@roles, master => $master };
 		}
 		elsif ($agent->state ne 'ADMIN_OFFLINE') {
-			FATAL "Could not get agent status for host '$host'. Will switch to passive mode: $res";
-			$status = 0;
+			ERROR "(startup) Switching to passive mode:  The status of the agent on host '$host' could not be determined (answer was: $res).";
+			$status			= 0;
+			$host_status	= 0;
 		}
 		
+
+		#_______________________________________________________________________
+		#
 		# Get SYSTEM status
-		$res = $agent->cmd_get_system_status();
+		#_______________________________________________________________________
+
+		$res = $agent->cmd_get_system_status(2);
 		if ($res =~ /^OK/) {
 			my ($msg, $writable, $roles_str) = split('\|', $res);
 			my @roles_str_arr = sort(split(/\,/, $roles_str));
@@ -113,43 +142,76 @@ sub init($) {
 			};
 		}
 		elsif ($agent->state ne 'ADMIN_OFFLINE') {
-			FATAL "Could not get system status for host '$host'. Will switch to passive mode: $res";
-			$status = 0;
+			ERROR "(startup) Switching to passive mode:  The status of the system '$host' could not be determined (answer was: $res).";
+			$status			= 0;
+			$host_status	= 0;
 		}
+
+
+		#_______________________________________________________________________
+		#
+		# Skip comparison, if we coult not fetch AGENT/SYSTEM status
+		#_______________________________________________________________________
+
 		next unless (defined($agent_status->{$host}));
 		next unless (defined($system_status->{$host}));
 
-		# Compare agent and system status
+
+		#_______________________________________________________________________
+		#
+		# Compare agent and system status ...
+		#_______________________________________________________________________
+
 		if ($agent_status->{$host}->{state} ne 'UNKNOWN' && $agent_status->{$host}->{state} ne $agent->state) {
-			FATAL "Agent state '", $agent_status->{$host}->{state}, "' differs from stored one '", $agent->state, "' for host '$host'. Will switch to passive mode";
-			$status = 0;
+			ERROR "(startup) Switching to passive mode: Agent state '", $agent_status->{$host}->{state}, "' differs from stored one '", $agent->state, "' for host '$host'.";
+			$status			= 0;
+			$host_status	= 0;
 			next;
 		}
 
-		# Determine if roles differ 
+
+		#_______________________________________________________________________
+		#
+		# ... determine if roles differ 
+		#_______________________________________________________________________
+
 		my $changes	= 0;
 		my $diff	= new Algorithm::Diff:: (
 			$system_status->{$host}->{roles},
 			$agent->roles,
 			{ keyGen => \&MMM::Common::Role::to_string }
 		);
+
 		while ($diff->Next) {
 			next if ($diff->Same);
-			FATAL sprintf(
-				"Switching to passive mode: Roles of host '$host' [%s] differ from stored ones [%s]",
+
+			ERROR sprintf(
+				"(startup) Switching to passive mode: Roles of host '$host' [%s] differ from stored ones [%s]",
 				join(', ', @{$system_status->{$host}->{roles}}),
 				join(', ', @{$agent->roles})
 			);
-			$status = 0;
+			$status			= 0;
+			$host_status	= 0;
 			last;
 		}
 		
-		# TODO check "writable" if host has master role
+		next unless ($host_status);
+		foreach my $role (@{$agent->roles}) {
+			next if ($self->roles->is_active_master_role($role));
+			next if ($system_status->{$host}->{writable});
+			WARN "(startup) Active master $host was not writable at monitor startup. (Don't mind, the host will be made writable soon)"
+		}
+		
 	}
 
 	DEBUG "STATE INFO\n", Data::Dumper->Dump([$agents, $agent_status, $system_status], ['Stored status', 'Agent status', 'System status']);
 
+
+	#___________________________________________________________________________
+	#
 	# Maybe switch into passive mode?
+	#___________________________________________________________________________
+
 	unless ($status) {
 		# Enter PASSIVE MODE
 		$self->passive(1);
@@ -174,7 +236,7 @@ sub init($) {
 		}
 		my $status_str = sprintf("\nStored status:\n%s\nAgent status:\n%s\nSystem status:\n%s", $agents->get_status_info(), $agent_status_str, $system_status_str);
 		$self->passive_info("Discrepancies between stored status, agent status and system status during startup.\n" . $status_str);
-		FATAL "Switching to PASSIVE MODE!!! $status_str";
+		FATAL "(startup) Switching to PASSIVE MODE!!! $status_str";
 
 		foreach my $host (keys(%{$main::config->{host}})) {
 			my $agent = $agents->get($host);
@@ -193,7 +255,7 @@ sub init($) {
 			}
 		}
 
-		# propagate roles to agents-objects
+		# propagate roles to agent objects
 		foreach my $host (keys(%{$main::config->{host}})) {
 			my $agent = $agents->get($host);
 			my @roles = sort($self->roles->get_host_roles($host));
@@ -210,18 +272,18 @@ sub init($) {
 
 		# Set new hosts to AWAITING_RECOVERY
 		if ($agent->state eq 'UNKNOWN') {
-			FATAL "Detected new host '$host': Setting its initial state to 'AWAITING_RECOVERY'.";
+			WARN "(startup) Detected new host '$host': Setting its initial state to 'AWAITING_RECOVERY'. Use 'mmm_control set_online $host' to switch it online.";
 			$agent->state('AWAITING_RECOVERY');
 		}
 
 		# Apply roles loaded from status file
 		foreach my $role (@{$agent->roles}) {
 			unless ($self->roles->exists_ip($role->name, $role->ip)) {
-				FATAL "Detected change in role definitions: Role '$role' was removed.";
+				WARN "(startup) Detected change in role definitions: Role '$role' was removed.";
 				next;
 			}
 			unless ($self->roles->can_handle($role->name, $host)) {
-				FATAL "Detected change in role definitions: Host '$host' can't handle role '$role' anymore.";
+				WARN "(startup) Detected change in role definitions: Host '$host' can't handle role '$role' anymore.";
 				next;
 			}
 			$self->roles->set_role($role->name, $role->ip, $host);
@@ -242,6 +304,7 @@ sub main($) {
 
 	# Delay execution so we can reap all childs before spawning the checker threads.
 	# This prevents a segfault if a SIGCHLD arrives during creation of a thread.
+	# See perl bug #60724
 	sleep(3);
 
 	# Spawn checker threads
@@ -599,13 +662,13 @@ sub _process_commands($) {
 		my $res;
 
 		# Execute command
-		if    ($command eq 'ping'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::ping();			}
-		elsif ($command eq 'show'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::show();			}
-		elsif ($command eq 'mode'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::mode();			}
-		elsif ($command eq 'set_active'		&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_active();	}
-		elsif ($command eq 'set_passive'	&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_passive();	}
-		elsif ($command eq 'set_online'		&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_online ($args[0]);	}
-		elsif ($command eq 'set_offline'	&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_offline($args[0]);	}
+		if    ($command eq 'ping'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::ping();							}
+		elsif ($command eq 'show'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::show();							}
+		elsif ($command eq 'mode'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::mode();							}
+		elsif ($command eq 'set_active'		&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_active();					}
+		elsif ($command eq 'set_passive'	&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_passive();					}
+		elsif ($command eq 'set_online'		&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_online ($args[0]);			}
+		elsif ($command eq 'set_offline'	&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_offline($args[0]);			}
 		elsif ($command eq 'move_role'		&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::move_role($args[0], $args[1]);	}
 		elsif ($command eq 'set_ip'			&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::set_ip($args[0], $args[1]);		}
 		else { $res = "Invalid command '$cmdline'\n\n" . MMM::Monitor::Commands::help(); }

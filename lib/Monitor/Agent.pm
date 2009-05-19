@@ -116,31 +116,53 @@ READ: {
 	return $res;
 }
 
+sub _send_command_retry {
+	my $self	= shift;
+	my $retries	= shift;
+	my $cmd		= shift;
+	my @params	= @_;
+
+	my $res;
+
+	do {
+		$res = $self->_send_command($cmd, @params);
+		if ($res) { return $res; }
+		$retries--;
+		if ($retries >= 0) { DEBUG "Retrying to send command"; }
+	} while ($retries >= 0);
+	return $res;
+}
+
 sub cmd_ping($) {
 	my $self	= shift;
-	return $self->_send_command('PING');
+	my $retries	= shift || 0;
+	return $self->_send_command_retry($retries, 'PING');
 }
 
 sub cmd_set_status($$) {
 	my $self	= shift;
 	my $master	= shift;
+	my $retries	= shift || 0;
 
-	return $self->_send_command('SET_STATUS', $self->state, join(',', sort(@{$self->roles})), $master);
+	return $self->_send_command_retry($retries, 'SET_STATUS', $self->state, join(',', sort(@{$self->roles})), $master);
 }
 
 sub cmd_get_agent_status($) {
 	my $self	= shift;
-	return $self->_send_command('GET_AGENT_STATUS');
+	my $retries	= shift || 0;
+	return $self->_send_command_retry($retries, 'GET_AGENT_STATUS');
 }
 
 sub cmd_get_system_status($) {
 	my $self	= shift;
-	return $self->_send_command('GET_SYSTEM_STATUS');
+	my $retries	= shift || 0;
+	return $self->_send_command_retry($retries, 'GET_SYSTEM_STATUS');
 }
 
 sub cmd_clear_bad_roles($) {
 	my $self	= shift;
-	return $self->_send_command('CLEAR_BAD_ROLES');
+	my $retries	= shift || 0;
+	return $self->_send_command_retry($retries, 'CLEAR_BAD_ROLES');
 }
 
 1;

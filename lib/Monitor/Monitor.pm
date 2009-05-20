@@ -98,7 +98,7 @@ sub init($) {
 
 		$res = $agent->cmd_get_agent_status(2);
 
-		if ($res !~ /^OK/) {
+		if ($res =~ /^OK/) {
 
 			my ($msg, $state, $roles_str, $master) = split('\|', $res);
 			my @roles_str_arr = sort(split(/\,/, $roles_str));

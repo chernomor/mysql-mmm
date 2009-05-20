@@ -51,6 +51,8 @@ my $debug = $config->{debug};
 
 MMM::Common::Log::debug() if ($debug);
 
+INFO 'STARTING...';
+
 our $monitor	= new MMM::Monitor::Monitor::();
 
 if (!MMM::Monitor::NetworkChecker->initial_check()) {

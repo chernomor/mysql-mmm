@@ -63,6 +63,7 @@ sub init($) {
 	$self->roles(MMM::Monitor::Roles->instance());
 	$self->passive_info('');
 
+	my $checks	= $self->checks_status;
 
 	#___________________________________________________________________________
 	#
@@ -114,7 +115,11 @@ sub init($) {
 			$agent_status->{$host} = { state => $state, roles => \@roles, master => $master };
 		}
 		elsif ($agent->state ne 'ADMIN_OFFLINE') {
-			ERROR "(startup) Switching to passive mode:  The status of the agent on host '$host' could not be determined (answer was: $res).";
+			if ($checks->ping($host) && $checks->mysql($host) && !$agent->agent_down()) {
+				ERROR "Can't reach agent on host '$host'";
+				$agent->agent_down(1);
+			}
+			ERROR "Switching to passive mode: The status of the agent on host '$host' could not be determined (answer was: $res).";
 			$status			= 0;
 			$host_status	= 0;
 		}
@@ -142,9 +147,14 @@ sub init($) {
 			};
 		}
 		elsif ($agent->state ne 'ADMIN_OFFLINE') {
-			ERROR "(startup) Switching to passive mode:  The status of the system '$host' could not be determined (answer was: $res).";
+			if ($checks->ping($host) && $checks->mysql($host) && !$agent->agent_down()) {
+				ERROR "Can't reach agent on host '$host'";
+				$agent->agent_down(1);
+			}
+			ERROR "Switching to passive mode: The status of the system '$host' could not be determined (answer was: $res).";
 			$status			= 0;
 			$host_status	= 0;
+
 		}
 
 
@@ -152,7 +162,7 @@ sub init($) {
 		#
 		# Skip comparison, if we coult not fetch AGENT/SYSTEM status
 		#_______________________________________________________________________
-
+		
 		next unless (defined($agent_status->{$host}));
 		next unless (defined($system_status->{$host}));
 
@@ -163,7 +173,7 @@ sub init($) {
 		#_______________________________________________________________________
 
 		if ($agent_status->{$host}->{state} ne 'UNKNOWN' && $agent_status->{$host}->{state} ne $agent->state) {
-			ERROR "(startup) Switching to passive mode: Agent state '", $agent_status->{$host}->{state}, "' differs from stored one '", $agent->state, "' for host '$host'.";
+			ERROR "Switching to passive mode: Agent state '", $agent_status->{$host}->{state}, "' differs from stored one '", $agent->state, "' for host '$host'.";
 			$status			= 0;
 			$host_status	= 0;
 			next;
@@ -186,7 +196,7 @@ sub init($) {
 			next if ($diff->Same);
 
 			ERROR sprintf(
-				"(startup) Switching to passive mode: Roles of host '$host' [%s] differ from stored ones [%s]",
+				"Switching to passive mode: Roles of host '$host' [%s] differ from stored ones [%s]",
 				join(', ', @{$system_status->{$host}->{roles}}),
 				join(', ', @{$agent->roles})
 			);
@@ -199,7 +209,7 @@ sub init($) {
 		foreach my $role (@{$agent->roles}) {
 			next if ($self->roles->is_active_master_role($role));
 			next if ($system_status->{$host}->{writable});
-			WARN "(startup) Active master $host was not writable at monitor startup. (Don't mind, the host will be made writable soon)"
+			WARN "Active master $host was not writable at monitor startup. (Don't mind, the host will be made writable soon)"
 		}
 		
 	}
@@ -236,7 +246,8 @@ sub init($) {
 		}
 		my $status_str = sprintf("\nStored status:\n%s\nAgent status:\n%s\nSystem status:\n%s", $agents->get_status_info(), $agent_status_str, $system_status_str);
 		$self->passive_info("Discrepancies between stored status, agent status and system status during startup.\n" . $status_str);
-		FATAL "(startup) Switching to PASSIVE MODE!!! $status_str";
+		FATAL "Switching to passive mode now."; # TODO verbessern: besser erklären
+		INFO $status_str;
 
 		foreach my $host (keys(%{$main::config->{host}})) {
 			my $agent = $agents->get($host);
@@ -262,6 +273,8 @@ sub init($) {
 			$agent->roles(\@roles);
 		}
 
+		WARN "Monitor started in passive mode.";
+
 		return;
 	}
 
@@ -272,24 +285,26 @@ sub init($) {
 
 		# Set new hosts to AWAITING_RECOVERY
 		if ($agent->state eq 'UNKNOWN') {
-			WARN "(startup) Detected new host '$host': Setting its initial state to 'AWAITING_RECOVERY'. Use 'mmm_control set_online $host' to switch it online.";
+			WARN "Detected new host '$host': Setting its initial state to 'AWAITING_RECOVERY'. Use 'mmm_control set_online $host' to switch it online.";
 			$agent->state('AWAITING_RECOVERY');
 		}
 
 		# Apply roles loaded from status file
 		foreach my $role (@{$agent->roles}) {
 			unless ($self->roles->exists_ip($role->name, $role->ip)) {
-				WARN "(startup) Detected change in role definitions: Role '$role' was removed.";
+				WARN "Detected change in role definitions: Role '$role' was removed.";
 				next;
 			}
 			unless ($self->roles->can_handle($role->name, $host)) {
-				WARN "(startup) Detected change in role definitions: Host '$host' can't handle role '$role' anymore.";
+				WARN "Detected change in role definitions: Host '$host' can't handle role '$role' anymore.";
 				next;
 			}
 			$self->roles->set_role($role->name, $role->ip, $host);
 		}
 	}
 
+	INFO "Monitor started in active mode."  unless ($self->passive);
+	WARN "Monitor started in passive mode." if ($self->passive);
 }
 
 
@@ -405,7 +420,7 @@ sub _check_host_states($) {
 
 			# ONLINE -> HARD_OFFLINE
 			unless ($ping && $mysql) {
-				FATAL "State of host '$host' changed from $state to HARD_OFFLINE";
+				FATAL sprintf("State of host '%s' changed from %s to HARD_OFFLINE (ping: %s, mysql: %s)", $host, $state, ($ping? 'OK' : 'not OK'), ($mysql? 'OK' : 'not OK'));
 				$agent->state('HARD_OFFLINE');
 				$self->roles->clear_host_roles($host);
 				$self->send_agent_status($host);
@@ -479,7 +494,7 @@ sub _check_host_states($) {
 		########################################################################
 
 		if ($state eq 'REPLICATION_FAIL') {
-        	# REPLICATION_FAIL -> REPLICATION_DELAY
+			# REPLICATION_FAIL -> REPLICATION_DELAY
 			if ($ping && $mysql && !$rep_backlog && $rep_threads) {
 				FATAL "State of host '$host' changed from $state to REPLICATION_DELAY";
 				$agent->state('REPLICATION_DELAY');
@@ -487,7 +502,7 @@ sub _check_host_states($) {
 			}
 		}
 		if ($state eq 'REPLICATION_DELAY') {
-	        # REPLICATION_DELAY -> REPLICATION_FAIL
+			# REPLICATION_DELAY -> REPLICATION_FAIL
 			if ($ping && $mysql && !$rep_threads) {
 				FATAL "State of host '$host' changed from $state to REPLICATION_FAIL";
 				$agent->state('REPLICATION_FAIL');
@@ -498,8 +513,7 @@ sub _check_host_states($) {
 		########################################################################
 
 		if ($state eq 'REPLICATION_DELAY' || $state eq 'REPLICATION_FAIL') {
-			if ($ping && $mysql && (($rep_backlog && $rep_threads) || $peer_state ne 'ONLINE')
-			) {
+			if ($ping && $mysql && (($rep_backlog && $rep_threads) || $peer_state ne 'ONLINE')) {
 
 				# REPLICATION_DELAY || REPLICATION_FAIL -> AWAITING_RECOVERY
 				if ($agent->flapping) {
@@ -516,9 +530,9 @@ sub _check_host_states($) {
 				next;
 			}
 
-	        # REPLICATION_DELAY || REPLICATION_FAIL -> HARD_OFFLINE
+			# REPLICATION_DELAY || REPLICATION_FAIL -> HARD_OFFLINE
 			unless ($ping && $mysql) {
-				FATAL "State of host '$host' changed from $state to HARD_OFFLINE";
+				FATAL sprintf("State of host '%s' changed from %s to HARD_OFFLINE (ping: %s, mysql: %s)", $host, $state, ($ping? 'OK' : 'not OK'), ($mysql? 'OK' : 'not OK'));
 				$agent->state('HARD_OFFLINE');
 				$self->send_agent_status($host);
 				# TODO kill host (remove ips, drop connections, iptable connections, ...) if sending state was not ok
@@ -635,7 +649,7 @@ sub send_agent_status($$$) {
 			$agent->agent_down(1);
 		}
 	}
-	elsif ($agent->agent_down()) {
+	elsif ($agent->agent_down) {
 		FATAL "Agent on host '$host' is reachable again";
 		$agent->agent_down(0);
 	}

@@ -38,28 +38,28 @@ sub init($$) {
 		log4perl.appender.FileInfo.filename                 = /var/log/mysql-mmm/$progam.info
 		log4perl.appender.FileInfo.recreate                 = 1
 		log4perl.appender.FileInfo.layout                   = PatternLayout
-		log4perl.appender.FileInfo.layout.ConversionPattern = %d %m%n
+		log4perl.appender.FileInfo.layout.ConversionPattern = %d %5p %m%n
 
 		log4perl.appender.FileWarn                          = Log::Log4perl::Appender::File
 		log4perl.appender.FileWarn.Threshold                = WARN 
 		log4perl.appender.FileWarn.filename                 = /var/log/mysql-mmm/$progam.warn
 		log4perl.appender.FileWarn.recreate                 = 1
 		log4perl.appender.FileWarn.layout                   = PatternLayout
-		log4perl.appender.FileWarn.layout.ConversionPattern = %d %m%n
+		log4perl.appender.FileWarn.layout.ConversionPattern = %d %5p %m%n
 
 		log4perl.appender.FileError                         = Log::Log4perl::Appender::File
 		log4perl.appender.FileError.Threshold               = ERROR 
 		log4perl.appender.FileError.filename                = /var/log/mysql-mmm/$progam.error
 		log4perl.appender.FileError.recreate                = 1
 		log4perl.appender.FileError.layout                  = PatternLayout
-		log4perl.appender.FileError.layout.ConversionPattern= %d %m%n
+		log4perl.appender.FileError.layout.ConversionPattern= %d %5p %m%n
 
 		log4perl.appender.FileFatal                         = Log::Log4perl::Appender::File
 		log4perl.appender.FileFatal.Threshold               = FATAL 
 		log4perl.appender.FileFatal.filename                = /var/log/mysql-mmm/$progam.fatal
 		log4perl.appender.FileFatal.recreate                = 1
 		log4perl.appender.FileFatal.layout                  = PatternLayout
-		log4perl.appender.FileFatal.layout.ConversionPattern= %d %m%n
+		log4perl.appender.FileFatal.layout.ConversionPattern= %d %5p %m%n
 
 		log4perl.appender.MailFatal                         = Log::Dispatch::Email::MailSend
 		log4perl.appender.MailFatal.Threshold               = FATAL 
@@ -78,7 +78,7 @@ sub debug() {
 		name      => 'ScreenLog',
 		stderr    => 0
 	);
-	my $layout = Log::Log4perl::Layout::PatternLayout->new('%d %m%n');
+	my $layout = Log::Log4perl::Layout::PatternLayout->new('%d %5p %m%n');
 	$stdout_appender->layout($layout);
 	Log::Log4perl::Logger->get_root_logger()->add_appender($stdout_appender);
 	Log::Log4perl::Logger->get_root_logger()->level($DEBUG);

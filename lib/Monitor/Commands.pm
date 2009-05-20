@@ -62,7 +62,7 @@ sub show() {
 		$ret .= sprintf("Cause: %s\n", $monitor->passive_info);
 		$ret =~ s/^/# /mg;
 	}
-	$ret .= $agents->get_status_info();
+	$ret .= $agents->get_status_info(1);
 	return $ret;
 }
 

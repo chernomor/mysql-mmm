@@ -4,10 +4,12 @@ use strict;
 use warnings FATAL => 'all';
 use threads;
 use threads::shared;
+use Algorithm::Diff;
+use Algorithm::Diff;
+use Data::Dumper;
+use DBI;
 use Log::Log4perl qw(:easy);
 use Thread::Queue;
-use Data::Dumper;
-use Algorithm::Diff;
 use MMM::Monitor::Agents;
 use MMM::Monitor::Checker;
 use MMM::Monitor::ChecksStatus;
@@ -72,6 +74,14 @@ sub init($) {
 
 	$self->passive(!$main::have_net);
 	$self->passive_info('No network connection during startup.') unless ($main::have_net);
+
+	
+	#___________________________________________________________________________
+	#
+	# Check replication setup of master hosts
+	#___________________________________________________________________________
+
+	$self->check_master_configuration();
 
 
 	#___________________________________________________________________________
@@ -246,7 +256,7 @@ sub init($) {
 		}
 		my $status_str = sprintf("\nStored status:\n%s\nAgent status:\n%s\nSystem status:\n%s", $agents->get_status_info(), $agent_status_str, $system_status_str);
 		$self->passive_info("Discrepancies between stored status, agent status and system status during startup.\n" . $status_str);
-		FATAL "Switching to passive mode now."; # TODO verbessern: besser erklären
+		FATAL "Switching to passive mode now. See output of 'mmm_control show' for details.";
 		INFO $status_str;
 
 		foreach my $host (keys(%{$main::config->{host}})) {
@@ -305,6 +315,72 @@ sub init($) {
 
 	INFO "Monitor started in active mode."  unless ($self->passive);
 	WARN "Monitor started in passive mode." if ($self->passive);
+}
+
+sub check_master_configuration($) {
+	my $self	= shift;
+
+	# Get masters
+	my @masters = $self->roles->get_role_hosts($main::config->{active_master_role});
+
+	if (scalar(@masters) < 2) {
+		WARN "Only one host configured which can handle the active master role. Skipping check of master-master configuration.";
+		return;
+	}
+	if (scalar(@masters) > 2) {
+		LOGDIE "There are more than two hosts configured which can handle the active master role.";
+	}
+
+
+	# Check status of masters
+	my $checks	= $self->checks_status;
+	foreach my $master (@masters) {
+		next if ($checks->mysql($master));
+		WARN "Check 'mysql' is in state 'failed' on host '$master'. Skipping check of master-master configuration.";
+		return;
+	}
+
+	# Connect to masters
+	my ($master1, $master2) = @masters;
+	my $master1_info = $main::config->{host}->{$master1};
+	my $master2_info = $main::config->{host}->{$master2};
+
+	my $dsn1	= sprintf("DBI:mysql:host=%s;port=%s;mysql_connect_timeout=3", $master1_info->{ip}, $master1_info->{mysql_port});
+	my $dsn2	= sprintf("DBI:mysql:host=%s;port=%s;mysql_connect_timeout=3", $master2_info->{ip}, $master2_info->{mysql_port});
+
+	my $dbh1	= DBI->connect($dsn1, $master1_info->{monitor_user}, $master1_info->{monitor_password}, { PrintError => 0 });
+	my $dbh2	= DBI->connect($dsn2, $master2_info->{monitor_user}, $master2_info->{monitor_password}, { PrintError => 0 });
+
+	unless	($dbh1) {
+		WARN "Could'nt connect to  '$master1'. Skipping check of master-master configuration.";
+		return;
+	}
+	unless	($dbh2) {
+		WARN "Could'nt connect to  '$master2'. Skipping check of master-master configuration.";
+		return;
+	}
+
+
+	# Get value of auto_increment_offset and auto_increment_increment
+	my ($offset1, $increment1) = $dbh1->selectrow_array('select @@auto_increment_offset, @@auto_increment_increment');
+	my ($offset2, $increment2) = $dbh2->selectrow_array('select @@auto_increment_offset, @@auto_increment_increment');
+
+	unless (defined($offset1) && defined($increment1)) {
+		WARN "Could'nt get value of auto_increment_offset/auto_increment_increment from host $master1. Skipping check of master-master configuration.";
+		return;
+	}
+	unless (defined($offset2) && defined($increment2)) {
+		WARN "Could'nt get value of auto_increment_offset/auto_increment_increment from host $master2. Skipping check of master-master configuration.";
+		return;
+	}
+	
+	WARN "auto_increment_increment should be identical on both masters ($master1: $increment1 , $master2: $increment2)" unless ($increment1 == $increment2);
+	WARN "auto_increment_offset should be different on both masters ($master1: $offset1 , $master2: $offset2)" unless ($offset1 != $offset2);
+	WARN "$master1: auto_increment_increment ($increment1) should be >= 2" unless ($increment1 >= 2);
+	WARN "$master2: auto_increment_increment ($increment2) should be >= 2" unless ($increment2 >= 2);
+	WARN "$master1: auto_increment_offset ($offset1) should not be greater than auto_increment_increment ($increment1)" unless ($offset1 <= $increment1);
+	WARN "$master2: auto_increment_offset ($offset2) should not be greater than auto_increment_increment ($increment2)" unless ($offset2 <= $increment2);
+
 }
 
 

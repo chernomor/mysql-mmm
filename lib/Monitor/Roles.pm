@@ -68,6 +68,24 @@ sub assign($$$) {
 	$self->{$role->name}->{ips}->{$role->ip}->{assigned_to} = $host;
 }
 
+=item get_role_hosts($role)
+
+Get all hosts which may handle role $role
+
+=cut
+
+sub get_role_hosts($$) {
+	my $self	= shift;
+	my $role	= shift;
+
+	return () unless (defined($role));
+
+	my $role_info = $self->{$role};
+	return () unless $role_info;
+
+	return @{$role_info->{hosts}};
+}
+
 
 =item get_host_roles($host)
 

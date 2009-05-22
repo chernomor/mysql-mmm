@@ -120,7 +120,7 @@ sub send_arp($$) {
 		else {
 			$mac = Net::ARP::get_mac($if);
 		}
-		return "ERROR: Couln't get mac adress of interface $if" unless ($mac);
+		return "ERROR: Couldn't get mac adress of interface $if" unless ($mac);
 
 		for (my $i = 0; $i < 5; $i++) {
 			Net::ARP::send_packet($if, $ip, $ip, $mac, 'ff:ff:ff:ff:ff:ff', 'request');

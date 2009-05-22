@@ -352,11 +352,11 @@ sub check_master_configuration($) {
 	my $dbh2	= DBI->connect($dsn2, $master2_info->{monitor_user}, $master2_info->{monitor_password}, { PrintError => 0 });
 
 	unless	($dbh1) {
-		WARN "Could'nt connect to  '$master1'. Skipping check of master-master configuration.";
+		WARN "Couldn't connect to  '$master1'. Skipping check of master-master configuration.";
 		return;
 	}
 	unless	($dbh2) {
-		WARN "Could'nt connect to  '$master2'. Skipping check of master-master configuration.";
+		WARN "Couldn't connect to  '$master2'. Skipping check of master-master configuration.";
 		return;
 	}
 
@@ -366,11 +366,11 @@ sub check_master_configuration($) {
 	my ($offset2, $increment2) = $dbh2->selectrow_array('select @@auto_increment_offset, @@auto_increment_increment');
 
 	unless (defined($offset1) && defined($increment1)) {
-		WARN "Could'nt get value of auto_increment_offset/auto_increment_increment from host $master1. Skipping check of master-master configuration.";
+		WARN "Couldn't get value of auto_increment_offset/auto_increment_increment from host $master1. Skipping check of master-master configuration.";
 		return;
 	}
 	unless (defined($offset2) && defined($increment2)) {
-		WARN "Could'nt get value of auto_increment_offset/auto_increment_increment from host $master2. Skipping check of master-master configuration.";
+		WARN "Couldn't get value of auto_increment_offset/auto_increment_increment from host $master2. Skipping check of master-master configuration.";
 		return;
 	}
 	

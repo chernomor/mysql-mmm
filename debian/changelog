@@ -1,3 +1,16 @@
+mysql-mmm (2.0.2-1) stable; urgency=low
+
+  * Improved logging
+  * Retry failed agent commands in some cases 
+  * Show unreachable agents in "mmm_control status" output.
+  * Flag unreachable agents on startup to prevent assignment of roles when monitor is set active.
+  * Warn about bad auto_increment_increment and auto_increment_offset values
+  * check replication peer of both masters
+  * retry mysql connect when checking master configuration (could be interrupted through SIGCHILD)
+
+
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Sun, 24 May 2009 19:08:00 +0200
+
 mysql-mmm (2.0.1-1) stable; urgency=low
 
   * Support Net:ARP >= 1.0

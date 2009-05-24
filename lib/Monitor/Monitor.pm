@@ -8,6 +8,7 @@ use Algorithm::Diff;
 use Algorithm::Diff;
 use Data::Dumper;
 use DBI;
+use Errno qw(EINTR);
 use Log::Log4perl qw(:easy);
 use Thread::Queue;
 use MMM::Monitor::Agents;
@@ -340,6 +341,7 @@ sub check_master_configuration($) {
 		return;
 	}
 
+
 	# Connect to masters
 	my ($master1, $master2) = @masters;
 	my $master1_info = $main::config->{host}->{$master1};
@@ -348,29 +350,47 @@ sub check_master_configuration($) {
 	my $dsn1	= sprintf("DBI:mysql:host=%s;port=%s;mysql_connect_timeout=3", $master1_info->{ip}, $master1_info->{mysql_port});
 	my $dsn2	= sprintf("DBI:mysql:host=%s;port=%s;mysql_connect_timeout=3", $master2_info->{ip}, $master2_info->{mysql_port});
 
-	my $dbh1	= DBI->connect($dsn1, $master1_info->{monitor_user}, $master1_info->{monitor_password}, { PrintError => 0 });
-	my $dbh2	= DBI->connect($dsn2, $master2_info->{monitor_user}, $master2_info->{monitor_password}, { PrintError => 0 });
+	my $eintr	= EINTR;
 
-	unless	($dbh1) {
-		WARN "Couldn't connect to  '$master1'. Skipping check of master-master configuration.";
-		return;
+	my $dbh1;
+CONNECT1: {
+	DEBUG "Connecting to master 1";
+	$dbh1	= DBI->connect($dsn1, $master1_info->{monitor_user}, $master1_info->{monitor_password}, { PrintError => 0 });
+	unless ($dbh1) {
+		redo CONNECT1 if ($DBI::err == 2003 && $DBI::errstr =~ /\($eintr\)/);
+		WARN "Couldn't connect to  '$master1'. Skipping check of master-master replication." . $DBI::err . " " . $DBI::errstr;
 	}
-	unless	($dbh2) {
-		WARN "Couldn't connect to  '$master2'. Skipping check of master-master configuration.";
-		return;
+}
+
+	my $dbh2;
+CONNECT2: {
+	DEBUG "Connecting to master 2";
+	$dbh2	= DBI->connect($dsn2, $master2_info->{monitor_user}, $master2_info->{monitor_password}, { PrintError => 0 });
+	unless ($dbh2) {
+		redo CONNECT2 if ($DBI::err == 2003 && $DBI::errstr =~ /\($eintr\)/);
+		WARN "Couldn't connect to  '$master2'. Skipping check of master-master replication." . $DBI::err . " " . $DBI::errstr;
 	}
+}
 
 
-	# Get value of auto_increment_offset and auto_increment_increment
+	# Check replication peers
+	my $slave_status1 = $dbh1->selectrow_hashref('SHOW SLAVE STATUS');
+	my $slave_status2 = $dbh2->selectrow_hashref('SHOW SLAVE STATUS');
+
+	WARN "$master1 is not replicating from $master2" if (!defined($slave_status1) || $slave_status1->{Master_Host} ne $master2_info->{ip});
+	WARN "$master2 is not replicating from $master1" if (!defined($slave_status2) || $slave_status2->{Master_Host} ne $master1_info->{ip});
+
+
+	# Check auto_increment_offset and auto_increment_increment
 	my ($offset1, $increment1) = $dbh1->selectrow_array('select @@auto_increment_offset, @@auto_increment_increment');
 	my ($offset2, $increment2) = $dbh2->selectrow_array('select @@auto_increment_offset, @@auto_increment_increment');
 
 	unless (defined($offset1) && defined($increment1)) {
-		WARN "Couldn't get value of auto_increment_offset/auto_increment_increment from host $master1. Skipping check of master-master configuration.";
+		WARN "Couldn't get value of auto_increment_offset/auto_increment_increment from host $master1. Skipping check of master-master replication.";
 		return;
 	}
 	unless (defined($offset2) && defined($increment2)) {
-		WARN "Couldn't get value of auto_increment_offset/auto_increment_increment from host $master2. Skipping check of master-master configuration.";
+		WARN "Couldn't get value of auto_increment_offset/auto_increment_increment from host $master2. Skipping check of master-master replication.";
 		return;
 	}
 	

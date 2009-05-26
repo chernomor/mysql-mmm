@@ -218,7 +218,7 @@ sub init($) {
 		
 		next unless ($host_status);
 		foreach my $role (@{$agent->roles}) {
-			next if ($self->roles->is_active_master_role($role));
+			next unless ($self->roles->is_active_master_role($role->name));
 			next if ($system_status->{$host}->{writable});
 			WARN "Active master $host was not writable at monitor startup. (Don't mind, the host will be made writable soon)"
 		}
@@ -738,9 +738,9 @@ sub send_agent_status($$$) {
 	my $ret = $agent->cmd_set_status($master);
 
 	unless ($ret) {
-		# If mysql or ping is down, nothing will be send to agent. So this doesn't indicate that the agent is down.
+		# If ping is down, nothing will be send to agent. So this doesn't indicate that the agent is down.
 		my $checks	= $self->checks_status;
-		if ($checks->ping($host) && $checks->mysql($host) && !$agent->agent_down()) {
+		if ($checks->ping($host) && !$agent->agent_down()) {
 			FATAL "Can't reach agent on host '$host'";
 			$agent->agent_down(1);
 		}

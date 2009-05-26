@@ -1,3 +1,11 @@
+mysql-mmm (2.0.3-1) stable; urgency=low
+
+
+  * fixed startup
+  * fixed removal of roles if only mysql is down, but agent is reachable.
+
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Sun, 24 May 2009 19:08:00 +0200
+
 mysql-mmm (2.0.2-1) stable; urgency=low
 
   * Improved logging
@@ -7,7 +15,6 @@ mysql-mmm (2.0.2-1) stable; urgency=low
   * Warn about bad auto_increment_increment and auto_increment_offset values
   * check replication peer of both masters
   * retry mysql connect when checking master configuration (could be interrupted through SIGCHILD)
-
 
  -- Pascal Hofmann <mail@pascalhofmann.de>  Sun, 24 May 2009 19:08:00 +0200
 

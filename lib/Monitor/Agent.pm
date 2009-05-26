@@ -71,7 +71,7 @@ sub _send_command {
 
 
 	my $checks_status = MMM::Monitor::ChecksStatus->instance();
-	unless ($checks_status->ping($self->host) && $checks_status->mysql($self->host)) {
+	unless ($checks_status->ping($self->host)) {
 		return 0;
 	}
 

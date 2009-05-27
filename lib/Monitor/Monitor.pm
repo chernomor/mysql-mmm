@@ -5,10 +5,11 @@ use warnings FATAL => 'all';
 use threads;
 use threads::shared;
 use Algorithm::Diff;
-use Algorithm::Diff;
 use Data::Dumper;
 use DBI;
 use Errno qw(EINTR);
+use Fcntl qw(F_SETFD F_GETFD FD_CLOEXEC);
+use File::Temp;
 use Log::Log4perl qw(:easy);
 use Thread::Queue;
 use MMM::Monitor::Agents;
@@ -40,7 +41,8 @@ struct 'MMM::Monitor::Monitor' => {
 	result_queue		=> 'Thread::Queue',
 	roles				=> 'MMM::Monitor::Roles',
 	passive				=> '$',
-	passive_info		=> '$'
+	passive_info		=> '$',
+	kill_host_bin		=> '$'
 };
 
 
@@ -65,6 +67,25 @@ sub init($) {
 	$self->result_queue(new Thread::Queue::);
 	$self->roles(MMM::Monitor::Roles->instance());
 	$self->passive_info('');
+
+
+	#___________________________________________________________________________
+	#
+	# Check kill host binary
+	#___________________________________________________________________________
+
+	my $kill_host_bin = $main::config->{monitor}->{kill_host_bin};
+	$kill_host_bin = $main::config->{monitor}->{bin_path} . "/monitor/$kill_host_bin" unless ($kill_host_bin =~ /^\/.*/);
+	if (!-f $kill_host_bin) {
+		WARN sprintf('No binary found for killing hosts (%s).', $kill_host_bin);
+	}
+	elsif (!-x _) {
+		WARN sprintf('Binary for killing hosts (%s) is not executable.', $kill_host_bin);
+	}
+	else {
+		$self->kill_host_bin($kill_host_bin);
+	}
+
 
 	my $checks	= $self->checks_status;
 
@@ -519,8 +540,10 @@ sub _check_host_states($) {
 				FATAL sprintf("State of host '%s' changed from %s to HARD_OFFLINE (ping: %s, mysql: %s)", $host, $state, ($ping? 'OK' : 'not OK'), ($mysql? 'OK' : 'not OK'));
 				$agent->state('HARD_OFFLINE');
 				$self->roles->clear_host_roles($host);
-				$self->send_agent_status($host);
-				# TODO kill host (remove ips, drop connections, iptable connections, ...) if sending state was not ok
+				if (!$self->send_agent_status($host)) {
+					ERROR sprintf("Can't send offline status notification to '%s' - killing it!", $host);
+					$self->_kill_host($host, $checks->ping($host));
+				}
 				next;
 			}
 
@@ -630,8 +653,10 @@ sub _check_host_states($) {
 			unless ($ping && $mysql) {
 				FATAL sprintf("State of host '%s' changed from %s to HARD_OFFLINE (ping: %s, mysql: %s)", $host, $state, ($ping? 'OK' : 'not OK'), ($mysql? 'OK' : 'not OK'));
 				$agent->state('HARD_OFFLINE');
-				$self->send_agent_status($host);
-				# TODO kill host (remove ips, drop connections, iptable connections, ...) if sending state was not ok
+				if (!$self->send_agent_status($host)) {
+					ERROR sprintf("Can't send offline status notification to '%s' - killing it!", $host);
+					$self->_kill_host($host, $checks->ping($host));
+				}
 				next;
 			}
 			next;
@@ -752,6 +777,54 @@ sub send_agent_status($$$) {
 	return $ret;
 }
 
+
+=item _kill_host
+
+Process commands received from the command thread.
+
+=cut
+
+sub _kill_host($$$) {
+	my $self		= shift;
+	my $host		= shift;
+	my $ping		= shift;
+
+	if (!defined($self->kill_host_bin)) {
+		FATAL sprintf("Could not kill host '%s' - there may be some duplicate ips now! (There's no binary configured for killing hosts.)", $host);
+		return;
+	}
+
+	# Executing the kill_host_bin and capturing its output _and_ return code is a bit complicated.
+	# We can't use backticks - $? (also called $CHILD_ERROR) will always be undefined because 
+	# mmmd_mon installs a custom signal handler for SIGCHLD.
+	# So we use "system" instead of backticks and redirect the output to a temporary file.
+	# To prevent race conditions we use tempfile instead of tmpname, clear the close-on-exec flag
+	# and redirect the output of system to '/dev/fd/' . fileno(fh).
+	my $fh = File::Temp::tempfile();
+	my $flags = fcntl($fh, F_GETFD, 0);
+	$flags &= ~FD_CLOEXEC;
+	fcntl($fh, F_SETFD, $flags);
+
+	my $command	= sprintf("%s %s %s", $self->kill_host_bin, $host, $ping);
+	INFO sprintf("Killing host using command '%s'", $command);
+	my $ret = system($command . sprintf(' >/dev/fd/%s 2>&1', fileno($fh)));
+	# signal information in the lower 8 bits, exit code above that
+	$ret = $ret >> 8;
+
+	my $output = '';
+	seek($fh, 0, 0);
+	local $/;
+	$output = <$fh>;
+	close $fh;
+
+	if ($ret == 0) {
+		INFO sprintf("Output of kill host command was: %s", $output) if ($output ne "");
+		return;
+	}
+
+	FATAL sprintf("Could not kill host '%s' - there may be some duplicate ips now! kill_host binary exited with '%s'. Output was: %s ", $host, $ret, $output);
+	return;
+}
 
 =item _process_commands
 

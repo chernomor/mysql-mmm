@@ -217,6 +217,13 @@ The @code{monitor} section is required by mmmd_mon and mmmd_control.
 @item Used by:			@tab monitor
 @end multitable
 
+@item @strong{kill_host_bin}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Binary used to kill hosts if roles couldn't be removed because the agent was not reachable. You have to provide a custom binary for this which takes the hostname as first argument and the state of check ping (1 - ok; 0 - not ok) as second argument.
+@item Default value:	@tab @var{bin_path}/monitor/kill_host
+@item Used by:			@tab monitor
+@end multitable
+
 @end itemize
 
 

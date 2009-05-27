@@ -34,7 +34,8 @@ our $RULESET = {
 		'ping_interval'			=> { 'default' => 1 },
 		'ping_ips'				=> { 'required' => ['MONITOR'], 'multiple' => 1 },
 		'flap_duration'			=> { 'default' => 60 * 60 },
-		'flap_count'			=> { 'default' => 3 }
+		'flap_count'			=> { 'default' => 3 },
+		'kill_host_bin'			=> { 'default' => 'kill_host' }
 		}
 	},
 	'socket'				=> { 'create_if_empty' => ['AGENT', 'CONTROL', 'MONITOR'], 'section' => {

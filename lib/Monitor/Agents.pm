@@ -152,6 +152,8 @@ sub save_status($) {
 	my $self	= shift;
 	
 	my $filename = $main::config->{monitor}->{status_path};
+
+	# TODO maybe it's safer to use File::Temp::tempfile()
 	my $tempname = $filename . '.tmp';
 
 	open(STATUS, '>', $tempname) || LOGDIE "Can't open temporary status file '$tempname' for writing!";

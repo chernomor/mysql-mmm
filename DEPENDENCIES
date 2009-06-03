@@ -13,6 +13,7 @@ Monitor:
 	Proc::Daemon	libproc-daemon-perl
 	Algorithm::Diff libalgorithm-diff-perl
 	Thread::Queue	perl-modules
+	DBD::mysql		libdbd-mysql-perl
 
 Agent:
 	Proc::Daemon	libproc-daemon-perl

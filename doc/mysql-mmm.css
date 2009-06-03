@@ -1,0 +1,21 @@
+body {
+	font: 14px arial, sans-serif;
+	width: 90%;
+	margin: 0 auto;
+}
+table {
+	border-color: #999;
+/*	border: 1px solid #999;*/
+/*	border-collapse: collapse;*/
+}
+td, th {
+	padding: 0.1em 1em;
+}
+td p {
+	margin: 0;
+}
+hr {
+	background-color: #ddd;
+}
+/*
+*/

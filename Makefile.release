@@ -3,21 +3,22 @@ ifndef INSTALLDIR
 INSTALLDIR = installvendorlib
 endif
 
-MODULEDIR = $(DESTDIR)$(shell eval "`perl -V:${INSTALLDIR}`"; echo "$$${INSTALLDIR}")/MMM/
-BINDIR    = $(DESTDIR)/usr/bin/mysql-mmm/
-SBINDIR   = $(DESTDIR)/usr/sbin/
-LOGDIR    = $(DESTDIR)/var/log/mysql-mmm/
+MODULEDIR = $(DESTDIR)$(shell eval "`perl -V:${INSTALLDIR}`"; echo "$$${INSTALLDIR}")/MMM
+BINDIR    = $(DESTDIR)/usr/bin/mysql-mmm
+SBINDIR   = $(DESTDIR)/usr/sbin
+LOGDIR    = $(DESTDIR)/var/log/mysql-mmm
 ETCDIR    = $(DESTDIR)/etc
 CONFDIR   = $(ETCDIR)/mysql-mmm
 
 install:
-		mkdir -p $(DESTDIR) $(MODULEDIR) $(BINDIR) $(SBINDIR) $(LOGDIR) $(ETCDIR) $(CONFDIR)
+		mkdir -p $(DESTDIR) $(MODULEDIR) $(BINDIR) $(SBINDIR) $(LOGDIR) $(ETCDIR) $(CONFDIR) $(BINDIR)/agent/ $(BINDIR)/monitor/ $(BINDIR)/tools/ $(ETCDIR)/init.d/
 		cp -r lib/* $(MODULEDIR)
-		cp -r bin/agent $(BINDIR)
-		cp -r bin/monitor $(BINDIR)
-		cp -r bin/tools $(BINDIR)
-		cp -r etc/init.d $(ETCDIR)
+		cp -r bin/agent/* $(BINDIR)/agent/
+		cp -r bin/monitor/* $(BINDIR)/monitor/
+		cp -r bin/tools/* $(BINDIR)/tools/
+		cp -r etc/init.d/* $(ETCDIR)/init.d/
 		cp sbin/mmm* $(SBINDIR)
 		[ -f $(CONFDIR)/mmm_common.conf ] || cp etc/mysql-mmm/mmm_common.conf $(ETCDIR)/mysql-mmm/
 		[ -f $(CONFDIR)/mmm_agent.conf  ] || cp etc/mysql-mmm/mmm_agent.conf  $(ETCDIR)/mysql-mmm/
 		[ -f $(CONFDIR)/mmm_mon.conf    ] || cp etc/mysql-mmm/mmm_mon.conf    $(ETCDIR)/mysql-mmm/
+		[ -f $(CONFDIR)/mmm_tools.conf  ] || cp etc/mysql-mmm/mmm_tools.conf  $(ETCDIR)/mysql-mmm/

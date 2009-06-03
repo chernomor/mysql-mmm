@@ -1,6 +1,6 @@
 \input texinfo @c -*- texinfo -*-
 @setfilename mmm.info
-@settitle MMM Manual 0.1
+@settitle MMM Manual 2.0.4-1
 @set language en
 
 @copying
@@ -101,11 +101,14 @@ A MySQL user with privileges @code{SUPER, REPLICATION CLIENT, RELOAD} for MMM to
 @item Mail::Send
 @item Log::Dispatch
 @item Time::HiRes
+@item File::Temp
 @item Net::Ping
 @item Class:Singleton
 @item Proc::Daemon
 @item Algorithm::Diff
 @item Thread::Queue
+@item DBI and DBD::mysql
+
 @end itemize
 
 @end itemize

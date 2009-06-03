@@ -98,7 +98,10 @@ sub check_ssh_connection($) {
 	my $host = shift;
 
 	my $ssh_host	= $main::config->{host}->{$host}->{ssh_user} . '@' . $main::config->{host}->{$host}->{ip};
-	my $check_cmd	= "ssh $ssh_host date";
+	my $ssh_port	= $main::config->{host}->{$host}->{ssh_port};
+	my $ssh_params	= $main::config->{host}->{$host}->{ssh_parameters};
+	
+	my $check_cmd	= "ssh $ssh_params -p $ssh_port $ssh_host date";
 
 	INFO "Verifying ssh connection to remote host '$ssh_host' (command: $check_cmd)...";
 
@@ -124,11 +127,15 @@ sub execute_remote($$) {
 	my $program	= shift;
 
 	my $ssh_host	= $main::config->{host}->{$host}->{ssh_user} . '@' . $main::config->{host}->{$host}->{ip};
+	my $ssh_port	= $main::config->{host}->{$host}->{ssh_port};
+	my $ssh_params	= $main::config->{host}->{$host}->{ssh_parameters};
+
 	my $command		= $main::config->{host}->{$host}->{bin_path} . '/tools/' . $program;
 
 	DEBUG "Executing $program on host '$host'...";
+	INFO "ssh $ssh_params -p $ssh_port $ssh_host $command";
 
-	chomp(my $res = `ssh "$ssh_host" "$command"`);
+	chomp(my $res = `ssh $ssh_params -p $ssh_port $ssh_host $command`);
 	print "$res\n";
 	my @res_lines = split(/\n/, $res);
 	my $last_line = pop(@res_lines);

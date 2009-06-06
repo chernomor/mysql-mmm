@@ -34,11 +34,15 @@ case "$1" in
         echo -n "Starting MMM Monitor daemon: "
         if [ -s $MMMD_MON_PIDFILE ] && kill -0 `cat $MMMD_MON_PIDFILE` 2> /dev/null; then
             echo " already running."
-        else
-            $MMMD_MON_BIN
-            RETVAL=$?
-            echo "Ok"
+            exit 0
         fi
+        $MMMD_MON_BIN
+        if [ "$?" -ne 0 ]; then
+            echo "failed"
+            exit 1
+        fi
+        echo "Ok"
+        exit 0
         ;;
 
   stop)
@@ -49,48 +53,45 @@ case "$1" in
             cnt=0
             kill "$pid"
             while kill -0 "$pid" 2>/dev/null; do
-                RETCODE=$?
                 cnt=`expr "$cnt" + 1`
                 if [ "$cnt" -gt 15 ]; then
                     kill -9 "$pid"
-                    RETCODE=$?
                     break
                 fi
                 sleep 2
                 echo -n "."
             done
-            RETVAL=$?
             echo " Ok"
-        else
-            echo " not running."
-            RETVAL=0
+            exit 0
         fi
+        echo " not running."
+        exit 0
         ;;
 
   status)
         echo -n "Checking MMM Monitor process:"
         if [ ! -s $MMMD_MON_PIDFILE ]; then
             echo " not running."
-            exit
+            exit 3
         fi
         pid="$(cat $MMMD_MON_PIDFILE)"
         if ! kill -0 "$pid" 2> /dev/null; then
             echo " not running."
-            exit
+            exit 1
         fi
         echo " running."
-        exit
+        exit 0
         ;;
 
   restart|reload)
         $0 stop
         $0 start
+        exit $?
         ;;
 
   *)
-        echo "Usage: $0 {start|stop|restart}"
-        RETVAL=1
+        echo "Usage: $0 {start|stop|restart|status}"
         ;;
 esac
 
-exit $RETVAL
+exit 1

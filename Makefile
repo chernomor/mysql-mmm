@@ -22,7 +22,7 @@ release-archives:
 	mkdir -p $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)
 	cp -r lib bin sbin etc $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)
 	cp Makefile.release $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/Makefile
-	cp README INSTALL COPYING VERSION $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/
+	cp README INSTALL COPYING VERSION LICENSE $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/
 	find $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION) -depth -type d -name '.svn' -exec rm -rf {} \;
 	find $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION) -depth -type d -name 't' -exec rm -rf {} \;
 	find $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION) -depth -type f -name '*.swp' -exec rm -rf {} \;

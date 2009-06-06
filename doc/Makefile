@@ -18,4 +18,4 @@ mysql-mmm.pdf: mmm.texi mmm_agent.texi mmm_configuration.texi mmm_control.texi m
 
 clean:
 	rm -rf tmp
-	rm -f mysql-mmm.info mysql-mmm.pdf mysql-mmm.html
+	rm -f mysql-mmm.info mysql-mmm.pdf mysql-mmm.html mmm-sample-setup-1.png mmm-sample-setup-2.png

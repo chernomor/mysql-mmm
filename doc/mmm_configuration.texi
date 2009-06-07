@@ -358,6 +358,20 @@ The @code{monitor} section is required by mmmd_mon and mmmd_control.
 @item Used by:			@tab tools
 @end multitable
 
+@item @strong{ssh_port}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab SSH port for MMM Tools
+@item Default value:	@tab 22
+@item Used by:			@tab tools
+@end multitable
+
+@item @strong{ssh_parameters}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab additional SSH parameters for MMM Tools
+@item Default value:	@tab -
+@item Used by:			@tab tools
+@end multitable
+
 @item @strong{tools_user}
 @multitable @columnfractions 0.2 0.8
 @item Description:		@tab mysql user for MMM Tools

@@ -12,6 +12,7 @@ use constant MMM_PROTOCOL_VERSION => 1;
 
 
 # Include parts of the system
+use MMM::Common::Angel;
 use MMM::Common::Config;
 use MMM::Common::Log;
 use MMM::Common::PidFile;
@@ -48,7 +49,9 @@ unless ($debug) {
 	# Init logging again to re-open fds
 	MMM::Common::Log::init('mmm_agent_log.conf', 'mmmd_agent');
 }
-$pidfile->create();
+
+# Init angel magic, which will restart us if we die unexpected
+MMM::Common::Angel::Init($pidfile);
 
 # Shutdown flag
 our $shutdown = 0;
@@ -56,11 +59,9 @@ our $shutdown = 0;
 # Catch signals
 $SIG{INT} = \&SignalHandler;
 $SIG{TERM} = \&SignalHandler;
+$SIG{QUIT} = \&SignalHandler;
 
 $agent->main();
-
-# Remove pid file
-$pidfile->remove();
 
 INFO 'END';
 exit(0);

@@ -19,6 +19,7 @@ $Config{useithreads} or die "Recompile Perl with threads to run this program.";
 
 
 # Include parts of the system
+use MMM::Common::Angel;
 use MMM::Common::Config;
 use MMM::Common::Log;
 use MMM::Common::PidFile;
@@ -73,7 +74,9 @@ unless ($debug) {
 	# Init logging again to re-open fds
 	MMM::Common::Log::init("mmm_mon_log$postfix.conf", "mmmd_mon$postfix");
 }
-$pidfile->create();
+
+# Init angel magic, which will restart us if we die unexpected
+MMM::Common::Angel::Init($pidfile);
 
 our $shutdown :shared = 0;		# Shutdown flag
 our $have_net :shared = 1;		# Network status flag
@@ -81,15 +84,13 @@ our $have_net :shared = 1;		# Network status flag
 # Set signal handlers
 $SIG{INT} = \&ShutdownHandler;
 $SIG{TERM} = \&ShutdownHandler;
+$SIG{QUIT} = \&ShutdownHandler;
 $SIG{PIPE} = 'IGNORE';
 $SIG{CHLD} = \&ChildHandler;
 
 $monitor->init();
 
 $monitor->main();
-
-# Remove pid file
-$pidfile->remove();
 
 INFO 'END';
 exit(0);

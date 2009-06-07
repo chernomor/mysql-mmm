@@ -1,10 +1,10 @@
 \input texinfo @c -*- texinfo -*-
 @setfilename mmm.info
-@settitle MMM Manual 2.0.4-1
+@settitle MMM Manual 2.0.5-1
 @set language en
 
 @copying
-Copyright @copyright{} 2008 Pascal Hofmann
+Copyright @copyright{} 2009 Pascal Hofmann
 @end copying
 
 @titlepage

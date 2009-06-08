@@ -6,6 +6,7 @@ use English qw( NR );
 use Log::Log4perl qw(:easy);
 
 use List::Util qw(first);
+use File::stat qw();
 
 our $VERSION = '0.01';
 
@@ -121,6 +122,11 @@ sub read($$) {
 	my $fullname = $self->_get_filename($file);
 	LOGDIE "Could not find config file" unless $fullname;
 	DEBUG "Loading configuration from $fullname";
+
+	my $st = File::stat::stat($fullname);
+	LOGDIE sprintf("Configuration file %s is world writable!", $fullname) if ($st->mode & 0002);
+	LOGDIE sprintf("Configuration file %s is world readable!", $fullname) if ($st->mode & 0004);
+
 	my $fd;
 	open($fd, "<$fullname") || LOGDIE "Can't read config file '$fullname'";
 	my $ret = $self->parse($RULESET, $fullname, $fd);

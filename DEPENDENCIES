@@ -4,6 +4,7 @@ Common:
 	Log::Log4perl	liblog-log4perl-perl
 	Mail::Send		libmailtools-perl
 	Log::Dispatch	liblog-dispatch-perl
+	File::stat		perl
 
 Monitor:
 	Time::HiRes		perl

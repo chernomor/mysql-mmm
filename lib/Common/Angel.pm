@@ -20,9 +20,9 @@ sub Init($) {
 
 	$pidfile->create() if (defined($pidfile));
 
-	$SIG{INT}	= \&MMM::Common::Angel::SignalHandler;
-	$SIG{TERM}	= \&MMM::Common::Angel::SignalHandler;
-	$SIG{QUIT}	= \&MMM::Common::Angel::SignalHandler;
+	local $SIG{INT}		= \&MMM::Common::Angel::SignalHandler;
+	local $SIG{TERM}	= \&MMM::Common::Angel::SignalHandler;
+	local $SIG{QUIT}	= \&MMM::Common::Angel::SignalHandler;
 
 	do {
 

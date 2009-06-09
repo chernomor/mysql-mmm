@@ -154,7 +154,7 @@ sub save_status($) {
 	
 	my $filename = $main::config->{monitor}->{status_path};
 
-	my ($fh, $tempname) = File::Temp::tempfile(undef, UNLINK => 1);
+	my ($fh, $tempname) = File::Temp::tempfile(undef, UNLINK => 0);
 
 	keys (%$self); # reset iterator
 	while (my ($host, $agent) = each(%$self)) {

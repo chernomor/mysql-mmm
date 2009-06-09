@@ -1,3 +1,13 @@
+mysql-mmm (2.0.6-1) stable; urgency=low
+
+  * Check that config files are not world writable/readable (bug #384837)
+  * fixed angel functionality to overwrite signals only temporary.
+  * use File::Temp when overwriting status file.
+  * Check new master before executing set_active_master.
+  * distribute non-active-master roles equally (fixes bug #385223)
+
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Mon, 09 Jun 2009 17:43:00 +0200
+
 mysql-mmm (2.0.5-1) stable; urgency=low
 
   * Fixed return code of init scripts (bug #383872)

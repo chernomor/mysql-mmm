@@ -154,6 +154,7 @@ Calls B<bin/agent/set_active_master>, which reads the config file.
 
 sub set_active_master($) {
 	my $new_master = shift;
+	return "ERROR: Unknown host $new_master" unless (defined($main::config->{host}->{$new_master}));
 	return _execute('set_active_master', $new_master);
 }
 

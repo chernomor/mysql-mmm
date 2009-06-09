@@ -129,7 +129,9 @@ sub count_host_roles($$) {
 		my $role_info = $self->{$role};
 		foreach my $ip (keys(%{$role_info->{ips}})) {
 			my $ip_info = $role_info->{ips}->{$ip};
-			$cnt++ if ($ip_info->{assigned_to} eq $host);
+			next if ($ip_info->{assigned_to} ne $host);
+			$cnt++;
+			$cnt -= 0.5 if ($role eq $main::config->{active_master_role});
 		}
 	}
 	return $cnt;
@@ -387,7 +389,7 @@ sub balance($) {
 				$min_host = $host if ($min_host eq '' || $hosts->{$host} < $hosts->{$min_host});
 			}
 			
-			if ($hosts->{$max_host} - $hosts->{$min_host} < 2) {
+			if ($hosts->{$max_host} - $hosts->{$min_host} <= 1) {
 				last;
 			}
 			

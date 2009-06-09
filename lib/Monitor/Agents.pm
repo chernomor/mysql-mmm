@@ -5,6 +5,7 @@ use strict;
 use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
 use IO::Handle;
+use File::Temp;
 use MMM::Monitor::Agent;
 use MMM::Monitor::Role;
 
@@ -153,19 +154,16 @@ sub save_status($) {
 	
 	my $filename = $main::config->{monitor}->{status_path};
 
-	# TODO maybe it's safer to use File::Temp::tempfile()
-	my $tempname = $filename . '.tmp';
-
-	open(STATUS, '>', $tempname) || LOGDIE "Can't open temporary status file '$tempname' for writing!";
+	my ($fh, $tempname) = File::Temp::tempfile(undef, UNLINK => 1);
 
 	keys (%$self); # reset iterator
 	while (my ($host, $agent) = each(%$self)) {
 		next unless $agent;
-		printf(STATUS "%s|%s|%s\n", $host, $agent->state, join(',', sort(@{$agent->roles})));
+		printf($fh "%s|%s|%s\n", $host, $agent->state, join(',', sort(@{$agent->roles})));
 	}
-	IO::Handle::flush(*STATUS);
-	IO::Handle::sync(*STATUS);
-	close(STATUS);
+	IO::Handle::flush($fh);
+	IO::Handle::sync($fh);
+	close($fh);
 	rename($tempname, $filename) || LOGDIE "Can't savely overwrite status file '$filename'!";
 	return;
 }

@@ -21,6 +21,7 @@ release-archives:
 	rm -rf $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/
 	mkdir -p $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)
 	cp -r lib bin sbin etc $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)
+	chmod 640 $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/etc/mysql-mmm/*.conf
 	cp Makefile.release $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/Makefile
 	cp README INSTALL COPYING VERSION LICENSE $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/
 	find $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION) -depth -type d -name '.svn' -exec rm -rf {} \;

@@ -6,6 +6,7 @@ use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
 use IO::Handle;
 use File::Temp;
+use File::Basename;
 use MMM::Monitor::Agent;
 use MMM::Monitor::Role;
 
@@ -154,7 +155,7 @@ sub save_status($) {
 	
 	my $filename = $main::config->{monitor}->{status_path};
 
-	my ($fh, $tempname) = File::Temp::tempfile(undef, UNLINK => 0);
+	my ($fh, $tempname) = File::Temp::tempfile(basename($filename) . ('X' x 10), UNLINK => 0, DIR => dirname($filename));
 
 	keys (%$self); # reset iterator
 	while (my ($host, $agent) = each(%$self)) {

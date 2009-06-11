@@ -97,18 +97,19 @@ A MySQL user with privileges @code{SUPER, REPLICATION CLIENT, RELOAD} for MMM to
 @item Perl modules:
 
 @itemize @minus
+@item Algorithm::Diff
+@item Class:Singleton
+@item DBI and DBD::mysql
+@item File::Basename
+@item File::stat
+@item File::Temp
+@item Log::Dispatch
 @item Log::Log4perl
 @item Mail::Send
-@item Log::Dispatch
-@item Time::HiRes
-@item File::Temp
-@item File::stat
 @item Net::Ping
-@item Class:Singleton
 @item Proc::Daemon
-@item Algorithm::Diff
 @item Thread::Queue
-@item DBI and DBD::mysql
+@item Time::HiRes
 
 @end itemize
 

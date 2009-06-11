@@ -9,6 +9,7 @@ Common:
 Monitor:
 	Time::HiRes		perl
 	File::Temp		perl
+	File::Basename	perl-modules
 	Net::Ping | fping (root || non-root) perl-modules
 	Class:Singleton	libclass-singleton-perl
 	Proc::Daemon	libproc-daemon-perl

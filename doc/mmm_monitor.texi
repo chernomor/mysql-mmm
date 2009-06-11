@@ -190,3 +190,15 @@ status file won't be updated
 @end enumerate
 @end itemize
 
+@node Kill host functionality
+@section Kill host functionality
+@cindex Kill host functionality
+
+If a host goes down and the agent on it can't be reached, the monitor executes a "kill host"-binary if present. You have to provide a custom binary for this which takes the hostname as first argument and the state of check ping (1 - ok; 0 - not ok) as second argument. This binary could for example:
+@itemize
+@item SSH to the failed host and use iptables to close mysql from the world by dropping all connections to port 3306.
+@item Tell a UPS to poweroff the failed host.
+@item ...
+@end itemize
+
+The default location for this binary is @file{@var{bin_path}/monitor/kill_host}. This may be changed via the variable @var{kill_host_bin} in the monitor section of the configuration.

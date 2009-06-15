@@ -298,7 +298,7 @@ sub _determine_fping_path() {
 
 sub _determine_path($) {
 	my $program = shift;
-	my @paths = qw(/usr/sbin/ /sbin /usr/bin /bin);
+	my @paths = qw(/usr/sbin /sbin /usr/bin /bin);
 
 	foreach my $path (@paths) {
 		my $fullpath = "$path/$program";

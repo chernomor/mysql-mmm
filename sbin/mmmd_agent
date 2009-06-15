@@ -18,6 +18,9 @@ use MMM::Common::Log;
 use MMM::Common::PidFile;
 use MMM::Agent::Agent;
 
+chdir('/');
+umask(0022);
+
 MMM::Common::Log::init('mmm_agent_log.conf', 'mmmd_agent');
 
 # Read configuration
@@ -46,6 +49,8 @@ WARN	"Unclean start - found stale pid file!"		if ($pidfile->exists());
 unless ($debug) {
 	# Go to background
 	Proc::Daemon::Init();
+	# Set umask again
+	umask(0022);
 	# Init logging again to re-open fds
 	MMM::Common::Log::init('mmm_agent_log.conf', 'mmmd_agent');
 }

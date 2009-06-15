@@ -27,6 +27,7 @@ use MMM::Monitor::Monitor;
 use MMM::Monitor::NetworkChecker;
 
 chdir('/');
+umask(0022);
 
 our $cluster_name = '';
 my $postfix = '';
@@ -71,6 +72,8 @@ WARN	"Unclean start - found stale pid file!"		if ($pidfile->exists());
 unless ($debug) {
 	# Go to background
 	Proc::Daemon::Init();
+	# Set umask again
+	umask(0022);
 	# Init logging again to re-open fds
 	MMM::Common::Log::init("mmm_mon_log$postfix.conf", "mmmd_mon$postfix");
 }

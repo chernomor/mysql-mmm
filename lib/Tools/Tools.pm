@@ -456,10 +456,11 @@ format VERSION_LINE =
 clean up restore directory
 
 =cut
-sub cleanup($$) {
+sub cleanup($$$) {
 
-	my $status	= shift;
-	my $dir		= shift;
+	my $status		= shift;
+	my $dir			= shift;
+	my $clone_dirs	= shift;
 
 	INFO 'Cleaning dump from master.info and binary logs...';
 	
@@ -489,7 +490,9 @@ sub cleanup($$) {
 	system("find $dir -name '*.pid' | xargs rm -vf");
 	
 	INFO 'Changing permissions on mysql data dir...';
-	system("chown -R mysql:mysql $dir");
+	foreach my $sub_dir (@$clone_dirs) {
+		system("chown -R mysql:mysql $dir/$sub_dir");
+	}
 	
 	return 1;
 }

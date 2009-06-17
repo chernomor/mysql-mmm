@@ -177,7 +177,7 @@ else {
 
 
 # Cleanup
-die unless (MMM::Tools::Tools::cleanup($status, $dest_dir));
+die unless (MMM::Tools::Tools::cleanup($status, $dest_dir, $config->{clone_dirs}));
 
 
 unless ($skip_mysqld) {

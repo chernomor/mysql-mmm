@@ -138,7 +138,7 @@ my $status = MMM::Tools::Tools::load_status($dest_dir);
 die unless (defined($status));
 
 # Cleanup
-die unless (MMM::Tools::Tools::cleanup($status, $dest_dir));
+die unless (MMM::Tools::Tools::cleanup($status, $dest_dir, $config->{clone_dirs}));
 
 # Start MySQL server
 die unless (MMM::Tools::MySQL::start());

@@ -1,8 +1,14 @@
+mysql-mmm (2.0.9-1) stable; urgency=high
+
+  * Fixed mmm_clone and mmm_restore so that they don't mess up owner/group of files. (bug #388426)
+
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Fri, 19 Jun 2009 03:13:00 +0200
+
 mysql-mmm (2.0.8-1) stable; urgency=high
 
   * .pid file permissions (bug #387459)
 
- -- Pascal Hofmann <mail@pascalhofmann.de>  Thu, 15 Jun 2009 22:30:00 +0200
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Mon, 15 Jun 2009 22:30:00 +0200
 
 mysql-mmm (2.0.7-1) stable; urgency=low
 

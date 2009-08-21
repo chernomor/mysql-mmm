@@ -120,7 +120,7 @@ sub read($$) {
 	my $self = shift;
 	my $file = shift;
 	my $fullname = $self->_get_filename($file);
-	LOGDIE "Could not find config file" unless $fullname;
+	LOGDIE "Could not find a readable config file" unless $fullname;
 	DEBUG "Loading configuration from $fullname";
 
 	my $st = File::stat::stat($fullname);
@@ -252,7 +252,7 @@ sub _get_filename($$) {
 			last;
 		}
 	}
-	FATAL "No config file $file in ", join(', ', @paths) unless $fullname;
+	FATAL "No readable config file $file in ", join(', ', @paths) unless $fullname;
 	return $fullname;
 }
 

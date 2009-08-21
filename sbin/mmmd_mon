@@ -58,7 +58,7 @@ INFO 'STARTING...';
 our $monitor	= new MMM::Monitor::Monitor::();
 
 if (!MMM::Monitor::NetworkChecker->initial_check()) {
-	LOGDIE "DIED: Network is unreachable";
+	LOGDIE "None of the 'ping_ips' could be reached during startup. Network seems to be down - mmmd_mon will shutdown now.";
 }
 
 

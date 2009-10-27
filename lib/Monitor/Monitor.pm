@@ -606,8 +606,29 @@ sub _check_host_states($) {
 
 		if ($state eq 'HARD_OFFLINE') {
 
-			# HARD_OFFLINE -> AWAITING_RECOVERY
 			if ($ping && $mysql) {
+
+				# only if we have an active master or the host can't be the active master 
+				if ($active_master ne '' || !$self->roles->can_handle($main::config->{active_master_role}, $host)) {
+
+					# HARD_OFFLINE -> REPLICATION_FAIL
+					if (!$rep_threads) {
+						FATAL "State of host '$host' changed from $state to REPLICATION_FAIL";
+						$agent->state('REPLICATION_FAIL');
+						$self->send_agent_status($host);
+						next;
+					}
+	
+					# HARD_OFFLINE -> REPLICATION_DELAY
+					if (!$rep_backlog) {
+						FATAL "State of host '$host' changed from $state to REPLICATION_DELAY";
+						$agent->state('REPLICATION_DELAY');
+						$self->send_agent_status($host);
+						next;
+					}
+				}
+
+				# HARD_OFFLINE -> AWAITING_RECOVERY
 				FATAL "State of host '$host' changed from $state to AWAITING_RECOVERY";
 				$agent->state('AWAITING_RECOVERY');
 				$self->send_agent_status($host);

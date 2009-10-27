@@ -71,7 +71,7 @@ sub handle_command($$) {
 	DEBUG "Received Command $cmd";
 	my ($cmd_name, $version, $host, @params) = split('\|', $cmd, -1);
 
-	return "ERROR: Invalid hostname in command ($host)! My name is '" . $self->name . '"' if ($host ne $self->name);
+	return "ERROR: Invalid hostname in command ($host)! My name is '" . $self->name . "'" if ($host ne $self->name);
 	
 	if ($version > main::MMM_PROTOCOL_VERSION) {
 		WARN "Version in command '$cmd_name' ($version) is greater than mine (", main::MMM_PROTOCOL_VERSION, ")"

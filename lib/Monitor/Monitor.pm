@@ -587,12 +587,17 @@ sub _check_host_states($) {
 			# AWAITING_RECOVERY -> ONLINE (if host was offline for a short period)
 			if ($ping && $mysql && $rep_backlog && $rep_threads) {
 				my $uptime_diff = $agent->uptime - $agent->last_uptime;
-				next unless ($agent->last_uptime > 0 && $uptime_diff > 0 && $uptime_diff < 60);
 				next if ($agent->flapping);
-				FATAL sprintf("State of host '%s' changed from %s to ONLINE because it was down for only %d seconds", $host, $state, $uptime_diff);
-				$agent->state('ONLINE');
-				$self->send_agent_status($host);
-				next;
+				if ((	$agent->last_uptime > 0 && $uptime_diff > 0 && $uptime_diff < 60)
+				 || (	defined($main::config->{monitor}->{auto_set_online})
+					&&	$main::config->{monitor}->{auto_set_online} > 0
+					&&	$main::config->{monitor}->{auto_set_online} <= time() - $agent->last_state_change)
+				) {
+					FATAL sprintf("State of host '%s' changed from %s to ONLINE because it was down for only %d seconds", $host, $state, $uptime_diff);
+					$agent->state('ONLINE');
+					$self->send_agent_status($host);
+					next;
+				}
 			}
 			next;
 		}

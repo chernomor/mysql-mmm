@@ -217,6 +217,13 @@ The @code{monitor} section is required by mmmd_mon and mmmd_control.
 @item Used by:			@tab monitor
 @end multitable
 
+@item @strong{auto_set_online}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab How many seconds to wait before switching node status from @code{AWAITING_RECOVERY} to @code{ONLINE}. 0 = disabled.
+@item Default value:	@tab 0
+@item Used by:			@tab monitor
+@end multitable
+
 @item @strong{kill_host_bin}
 @multitable @columnfractions 0.2 0.8
 @item Description:		@tab Binary used to kill hosts if roles couldn't be removed because the agent was not reachable. You have to provide a custom binary for this which takes the hostname as first argument and the state of check ping (1 - ok; 0 - not ok) as second argument.

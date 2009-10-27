@@ -33,7 +33,7 @@ is OK again, unless it is flapping (see @ref{Flapping}).
 
 @item A host that was in state @code{HARD_OFFLINE} will be switched to 
 @code{AWAITING_RECOVERY} if everything is OK again. If its downtime was shorter 
-than 60 seconds and it wasn't rebooted, it will be switched back to @code{ONLINE} 
+than 60 seconds and it wasn't rebooted or auto_set_online is > 0 it will be switched back to @code{ONLINE} 
 automatically, unless it is flapping (see @ref{Flapping} again).
 
 @item Replication backlog or failure on the active master isn't considered 

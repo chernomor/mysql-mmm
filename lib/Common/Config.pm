@@ -36,6 +36,7 @@ our $RULESET = {
 		'ping_ips'				=> { 'required' => ['MONITOR'], 'multiple' => 1 },
 		'flap_duration'			=> { 'default' => 60 * 60 },
 		'flap_count'			=> { 'default' => 3 },
+		'auto_set_online'		=> { 'default' => 0 },
 		'kill_host_bin'			=> { 'default' => 'kill_host' }
 		}
 	},

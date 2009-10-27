@@ -13,23 +13,24 @@ no warnings qw(Class::Struct);
 
 
 struct 'MMM::Monitor::Agent' => {
-	host		=> '$',
-	mode		=> '$',
-	ip			=> '$',
-	port		=> '$',
+	host              => '$',
+	mode              => '$',
+	ip                => '$',
+	port              => '$',
 
-	state		=> '$',
-	roles		=> '@',
-	uptime		=> '$',
-	last_uptime	=> '$',
+	state             => '$',
+	roles             => '@',
+	uptime            => '$',
+	last_uptime       => '$',
+	last_state_change => '$',
 
-	online_since=> '$',
+	online_since      => '$',
 
-	flapping	=> '$',
-	flapstart	=> '$',
-	flapcount	=> '$',
+	flapping          => '$',
+	flapstart         => '$',
+	flapcount         => '$',
 
-	agent_down	=> '$'
+	agent_down        => '$'
 };
 
 sub state {
@@ -38,9 +39,8 @@ sub state {
 		my $new_state = shift;
 		my $old_state = $self->{'MMM::Monitor::Agent::state'};
 
-		if ($old_state ne $new_state && $new_state eq 'ONLINE') {
-			$self->online_since(time());
-		}
+		$self->last_state_change(time()) if ($old_state ne $new_state);
+		$self->online_since(time())      if ($old_state ne $new_state && $new_state eq 'ONLINE');
 
 		if ($old_state ne $new_state && $main::config->{monitor}->{flap_count}) {
 			if ($old_state eq 'ONLINE' and $new_state ne 'ADMIN_OFFLINE') {

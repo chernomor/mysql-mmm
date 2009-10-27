@@ -111,8 +111,8 @@ sub mysql($$) {
 		unless ($dbh) {
 			alarm(0);
 			# We don't want to trigger any action because of a simple 'too many connections' error
-			return "UNKNOWN: Too many connections! " . DBI::errstr if (DBI::err == 1040);
-			return "ERROR: Connect error (host = $peer_host:$peer_port, user = $peer_user)! " . DBI::errstr;
+			return "UNKNOWN: Too many connections! " . $DBI::errstr if ($DBI::err == 1040);
+			return "ERROR: Connect error (host = $peer_host:$peer_port, user = $peer_user)! " . $DBI::errstr;
 		}
 	
 		# Check server (simple)
@@ -158,7 +158,7 @@ sub rep_backlog($$) {
 		# connect to server
 		my $dsn = "DBI:mysql:host=$peer_host;port=$peer_port";
 		my $dbh = DBI->connect($dsn, $peer_user, $peer_password, { PrintError => 0 });
-		return "UNKNOWN: Connect error (host = $peer_host:$peer_port, user = $peer_user)! " . DBI::errstr unless ($dbh);
+		return "UNKNOWN: Connect error (host = $peer_host:$peer_port, user = $peer_user)! " . $DBI::errstr unless ($dbh);
 	
 		# Check server (replication backlog)
 		my $sth = $dbh->prepare('SHOW SLAVE STATUS');
@@ -225,7 +225,7 @@ sub rep_threads($$) {
 		# connect to server
 		my $dsn = "DBI:mysql:host=$peer_host;port=$peer_port";
 		my $dbh = DBI->connect($dsn, $peer_user, $peer_password, { PrintError => 0 });
-		return "UNKNOWN: Connect error (host = $peer_host:$peer_port, user = $peer_user)! " . DBI::errstr unless ($dbh);
+		return "UNKNOWN: Connect error (host = $peer_host:$peer_port, user = $peer_user)! " . $DBI::errstr unless ($dbh);
 	
 		# Check server (replication backlog)
 		my $sth = $dbh->prepare('SHOW SLAVE STATUS');

@@ -89,7 +89,7 @@ sub mysql_may_write() {
 
 	# connect to server
 	my $dbh = _mysql_connect($host, $port, $user, $password);
-	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)!") unless ($dbh);
+	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)! " . $DBI::errstr) unless ($dbh);
 	
 	# check old read_only state
 	(my $read_only) = $dbh->selectrow_array('select @@read_only');
@@ -132,7 +132,7 @@ sub _mysql_set_read_only($) {
 
 	# connect to server
 	my $dbh = _mysql_connect($host, $port, $user, $password);
-	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)!") unless ($dbh);
+	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)! " . $DBI::errstr) unless ($dbh);
 	
 	# check old read_only state
 	(my $read_only_old) = $dbh->selectrow_array('select @@read_only');
@@ -162,7 +162,7 @@ sub kill_sql() {
 
 	# Connect to server
 	my $dbh = _mysql_connect($host, $port, $user, $password);
-	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)!") unless ($dbh);
+	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)! " . $DBI::errstr) unless ($dbh);
 
 	my $my_id = $dbh->{'mysql_thread_id'};
 
@@ -222,7 +222,7 @@ sub toggle_slave($) {
 
 	# connect to server
 	my $dbh = _mysql_connect($host, $port, $user, $password);
-	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)!") unless ($dbh);
+	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)! " . $DBI::errstr) unless ($dbh);
 	
 	# execute query
 	my $res = $dbh->do($query);
@@ -252,7 +252,7 @@ sub sync_with_master() {
 
 	# Connect to local server
 	my $this_dbh = _mysql_connect($this_host, $this_port, $this_user, $this_password);
-	_exit_error("Can't connect to MySQL (host = $this_host:$this_port, user = $this_user)!") unless ($this_dbh);
+	_exit_error("Can't connect to MySQL (host = $this_host:$this_port, user = $this_user)! " . $DBI::errstr) unless ($this_dbh);
 
 	# Connect to peer
 	my $peer_dbh = _mysql_connect($peer_host, $peer_port, $peer_user, $peer_password);
@@ -310,7 +310,7 @@ sub set_active_master($) {
 	
 	# Connect to local server
 	my $this_dbh = _mysql_connect($this_host, $this_port, $this_user, $this_password);
-	_exit_error("Can't connect to MySQL (host = $this_host:$this_port, user = $this_user)!") unless ($this_dbh);
+	_exit_error("Can't connect to MySQL (host = $this_host:$this_port, user = $this_user)! " . $DBI::errstr) unless ($this_dbh);
 
 	# Get slave info
 	my $slave_status = $this_dbh->selectrow_hashref('SHOW SLAVE STATUS');
@@ -351,7 +351,7 @@ sub set_active_master($) {
 	
 	# Connect to new peer
 	my $new_peer_dbh = _mysql_connect($new_peer_host, $new_peer_port, $new_peer_user, $new_peer_password);
-	_exit_error("Can't connect to MySQL (host = $new_peer_host:$new_peer_port, user = $new_peer_user)!") unless ($new_peer_dbh);
+	_exit_error("Can't connect to MySQL (host = $new_peer_host:$new_peer_port, user = $new_peer_user)! " . $DBI::errstr) unless ($new_peer_dbh);
 
 	# Get log position of new master
 	my $new_master_status = $new_peer_dbh->selectrow_hashref('SHOW MASTER STATUS');

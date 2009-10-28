@@ -35,7 +35,7 @@ Description: MySQL Multi-Master Replication Manager Agent.
 
 Package: mysql-mmm-monitor
 Architecture: all
-Depends: ${perl:Depends}, ${misc:Depends}, mysql-mmm-common, libclass-singleton-perl, libproc-daemon-perl, libalgorithm-diff-perl
+Depends: ${perl:Depends}, ${misc:Depends}, mysql-mmm-common, libclass-singleton-perl, libproc-daemon-perl, libalgorithm-diff-perl, libdbi-perl, libdbd-mysql-perl
 Recommends: fping
 Description: MySQL Multi-Master Replication Manager Monitor.
  MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts 

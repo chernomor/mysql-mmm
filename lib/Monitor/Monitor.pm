@@ -878,7 +878,8 @@ sub _process_commands($) {
 		my $res;
 
 		# Execute command
-		if    ($command eq 'ping'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::ping();							}
+		if    ($command eq 'help'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::help();							}
+		elsif ($command eq 'ping'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::ping();							}
 		elsif ($command eq 'show'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::show();							}
 		elsif ($command eq 'mode'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::mode();							}
 		elsif ($command eq 'set_active'		&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_active();					}
@@ -886,6 +887,9 @@ sub _process_commands($) {
 		elsif ($command eq 'set_online'		&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_online ($args[0]);			}
 		elsif ($command eq 'set_offline'	&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_offline($args[0]);			}
 		elsif ($command eq 'move_role'		&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::move_role($args[0], $args[1]);	}
+		elsif ($command eq 'move_role'		&& $arg_cnt == 3 && $args[0] eq "--force") {
+			$res = MMM::Monitor::Commands::forced_move_role($args[1], $args[2]);
+		}
 		elsif ($command eq 'set_ip'			&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::set_ip($args[0], $args[1]);		}
 		else { $res = "Invalid command '$cmdline'\n\n" . MMM::Monitor::Commands::help(); }
 

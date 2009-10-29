@@ -207,13 +207,78 @@ sub move_role($$) {
 	# Notify old host (if is_active_master_role($role) this will make the host non writable)
 	MMM::Monitor::Monitor->instance()->send_agent_status($old_owner);
 
-	# Notify old host (this will make them switch the master)
+	# Notify slaves (this will make them switch the master)
 	MMM::Monitor::Monitor->instance()->notify_slaves($host) if ($roles->is_active_master_role($role));
 
 	# Notify new host (if is_active_master_role($role) this will make the host writable)
 	MMM::Monitor::Monitor->instance()->send_agent_status($host);
 	
 	return "OK: Role '$role' has been moved from '$old_owner' to '$host'. Now you can wait some time and check new roles info!";
+	
+}
+
+sub forced_move_role($$) {
+	my $role	= shift;
+	my $host	= shift;
+	
+	return "ERROR: This command is only allowed in active mode" if (MMM::Monitor::Monitor->instance()->passive);
+
+	my $agents	= MMM::Monitor::Agents->instance();
+	my $roles	= MMM::Monitor::Roles->instance();
+	my $checks	= MMM::Monitor::ChecksStatus->instance();
+
+
+	return "ERROR: Unknown role name '$role'!" unless ($roles->exists($role));
+	return "ERROR: Unknown host name '$host'!" unless ($agents->exists($host));
+	return "ERROR: move_role --forced may be used for the active master role only!" unless ($roles->is_active_master_role($role));
+
+	my $host_state = $agents->state($host);
+	unless ($host_state eq 'REPLICATION_FAIL' || $host_state eq 'REPLICATION_BACKLOG') {
+		return "ERROR: Can't force move of role to host with state $host_state.";
+	}
+
+	unless ($roles->can_handle($role, $host)) {
+        return "ERROR: Host '$host' can't handle role '$role'. Only following hosts could: " . join(', ', @{ $roles->get_valid_hosts($role) });
+	}
+	
+	my $old_owner = $roles->get_exclusive_role_owner($role);
+	return "OK: Role is on '$host' already. Skipping command." if ($old_owner eq $host);
+
+	my $agent     = $agents->get($host);
+	my $old_agent = $agents->get($old_owner);
+	return "ERROR: Can't reach agent daemon on '$host'! Can't move roles there!" unless ($agent->cmd_ping());
+
+	my $ip = $roles->get_exclusive_role_ip($role);
+	return "Error: Role $role has no IP." unless ($ip);
+
+	FATAL "Admin forced move of role '$role' from '$old_owner' to '$host'";
+
+	# Assign role to new host
+	$roles->set_role($role, $ip, $host);
+	FATAL "State of host '$host' changed from $host_state to ONLINE (because of move_role --force)";
+	$agent->state('ONLINE');
+
+	if (!$checks->rep_threads($old_owner)) {
+		FATAL "State of host '$old_owner' changed from ONLINE to REPLICATION_FAIL (because of move_role --force)";
+		$old_agent->state('REPLICATION_FAIL');
+		$roles->clear_host_roles($old_owner);
+	}
+	elsif (!$checks->rep_backlog($old_owner)) {
+		FATAL "State of host '$old_owner' changed from ONLINE to REPLICATION_BACKLOG (because of move_role --force)";
+		$old_agent->state('REPLICATION_BACKLOG');
+		$roles->clear_host_roles($old_owner);
+	}
+
+	# Notify old host (this will make the host non writable)
+	MMM::Monitor::Monitor->instance()->send_agent_status($old_owner);
+
+	# Notify slaves (this will make them switch the master)
+	MMM::Monitor::Monitor->instance()->notify_slaves($host);
+
+	# Notify new host (this will make the host writable)
+	MMM::Monitor::Monitor->instance()->send_agent_status($host);
+	
+	return "OK: Role '$role' has been moved from '$old_owner' to '$host' enforcedly. Now you can wait some time and check new roles info!";
 	
 }
 
@@ -273,16 +338,17 @@ sub set_passive() {
 
 sub help() {
 	return: "Valid commands are:
-    help                         - show this message
-    ping                         - ping monitor
-    show                         - show status
-    set_online <host>            - set host <host> online
-    set_offline <host>           - set host <host> offline
-    mode                         - print current mode.
-    set_active                   - switch into active mode.
-    set_passive                  - switch into passive mode.
-    move_role <role> <host>      - move exclusive role <role> to host <host>
-    set_ip <ip> <host>           - set role with ip <ip> to host <host>
+    help                              - show this message
+    ping                              - ping monitor
+    show                              - show status
+    set_online <host>                 - set host <host> online
+    set_offline <host>                - set host <host> offline
+    mode                              - print current mode.
+    set_active                        - switch into active mode.
+    set_passive                       - switch into passive mode.
+    move_role [--force] <role> <host> - move exclusive role <role> to host <host>
+                                        (Only use --force if you know what you are doing!)
+    set_ip <ip> <host>                - set role with ip <ip> to host <host>
 ";
 }
 

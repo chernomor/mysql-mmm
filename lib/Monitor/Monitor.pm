@@ -586,14 +586,21 @@ sub _check_host_states($) {
 
 			# AWAITING_RECOVERY -> ONLINE (if host was offline for a short period)
 			if ($ping && $mysql && $rep_backlog && $rep_threads) {
-				my $uptime_diff = $agent->uptime - $agent->last_uptime;
 				next if ($agent->flapping);
-				if ((	$agent->last_uptime > 0 && $uptime_diff > 0 && $uptime_diff < 60)
-				 || (	defined($main::config->{monitor}->{auto_set_online})
-					&&	$main::config->{monitor}->{auto_set_online} > 0
-					&&	$main::config->{monitor}->{auto_set_online} <= time() - $agent->last_state_change)
-				) {
+
+				my $uptime_diff = $agent->uptime - $agent->last_uptime;
+				my $state_diff  = time() - $agent->last_state_change;
+
+				# set ONLINE because of small downtime
+				if ($agent->last_uptime > 0 && $uptime_diff > 0 && $uptime_diff < 60) {
 					FATAL sprintf("State of host '%s' changed from %s to ONLINE because it was down for only %d seconds", $host, $state, $uptime_diff);
+					$agent->state('ONLINE');
+					$self->send_agent_status($host);
+					next;
+				}
+				# set ONLINE because of auto_set_online
+				if (defined($main::config->{monitor}->{auto_set_online}) && $main::config->{monitor}->{auto_set_online} > 0 && $main::config->{monitor}->{auto_set_online} <= $state_diff) {
+					FATAL sprintf("State of host '%s' changed from %s to ONLINE because of auto_set_online(%d seconds). It was in state AWAITING_RECOVERY for %d seconds", $host, $state, $main::config->{monitor}->{auto_set_online}, $state_diff);
 					$agent->state('ONLINE');
 					$self->send_agent_status($host);
 					next;

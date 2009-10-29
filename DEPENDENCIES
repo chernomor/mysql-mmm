@@ -40,3 +40,8 @@ Tests:
 Docs:
 	SVG				libsvg-perl
 	inkscape
+	Texinfo::Menus
+	texi2html
+	texinfo
+	texlive
+	texlive-base-bin

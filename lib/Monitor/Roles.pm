@@ -363,6 +363,35 @@ sub obey_preferences($) {
 }
 
 
+=item get_preference_info
+
+Get information about roles with preferred hosts
+
+=cut
+sub get_preference_info($) {
+	my $self	= shift;
+
+	my $ret = '';
+
+	foreach my $role (keys(%$self)) {
+		my $role_info = $self->{$role};
+		next unless ($role_info->{prefer});
+
+		my $host       = $role_info->{prefer};
+		my $other_host = $self->get_exclusive_role_owner($role);
+		if ($host eq $other_host) {
+			$ret .= "# Role $role is assigned to it's preferred host $host.\n";
+		}
+		elsif($other_host ne '') {
+			$ret .= "# Role $role has $host configured as it's preferred host but is assigned to $other_host at the moment.\n";
+		}
+		else {
+			$ret .= "# Role $role has $host configured as it's preferred host.\n";
+		}
+	}
+	return $ret;
+}
+
 
 =item balance
 

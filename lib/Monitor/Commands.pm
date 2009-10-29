@@ -56,6 +56,8 @@ sub ping() {
 sub show() {
 	my $agents	= MMM::Monitor::Agents->instance();
 	my $monitor	= MMM::Monitor::Monitor->instance();
+	my $roles	= MMM::Monitor::Roles->instance();
+
 	my $ret = '';
 	if ($monitor->passive) {
 		$ret .= "--- Monitor is in PASSIVE MODE ---\n";
@@ -63,6 +65,7 @@ sub show() {
 		$ret =~ s/^/# /mg;
 	}
 	$ret .= $agents->get_status_info(1);
+	$ret .= $roles->get_preference_info();
 	return $ret;
 }
 

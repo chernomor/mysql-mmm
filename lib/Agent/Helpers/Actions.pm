@@ -52,7 +52,9 @@ sub configure_ip($$) {
 		_exit_ok('IP address is configured');
 	}
 
-	MMM::Agent::Helpers::Network::add_ip($if, $ip);
+	if (!MMM::Agent::Helpers::Network::add_ip($if, $ip)) {
+		_exit_error("Could not configure ip adress $ip on interface $if!");
+	}
 	MMM::Agent::Helpers::Network::send_arp($if, $ip);
 	_exit_ok();
 }

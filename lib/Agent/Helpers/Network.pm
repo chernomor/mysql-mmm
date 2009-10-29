@@ -35,14 +35,15 @@ sub check_ip($$) {
 	my $output;
 	if ($OSNAME eq 'linux') {
 		$output = `/sbin/ip addr show dev $if`;
+		_exit_error("Could not check if ip $ip is configured on $if: $output") if ($? >> 8 == 255);
 	}
 	elsif ($OSNAME eq 'solaris') {
 		# FIXME $if is not used here
 		$output = `/usr/sbin/ifconfig -a | grep inet`;
+		_exit_error("Could not check if ip $ip is configured on $if: $output") if ($? >> 8 == 255);
 	}
 	else {
-		print "ERROR: Unsupported platform!\n";
-		exit(1);
+		_exit_error("ERROR: Unsupported platform!");
 	}
 
 	return ($output =~ /\D+$ip\D+/) ? 1 : 0;
@@ -59,22 +60,25 @@ sub add_ip($$) {
 	my $if = shift;
 	my $ip = shift;
 	
+	my $output;
 	if ($OSNAME eq 'linux') {
-		`/sbin/ip addr add $ip/32 dev $if`;
+		$output = `/sbin/ip addr add $ip/32 dev $if`;
+		_exit_error("Could not configure ip $ip on interface $if: $output") if ($? >> 8 == 255);
 	}
 	elsif ($OSNAME eq 'solaris') {
-		`/usr/sbin/ifconfig $if addif $ip`;
+		$output = `/usr/sbin/ifconfig $if addif $ip`;
+		_exit_error("Could not configure ip $ip on interface $if: $output") if ($? >> 8 == 255);
 		my $logical_if = _solaris_find_logical_if($ip);
 		unless ($logical_if) {
-			print "ERROR: Can't find logical interface with IP = $ip\n";
-			exit(1);
+			_exit_error("ERROR: Can't find logical interface with IP = $ip");
 		}
-		`/usr/sbin/ifconfig $logical_if up`;
+		$output = `/usr/sbin/ifconfig $logical_if up`;
+		_exit_error("Could not activate logical interface $logical_if with ip $ip on interface: $output") if ($? >> 8 == 255);
 	}
 	else {
-		print "ERROR: Unsupported platform!\n";
-		exit(1);
+		_exit_error("ERROR: Unsupported platform!");
 	}
+	return check_ip($if, $ip);
 }
 
 
@@ -88,14 +92,16 @@ sub clear_ip($$) {
 	my $if = shift;
 	my $ip = shift;
 	
+	my $output;
 	if ($OSNAME eq 'linux') {
-		`/sbin/ip addr del $ip/32 dev $if`;
+		$output = `/sbin/ip addr del $ip/32 dev $if`;
+		_exit_error("Could not remove ip $ip from interface $if: $output") if ($? >> 8 == 255);
 	}
 	elsif ($OSNAME eq 'solaris') {
-		`/usr/sbin/ifconfig $if removeif $ip`;
+		$output = `/usr/sbin/ifconfig $if removeif $ip`;
+		_exit_error("Could not remove ip $ip from interface $if: $output") if ($? >> 8 == 255);
 	}
 	else {
-		print "ERROR: Unsupported platform!\n";
 		exit(1);
 	}
 }
@@ -140,9 +146,17 @@ sub send_arp($$) {
 		`/bin/send_arp -i 100 -r 5 -p /tmp/send_arp $if $ip auto $if_bcast $if_mask`;
 	}
 	else {
-		print "ERROR: Unsupported platform!\n";
-		exit(1);
+		_exit_error("ERROR: Unsupported platform!");
 	}
+}
+
+sub _exit_error {
+    my $msg = shift;
+
+    print "ERROR: $msg\n"   if ($msg);
+    print "ERROR\n"         unless ($msg);
+
+    exit(255);
 }
 
 #-------------------------------------------------------------------------------

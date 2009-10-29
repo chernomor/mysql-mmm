@@ -1,3 +1,14 @@
+mysql-mmm (2.0.10-1) stable; urgency=low
+  * Check for failure when configuring ips, checking for ips and removing ips (bug #429651)
+  * Show preferred role status in mmm_control show output (bug #463241)
+  * Added move_role --force (bug #381919)
+  * Added auto_set_online feature (bug #429664)
+  * Fixed dependencies of package mysql-mmm-monitor (libdbi-perl and libdbd-mysql-perl were missing)
+  * Don't change host state from HARD_OFFLINE to AWAITING_RECOVERY if replication checks are not ok (bug #458907)
+  * Enhanced log messages (bug #416572, bug #416586, ...)
+
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Fri, 30 Oct 2009 08:51:00 +0200
+
 mysql-mmm (2.0.9-1) stable; urgency=high
 
   * Fixed mmm_clone and mmm_restore so that they don't mess up owner/group of files. (bug #388426)

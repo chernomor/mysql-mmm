@@ -6,7 +6,8 @@ use English qw( OSNAME );
 
 our $VERSION = '0.01';
 
-if ($OSNAME eq 'linux') {
+if ($OSNAME eq 'linux' || $OSNAME eq 'freebsd') {
+	# these libs will always be loaded, use require and then import to avoid that
 	use Net::ARP;
 	use Time::HiRes qw( usleep );
 }
@@ -31,7 +32,7 @@ Check if the IP $ip is configured on interface $if. Returns 0 if not, 1 otherwis
 sub check_ip($$) {
 	my $if = shift;
 	my $ip = shift;
-	
+
 	my $output;
 	if ($OSNAME eq 'linux') {
 		$output = `/sbin/ip addr show dev $if`;
@@ -40,6 +41,10 @@ sub check_ip($$) {
 	elsif ($OSNAME eq 'solaris') {
 		# FIXME $if is not used here
 		$output = `/usr/sbin/ifconfig -a | grep inet`;
+		_exit_error("Could not check if ip $ip is configured on $if: $output") if ($? >> 8 == 255);
+	}
+	elsif ($OSNAME eq 'freebsd') {
+		$output = `/sbin/ifconfig $if | grep inet`;
 		_exit_error("Could not check if ip $ip is configured on $if: $output") if ($? >> 8 == 255);
 	}
 	else {
@@ -59,7 +64,7 @@ Add IP $ip to the interface $if.
 sub add_ip($$) {
 	my $if = shift;
 	my $ip = shift;
-	
+
 	my $output;
 	if ($OSNAME eq 'linux') {
 		$output = `/sbin/ip addr add $ip/32 dev $if`;
@@ -74,6 +79,10 @@ sub add_ip($$) {
 		}
 		$output = `/usr/sbin/ifconfig $logical_if up`;
 		_exit_error("Could not activate logical interface $logical_if with ip $ip on interface: $output") if ($? >> 8 == 255);
+	}
+	elsif ($OSNAME eq 'freebsd') {
+		$output = `/sbin/ifconfig $if inet $ip netmask 255.255.255.255 alias`;
+		_exit_error("Could not configure ip $ip on interface $if: $output") if ($? >> 8 == 255);
 	}
 	else {
 		_exit_error("ERROR: Unsupported platform!");
@@ -91,7 +100,7 @@ Remove the IP $ip from the interface $if.
 sub clear_ip($$) {
 	my $if = shift;
 	my $ip = shift;
-	
+
 	my $output;
 	if ($OSNAME eq 'linux') {
 		$output = `/sbin/ip addr del $ip/32 dev $if`;
@@ -99,6 +108,10 @@ sub clear_ip($$) {
 	}
 	elsif ($OSNAME eq 'solaris') {
 		$output = `/usr/sbin/ifconfig $if removeif $ip`;
+		_exit_error("Could not remove ip $ip from interface $if: $output") if ($? >> 8 == 255);
+	}
+	elsif ($OSNAME eq 'freebsd') {
+		$output = `/sbin/ifconfig $if inet $ip -alias`;
 		_exit_error("Could not remove ip $ip from interface $if: $output") if ($? >> 8 == 255);
 	}
 	else {
@@ -117,8 +130,8 @@ sub send_arp($$) {
 	my $if = shift;
 	my $ip = shift;
 
-	
-	if ($OSNAME eq 'linux') {
+
+	if ($OSNAME eq 'linux' || $OSNAME eq 'freebsd') {
 		my $mac = '';
 		if ($Net::ARP::VERSION < 1.0) {
 			Net::ARP::get_mac($if, $mac);

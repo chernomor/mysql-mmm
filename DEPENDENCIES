@@ -25,6 +25,7 @@ Agent:
 	Time::HiRes		perl
 	Net::ARP		libnet-arp-perl
 	iproute
+	Unix::Uptime	(optional on linux)
 
 Tools:
 	Path::Class		libpath-class-perl

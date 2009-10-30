@@ -2,14 +2,24 @@ package MMM::Agent::Agent;
 
 use strict;
 use warnings FATAL => 'all';
+use English qw(EVAL_ERROR);
 use Algorithm::Diff;
 use Class::Struct;
 use Log::Log4perl qw(:easy);
 use MMM::Common::Role;
 use MMM::Common::Socket;
-use MMM::Common::Uptime;
 use MMM::Agent::Helpers;
 use MMM::Agent::Role;
+
+eval {
+    no warnings 'once';
+    require Unix::Uptime;
+    *uptime = *Unix::Uptime->uptime;
+};
+if ($EVAL_ERROR) {
+	require MMM::Common::Uptime;
+	MMM::Common::Uptime->import(qw(uptime));
+}
 
 our $VERSION = '0.01';
 
@@ -49,7 +59,7 @@ sub main($) {
 			DEBUG "Daemon: Command = '$cmd'";
 
 			my $res = $self->handle_command($cmd);
-			my $uptime = MMM::Common::Uptime::uptime();
+			my $uptime = uptime();
 
 			print $client "$res|UP:$uptime\n";
 			DEBUG "Daemon: Answer = '$res'";

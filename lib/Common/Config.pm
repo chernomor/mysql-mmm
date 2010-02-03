@@ -220,6 +220,7 @@ sub parse(\%\%$*) {
 			my $val = $2;
 			LOGDIE "Unknown variable $var in '$file' on line $INPUT_LINE_NUMBER!" unless defined($ruleset->{$var});
 			LOGDIE "'$var' should be a section instead of a variable in '$file' on line $INPUT_LINE_NUMBER!" if defined($ruleset->{$var}->{section});
+			$val =~ s/\s+$//;
 			@{$config->{$var}} = split(/\s*,\s*/, $val) if ($ruleset->{$var}->{multiple});
 			$config->{$var} = $val unless ($ruleset->{$var}->{multiple});
 			if ($ruleset->{$var}->{boolean}) {

@@ -10,12 +10,17 @@ use POSIX qw( WIFEXITED WIFSIGNALED WEXITSTATUS WTERMSIG WNOHANG );
 
 our $start_process;
 our $pid;
+our $attempts;
+our $starttime;
+
 
 sub Init($) { 
 	my $pidfile = shift;
 
 	
 	$MMM::Common::Angel::start_process	= 1;
+	$MMM::Common::Angel::attempts		= 0;
+	$MMM::Common::Angel::starttime		= time();
 	my $is_shutdown	= 0;
 
 	$pidfile->create() if (defined($pidfile));
@@ -25,6 +30,7 @@ sub Init($) {
 	local $SIG{QUIT}	= \&MMM::Common::Angel::SignalHandler;
 
 	do {
+		$MMM::Common::Angel::attempts++;
 
 		if ($MMM::Common::Angel::start_process) {
 			$MMM::Common::Angel::start_process = 0;
@@ -41,6 +47,9 @@ sub Init($) {
 
 		# Wait for child to exit
 		if (waitpid($MMM::Common::Angel::pid, 0) == -1) {
+			# child exited clean, reset attempts and starttime
+			$MMM::Common::Angel::attempts = 0;
+			$MMM::Common::Angel::starttime = time();
 			if ($ERRNO{ECHLD}) {
 				$is_shutdown = 1 unless ($MMM::Common::Angel::start_process);
 			}
@@ -52,8 +61,18 @@ sub Init($) {
 					$is_shutdown = 1;
 				}
 				else {
-					FATAL sprintf("Child exited with exitcode %s, restarting", WEXITSTATUS($?));
-					$MMM::Common::Angel::start_process	= 1;
+					my $now = time();
+					my $diff = $now - $MMM::Common::Angel::starttime;
+					if ($MMM::Common::Angel::attempts >= 10 && $diff < 300) {
+						FATAL sprintf("Child exited with exitcode %s and has failed more than 10 times consecutively in the last 5 minutes, not restarting", WEXITSTATUS($?));
+						$MMM::Common::Angel::start_process	= 0;
+						$is_shutdown = 1;
+					}
+					else {
+						FATAL sprintf("Child exited with exitcode %s, restarting after 10 second sleep", WEXITSTATUS($?));
+						sleep(10);
+						$MMM::Common::Angel::start_process	= 1;
+					}
 				}
 			}
 			if (WIFSIGNALED($CHILD_ERROR)) {

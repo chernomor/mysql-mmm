@@ -589,9 +589,10 @@ sub _check_host_states($) {
 				my $state_diff  = time() - $agent->last_state_change;
 
 				if ($agent->flapping) {
+					my $check_state_diff  = time() - $checks->last_change($host);
 					# set flapping host ONLINE because of auto_set_online
 					next unless (defined($main::config->{monitor}->{auto_set_online}) && $main::config->{monitor}->{auto_set_online} > 0);
-					next if ($state_diff < $main::config->{monitor}->{flap_duration});
+					next if ($check_state_diff < $main::config->{monitor}->{flap_duration});
 					FATAL sprintf(
 						"State of flapping host '%s' changed from %s to ONLINE because of auto_set_online and flap_duration(%d) seconds passed without another failure. It was in state AWAITING_RECOVERY for %d seconds",
 						$host,

@@ -20,6 +20,8 @@ sub _new_instance($) {
 		$data->{$host_name} = {};
 	}
 
+	my $time = time();
+
 	# Perform initial checks
 	INFO 'Performing initial checks...';
 	foreach my $check_name (@checks) {
@@ -32,7 +34,9 @@ sub _new_instance($) {
 			DEBUG "Trying initial check '$check_name' on host '$host_name'";
 			my $res = $checker->check($host_name);
 			DEBUG "$check_name($host_name) = '$res'";
-			$data->{$host_name}->{$check_name} = ($res =~ /^OK/)? 1 : 0;
+			$data->{$host_name}->{$check_name} = {};
+			$data->{$host_name}->{$check_name}->{status}      = ($res =~ /^OK/)? 1 : 0;
+			$data->{$host_name}->{$check_name}->{last_change} = $time;
 		}
 
 		# Shutdown checker
@@ -51,8 +55,9 @@ handle the results of a check and change state accordingly
 sub handle_result($$) {
 	my $self = shift;
 	my $result = shift;
-
-	$self->{$result->{host}}->{$result->{check}} = $result->{result};
+	return if ($result->{result} == $self->{$result->{host}}->{$result->{check}}->{status}); 
+	$self->{$result->{host}}->{$result->{check}}->{status}      = $result->{result};
+	$self->{$result->{host}}->{$result->{check}}->{last_change} = time();
 }
 
 =item ping($host)
@@ -64,7 +69,7 @@ Get state of check "ping" on host $host.
 sub ping() {
 	my $self = shift;
 	my $host = shift;
-	return $self->{$host}->{ping};
+	return $self->{$host}->{ping}->{status};
 }
 
 
@@ -77,7 +82,7 @@ Get state of check "mysql" on host $host.
 sub mysql() {
 	my $self = shift;
 	my $host = shift;
-	return $self->{$host}->{mysql};
+	return $self->{$host}->{mysql}->{status};
 }
 
 
@@ -90,7 +95,7 @@ Get state of check "rep_threads" on host $host.
 sub rep_threads() {
 	my $self = shift;
 	my $host = shift;
-	return $self->{$host}->{rep_threads};
+	return $self->{$host}->{rep_threads}->{status};
 }
 
 
@@ -103,7 +108,24 @@ Get state of check "rep_backlog" on host $host.
 sub rep_backlog() {
 	my $self = shift;
 	my $host = shift;
-	return $self->{$host}->{rep_backlog};
+	return $self->{$host}->{rep_backlog}->{status};
+}
+
+
+=item last_change($host)
+
+Get time of last state change
+
+=cut
+
+sub last_change() {
+	my $self = shift;
+	my $host = shift;
+	my $time = $self->{$host}->{ping}->{last_change};
+	$time = $self->{$host}->{mysql}->{last_change}       if ($self->{$host}->{mysql}->{last_change}       > $time);
+	$time = $self->{$host}->{rep_threads}->{last_change} if ($self->{$host}->{rep_threads}->{last_change} > $time);
+	$time = $self->{$host}->{rep_backlog}->{last_change} if ($self->{$host}->{rep_backlog}->{last_change} > $time);
+	return $time;
 }
 
 1;

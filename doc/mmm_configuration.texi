@@ -150,7 +150,7 @@ include	common.conf
 
 @node monitor section
 @subsection @code{monitor} section
-The @code{monitor} section is required by mmmd_mon and mmmd_control.
+The @code{monitor} section is required by mmmd_mon and mmm_control.
 
 @itemize
 

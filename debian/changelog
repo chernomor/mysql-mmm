@@ -1,3 +1,13 @@
+mysql-mmm (2.0.11-1) stable; urgency=low
+  * let auto_set_online set flapping hosts to ONLINE after flap_duration seconds
+    without failure (bug #484128)
+  * Prevent angel from filling filesystem on infinit error conditions
+    (bug #473446)
+  * Ignore white space after config values in the config file (bug #494128)
+  * Use Unix::Uptime when available (bug #465107)
+
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Wed, 03 Feb 2010 14:15:00 +0100
+
 mysql-mmm (2.0.10-1) stable; urgency=low
   * Check for failure when configuring ips, checking for ips and removing ips (bug #429651)
   * Show preferred role status in mmm_control show output (bug #463241)

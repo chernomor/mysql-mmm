@@ -1,6 +1,6 @@
 \input texinfo @c -*- texinfo -*-
 @setfilename mmm.info
-@settitle MMM Manual 2.0.10-1
+@settitle MMM Manual 2.0.11-1
 @set language en
 
 @copying
@@ -41,12 +41,12 @@ MMM (Master-Master Replication Manager for MySQL) is a set of flexible scripts t
 @*
 The main functionality is provided through the following three scripts: 
 @table @command
-@item mmmd_mon
+@item mmm_mond
 monitoring daemon which does all monitoring work and makes all decisions about roles moving and so on.
-@item mmmd_agent
+@item mmm_agentd
 agent daemon which runs on each MySQL server and provides monitoring node with simple set of remote services.
 @item mmm_control
-simple script dedicated to management of the mmmd_mon processes by commands. 
+simple script dedicated to management of the mmm_mond processes by commands. 
 @end table
 
 @*
@@ -93,7 +93,7 @@ A MySQL user with privileges @code{SUPER, REPLICATION CLIENT, RELOAD} for MMM to
 
 @itemize
 @item perl with ithreads support
-@item fping (if you want to run @command{mmmd_mon} as non-root user)
+@item fping (if you want to run @command{mmm_mond} as non-root user)
 @item Perl modules:
 
 @itemize @minus

@@ -1,15 +1,13 @@
 This package was debianized by Pascal Hofmann <mail@pascalhofmann.de> on
 Thu, 15 Jan 2009 13:11:31 +0200.
 
-It was downloaded from http://code.google.com/p/mysql-master-master/
+It was downloaded from http://mysql-mmm.org/
 
-Upstream Author(s): 
-
+Upstream Author: 
     Pascal Hofmann <mail@pascalhofmann.de>
 
 Copyright: 
-
-    Copyright (C) 2008-2009 Pascal Hofmann
+    Copyright (C) 2008-2010 Pascal Hofmann
 
 License:
     GPL version 2

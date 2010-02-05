@@ -8,7 +8,7 @@ Standards-Version: 3.7.2
 Package: mysql-mmm-common
 Architecture: all
 Depends: ${perl:Depends}, ${misc:Depends}, liblog-log4perl-perl, libmailtools-perl, liblog-dispatch-perl
-Description: MySQL Multi-Master Replication Manager common files.
+Description: MySQL Multi-Master Replication Manager common files
  MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts 
  to perform monitoring/failover and management of MySQL Master-Master 
  replication configurations (with only one node writable at any time). 
@@ -22,7 +22,7 @@ Description: MySQL Multi-Master Replication Manager common files.
 Package: mysql-mmm-agent
 Architecture: all
 Depends: ${perl:Depends}, ${misc:Depends}, mysql-mmm-common, iproute, libnet-arp-perl, libproc-daemon-perl, libalgorithm-diff-perl, libdbi-perl, libdbd-mysql-perl
-Description: MySQL Multi-Master Replication Manager Agent.
+Description: MySQL Multi-Master Replication Manager Agent
  MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts 
  to perform monitoring/failover and management of MySQL Master-Master 
  replication configurations (with only one node writable at any time). 
@@ -37,7 +37,7 @@ Package: mysql-mmm-monitor
 Architecture: all
 Depends: ${perl:Depends}, ${misc:Depends}, mysql-mmm-common, libclass-singleton-perl, libproc-daemon-perl, libalgorithm-diff-perl, libdbi-perl, libdbd-mysql-perl
 Recommends: fping
-Description: MySQL Multi-Master Replication Manager Monitor.
+Description: MySQL Multi-Master Replication Manager Monitor
  MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts 
  to perform monitoring/failover and management of MySQL Master-Master 
  replication configurations (with only one node writable at any time). 
@@ -51,7 +51,7 @@ Description: MySQL Multi-Master Replication Manager Monitor.
 Package: mysql-mmm-tools
 Architecture: all
 Depends: ${perl:Depends}, ${misc:Depends}, mysql-mmm-common, libdbi-perl, libdbd-mysql-perl
-Description: MySQL Multi-Master Replication Manager Tools.
+Description: MySQL Multi-Master Replication Manager Tools
  MMM (MySQL Master-Master Replication Manager) is a set of flexible scripts 
  to perform monitoring/failover and management of MySQL Master-Master 
  replication configurations (with only one node writable at any time). 

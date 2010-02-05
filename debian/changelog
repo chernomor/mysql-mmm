@@ -9,19 +9,23 @@ mysql-mmm (2.0.11-1) stable; urgency=low
  -- Pascal Hofmann <mail@pascalhofmann.de>  Wed, 03 Feb 2010 14:15:00 +0100
 
 mysql-mmm (2.0.10-1) stable; urgency=low
-  * Check for failure when configuring ips, checking for ips and removing ips (bug #429651)
+  * Check for failure when configuring ips, checking for ips and removing ips
+    (bug #429651)
   * Show preferred role status in mmm_control show output (bug #463241)
   * Added move_role --force (bug #381919)
   * Added auto_set_online feature (bug #429664)
-  * Fixed dependencies of package mysql-mmm-monitor (libdbi-perl and libdbd-mysql-perl were missing)
-  * Don't change host state from HARD_OFFLINE to AWAITING_RECOVERY if replication checks are not ok (bug #458907)
+  * Fixed dependencies of package mysql-mmm-monitor (libdbi-perl and
+    libdbd-mysql-perl were missing)
+  * Don't change host state from HARD_OFFLINE to AWAITING_RECOVERY if
+    replication checks are not ok (bug #458907)
   * Enhanced log messages (bug #416572, bug #416586, ...)
 
  -- Pascal Hofmann <mail@pascalhofmann.de>  Fri, 30 Oct 2009 08:51:00 +0200
 
 mysql-mmm (2.0.9-1) stable; urgency=high
 
-  * Fixed mmm_clone and mmm_restore so that they don't mess up owner/group of files. (bug #388426)
+  * Fixed mmm_clone and mmm_restore so that they don't mess up owner/group of
+    files. (bug #388426)
 
  -- Pascal Hofmann <mail@pascalhofmann.de>  Fri, 19 Jun 2009 03:13:00 +0200
 
@@ -33,7 +37,8 @@ mysql-mmm (2.0.8-1) stable; urgency=high
 
 mysql-mmm (2.0.7-1) stable; urgency=low
 
-  * When overwriting status file, create temporary file in the same directory (fixes bug #385541)
+  * When overwriting status file, create temporary file in the same directory
+    (fixes bug #385541)
 
  -- Pascal Hofmann <mail@pascalhofmann.de>  Thu, 11 Jun 2009 08:57:00 +0200
 
@@ -72,10 +77,12 @@ mysql-mmm (2.0.2-1) stable; urgency=low
   * Improved logging
   * Retry failed agent commands in some cases 
   * Show unreachable agents in "mmm_control status" output.
-  * Flag unreachable agents on startup to prevent assignment of roles when monitor is set active.
+  * Flag unreachable agents on startup to prevent assignment of roles when
+    monitor is set active.
   * Warn about bad auto_increment_increment and auto_increment_offset values
   * check replication peer of both masters
-  * retry mysql connect when checking master configuration (could be interrupted through SIGCHILD)
+  * retry mysql connect when checking master configuration (could be interrupted
+    through SIGCHILD)
 
  -- Pascal Hofmann <mail@pascalhofmann.de>  Sun, 24 May 2009 19:08:00 +0200
 

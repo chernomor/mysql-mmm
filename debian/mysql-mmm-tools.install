@@ -1,4 +1,4 @@
-bin/tools usr/bin/mysql-mmm/
+bin/tools usr/lib/mysql-mmm/
 etc/mysql-mmm/mmm_tools.conf etc/mysql-mmm/
 lib/Tools usr/share/perl5/MMM/
 sbin/mmm_backup usr/sbin/

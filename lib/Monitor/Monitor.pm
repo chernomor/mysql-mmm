@@ -844,7 +844,7 @@ sub _kill_host($$$) {
 
 	# Executing the kill_host_bin and capturing its output _and_ return code is a bit complicated.
 	# We can't use backticks - $? (also called $CHILD_ERROR) will always be undefined because 
-	# mmmd_mon installs a custom signal handler for SIGCHLD.
+	# mmm_mond installs a custom signal handler for SIGCHLD.
 	# So we use "system" instead of backticks and redirect the output to a temporary file.
 	# To prevent race conditions we use tempfile instead of tmpname, clear the close-on-exec flag
 	# and redirect the output of system to '/dev/fd/' . fileno(fh).

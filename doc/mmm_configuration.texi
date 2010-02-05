@@ -10,8 +10,8 @@ Config files may resist in @file{/etc}, @file{/etc/mmm} or @file{/etc/mysql-mmm}
 
 @multitable @columnfractions 0.2 0.8
 @headitem Program @tab Filename
-@item mmmd_agent	@tab @file{mmm_agent.conf}
-@item mmmd_mon		@tab @file{mmm_mon.conf} or @file{mmm_mon_CLUSTER.conf}
+@item mmm_agentd	@tab @file{mmm_agent.conf}
+@item mmm_mond		@tab @file{mmm_mon.conf} or @file{mmm_mon_CLUSTER.conf}
 @item mmm_control	@tab @file{mmm_mon.conf} or @file{mmm_mon_CLUSTER.conf}
 @item mmm_backup	@tab @file{mmm_tools.conf}
 @item mmm_clone		@tab @file{mmm_tools.conf}
@@ -150,20 +150,20 @@ include	common.conf
 
 @node monitor section
 @subsection @code{monitor} section
-The @code{monitor} section is required by mmmd_mon and mmm_control.
+The @code{monitor} section is required by mmm_mond and mmm_control.
 
 @itemize
 
 @item @strong{ip}
 @multitable @columnfractions 0.2 0.8
-@item Description:		@tab IP on which mmmd_mon listens
+@item Description:		@tab IP on which mmm_mond listens
 @item Default value:	@tab -
 @item Used by:			@tab control, monitor
 @end multitable
 
 @item @strong{port}
 @multitable @columnfractions 0.2 0.8
-@item Description:		@tab Port on which mmmd_mon listens
+@item Description:		@tab Port on which mmm_mond listens
 @item Default value:	@tab 9988
 @item Used by:			@tab control, monitor
 @end multitable
@@ -276,7 +276,7 @@ The @code{monitor} section is required by mmmd_mon and mmm_control.
 
 @item @strong{agent_port}
 @multitable @columnfractions 0.2 0.8
-@item Description:		@tab Port on which mmmd_agent listens
+@item Description:		@tab Port on which mmm_agentd listens
 @item Default value:	@tab 9989
 @item Used by:			@tab agent, monitor
 @end multitable

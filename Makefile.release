@@ -20,7 +20,7 @@ install_agent: install_common
 		cp -r lib/Agent/ $(MODULEDIR)
 		cp -r bin/agent/* $(BINDIR)/agent/
 		cp -r etc/init.d/mysql-mmm-agent $(ETCDIR)/init.d/
-		cp sbin/mmmd_agent $(SBINDIR)
+		cp sbin/mmm_agentd $(SBINDIR)
 		[ -f $(CONFDIR)/mmm_agent.conf  ] || cp etc/mysql-mmm/mmm_agent.conf  $(ETCDIR)/mysql-mmm/
 
 install_monitor: install_common
@@ -28,7 +28,7 @@ install_monitor: install_common
 		cp -r lib/Monitor/ $(MODULEDIR)
 		cp -r bin/monitor/* $(BINDIR)/monitor/
 		cp -r etc/init.d/mysql-mmm-monitor $(ETCDIR)/init.d/
-		cp sbin/mmm_control sbin/mmmd_mon $(SBINDIR)
+		cp sbin/mmm_control sbin/mmm_mond $(SBINDIR)
 		[ -f $(CONFDIR)/mmm_mon.conf    ] || cp etc/mysql-mmm/mmm_mon.conf    $(ETCDIR)/mysql-mmm/
 
 install_tools: install_common

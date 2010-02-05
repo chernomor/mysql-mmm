@@ -1,4 +1,4 @@
-/var/log/mysql-mmm/mmmd_agent.info {
+/var/log/mysql-mmm/mmm_agentd.info {
 	daily
 	missingok
 	rotate 7
@@ -8,7 +8,7 @@
 	create 640 root adm
 	sharedscripts
 }
-/var/log/mysql-mmm/mmmd_agent.warn {
+/var/log/mysql-mmm/mmm_agentd.warn {
 	daily
 	missingok
 	rotate 7
@@ -18,7 +18,7 @@
 	create 640 root adm
 	sharedscripts
 }
-/var/log/mysql-mmm/mmmd_agent.error {
+/var/log/mysql-mmm/mmm_agentd.error {
 	daily
 	missingok
 	rotate 7
@@ -28,7 +28,7 @@
 	create 640 root adm
 	sharedscripts
 }
-/var/log/mysql-mmm/mmmd_agent.fatal {
+/var/log/mysql-mmm/mmm_agentd.fatal {
 	daily
 	missingok
 	rotate 7

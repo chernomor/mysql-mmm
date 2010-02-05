@@ -4,7 +4,7 @@
 
 @node Monitor Internals
 @section Monitor
-@cindex Monitor, mmmd_mon
+@cindex Monitor, mmm_mond
 
 The monitor consists of several threads, which are:
 @enumerate

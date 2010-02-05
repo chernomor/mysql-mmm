@@ -168,15 +168,15 @@ Let's assume we have our cluster up and running with the following status:
 Now, several bad things happen:
 @enumerate
 @item network connection to db1 fails
-@item mmmd_mon detects that db1 has failed
-@item mmmd_mon moves the writer role to db2, but can't remove it from db1 (because it can't connect to it)
-@item mmmd_mon crashes and the status file gets corrupted.
+@item mmm_mond detects that db1 has failed
+@item mmm_mond moves the writer role to db2, but can't remove it from db1 (because it can't connect to it)
+@item mmm_mond crashes and the status file gets corrupted.
 @item network connection to db1 recovers
-@item The admin restarts mmmd_mon
+@item The admin restarts mmm_mond
 @end enumerate
 
-mmmd_mon has no status information now, and two nodes report, that they have the 
-@code{writer} role, so mmmd_mon doesn't know what it should do and will switch 
+mmm_mond has no status information now, and two nodes report, that they have the 
+@code{writer} role, so mmm_mond doesn't know what it should do and will switch 
 into @code{PASSIVE} mode.
 
 @smallexample
@@ -208,7 +208,7 @@ PASSIVE
 @end smallexample
 
 @noindent
-As you see, mmmd_mon tries to recover the status as well as possible. But in this situation it's wrong so one must move the writer role to db2 manually: 
+As you see, mmm_mond tries to recover the status as well as possible. But in this situation it's wrong so one must move the writer role to db2 manually: 
 
 @smallexample
 # mmm_control set_ip 192.168.0.50 db2

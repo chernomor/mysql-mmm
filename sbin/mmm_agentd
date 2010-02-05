@@ -21,7 +21,7 @@ use MMM::Agent::Agent;
 chdir('/');
 umask(0022);
 
-MMM::Common::Log::init('mmm_agent_log.conf', 'mmmd_agent');
+MMM::Common::Log::init('mmm_agent_log.conf', 'mmm_agentd');
 
 # Read configuration
 our $config = new MMM::Common::Config::;
@@ -52,7 +52,7 @@ unless ($debug) {
 	# Set umask again
 	umask(0022);
 	# Init logging again to re-open fds
-	MMM::Common::Log::init('mmm_agent_log.conf', 'mmmd_agent');
+	MMM::Common::Log::init('mmm_agent_log.conf', 'mmm_agentd');
 }
 
 # Init angel magic, which will restart us if we die unexpected

@@ -14,7 +14,7 @@ if ($OSNAME eq 'linux' || $OSNAME eq 'freebsd') {
 
 =head1 NAME
 
-MMM::Agent::Helpers::Network - network related functions for the B<mmmd_agent> helper programs
+MMM::Agent::Helpers::Network - network related functions for the B<mmm_agentd> helper programs
 
 =cut
 

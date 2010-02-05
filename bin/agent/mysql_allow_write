@@ -28,7 +28,7 @@ mysql_allow_write
 
 =head1 DESCRIPTION
 
-mysql_allow_write is a helper binary for B<mmmd_agent>. It allowes writes on the local MySQL server by setting global read_only to 0.
+mysql_allow_write is a helper binary for B<mmm_agentd>. It allowes writes on the local MySQL server by setting global read_only to 0.
 
 =head1 USAGE
 

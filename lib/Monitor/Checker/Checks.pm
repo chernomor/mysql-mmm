@@ -10,7 +10,7 @@ our $VERSION = '0.01';
 
 =head1 NAME
 
-MMM::Monitor::Checker::Checks - functions for the B<mmmd_mon> helper program B<checker>
+MMM::Monitor::Checker::Checks - functions for the B<mmm_mond> helper program B<checker>
 
 =cut
 

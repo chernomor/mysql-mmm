@@ -28,7 +28,7 @@ mysql_may_write
 
 =head1 DESCRIPTION
 
-mysql_may_write is a helper binary for B<mmmd_agent>. It checks if writes on the local MySQL server are allowed.
+mysql_may_write is a helper binary for B<mmm_agentd>. It checks if writes on the local MySQL server are allowed.
 
 =head1 USAGE
 

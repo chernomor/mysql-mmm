@@ -28,7 +28,7 @@ mysql_deny_write
 
 =head1 DESCRIPTION
 
-mysql_deny_write is a helper binary for B<mmmd_agent>. It denies writes on the local MySQL server by setting global read_only to 1.
+mysql_deny_write is a helper binary for B<mmm_agentd>. It denies writes on the local MySQL server by setting global read_only to 1.
 
 =head1 USAGE
 

@@ -5,13 +5,13 @@
 #
 # chkconfig: - 64 36
 # description:  MMM Agent.
-# processname: mmmd_agent
+# processname: mmm_agentd
 # config: /etc/mmm_agent.conf
-# pidfile: /var/run/mmmd_agent.pid
+# pidfile: /var/run/mmm_agentd.pid
 
 # Paths
-MMMD_AGENT_BIN="/usr/sbin/mmmd_agent"
-MMMD_AGENT_PIDFILE="/var/run/mmmd_agent.pid"
+MMM_AGENTD_BIN="/usr/sbin/mmm_agentd"
+MMM_AGENTD_PIDFILE="/var/run/mmm_agentd.pid"
 
 #-----------------------------------------------------------------------
 # See how we were called.
@@ -19,11 +19,11 @@ case "$1" in
   start)
         # Start daemon.
         echo -n "Starting MMM Agent daemon... "
-        if [ -s $MMMD_AGENT_PIDFILE ] && kill -0 `cat $MMMD_AGENT_PIDFILE` 2> /dev/null; then
+        if [ -s $MMM_AGENTD_PIDFILE ] && kill -0 `cat $MMM_AGENTD_PIDFILE` 2> /dev/null; then
             echo " already running."
             exit 0
         fi
-        $MMMD_AGENT_BIN
+        $MMM_AGENTD_BIN
         if [ "$?" -ne 0 ]; then
             echo "failed"
             exit 1
@@ -35,8 +35,8 @@ case "$1" in
   stop)
         # Stop daemon.
         echo -n "Shutting down MMM Agent daemon"
-        if [ -s $MMMD_AGENT_PIDFILE ]; then
-            pid="$(cat $MMMD_AGENT_PIDFILE)"
+        if [ -s $MMM_AGENTD_PIDFILE ]; then
+            pid="$(cat $MMM_AGENTD_PIDFILE)"
             cnt=0
             kill "$pid"
             while kill -0 "$pid" 2>/dev/null; do
@@ -57,11 +57,11 @@ case "$1" in
 
   status)
         echo -n "Checking MMM Agent process:"
-        if [ ! -s $MMMD_AGENT_PIDFILE ]; then
+        if [ ! -s $MMM_AGENTD_PIDFILE ]; then
             echo " not running."
             exit 3
         fi
-        pid="$(cat $MMMD_AGENT_PIDFILE)"
+        pid="$(cat $MMM_AGENTD_PIDFILE)"
         if ! kill -0 "$pid" 2> /dev/null; then
             echo " not running."
             exit 1

@@ -8,7 +8,7 @@ our $VERSION = '0.01';
 
 =head1 NAME
 
-MMM::Agent::Helpers::Actions - functions for the B<mmmd_agent> helper programs
+MMM::Agent::Helpers::Actions - functions for the B<mmm_agentd> helper programs
 
 =cut
 

@@ -26,7 +26,7 @@ check_ip
 
 =head1 DESCRIPTION
 
-check_ip is a helper binary for B<mmmd_agent>. It checks if the given ip is configured.
+check_ip is a helper binary for B<mmm_agentd>. It checks if the given ip is configured.
 
 =head1 USAGE
 

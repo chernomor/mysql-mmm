@@ -26,7 +26,7 @@ clear_ip
 
 =head1 DESCRIPTION
 
-clear_ip is a helper binary for B<mmmd_agent>. It removes the given ip from the given interface.
+clear_ip is a helper binary for B<mmm_agentd>. It removes the given ip from the given interface.
 
 =head1 USAGE
 

@@ -39,7 +39,7 @@ if (scalar(@ARGV) && $ARGV[0] =~ /^@(.*)/) {
 
 
 
-MMM::Common::Log::init("mmm_mon_log$postfix.conf", "mmmd_mon$postfix");
+MMM::Common::Log::init("mmm_mon_log$postfix.conf", "mmm_mond$postfix");
 
 # Read configuration
 our $config = new MMM::Common::Config::;
@@ -58,7 +58,7 @@ INFO 'STARTING...';
 our $monitor	= new MMM::Monitor::Monitor::();
 
 if (!MMM::Monitor::NetworkChecker->initial_check()) {
-	LOGDIE "None of the 'ping_ips' could be reached during startup. Network seems to be down - mmmd_mon will shutdown now.";
+	LOGDIE "None of the 'ping_ips' could be reached during startup. Network seems to be down - mmm_mond will shutdown now.";
 }
 
 
@@ -75,7 +75,7 @@ unless ($debug) {
 	# Set umask again
 	umask(0022);
 	# Init logging again to re-open fds
-	MMM::Common::Log::init("mmm_mon_log$postfix.conf", "mmmd_mon$postfix");
+	MMM::Common::Log::init("mmm_mon_log$postfix.conf", "mmm_mond$postfix");
 }
 
 # Init angel magic, which will restart us if we die unexpected

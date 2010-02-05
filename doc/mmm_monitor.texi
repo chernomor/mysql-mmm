@@ -1,6 +1,6 @@
-@node mmmd_mon
-@chapter @command{mmmd_mon} - the monitor
-@cindex mmmd_mon
+@node mmm_mond
+@chapter @command{mmm_mond} - the monitor
+@cindex mmm_mond
 @cindex Monitor
 
 @node States
@@ -79,7 +79,7 @@ information about host state and roles @file{@var{status_path}}
 @section Checks
 @cindex Checks
 
-mmmd_mon performs four different checks on each host to determine if it is OK. These checks are:
+mmm_mond performs four different checks on each host to determine if it is OK. These checks are:
 
 @multitable @columnfractions .20 .80
 @item ping
@@ -96,11 +96,11 @@ mmmd_mon performs four different checks on each host to determine if it is OK. T
 @section Network check
 @cindex Network check
 
-mmmd_mon has the ability to detect a non-functioning network connection. It 
+mmm_mond has the ability to detect a non-functioning network connection. It 
 regularly pings all @var{ping_ips} defined in the config. If at least one 
 ip is reachable, the network is considered to be working.
 
-Without working network connection mmmd_mon will... 
+Without working network connection mmm_mond will... 
 @itemize
 @item ... ignore failed checks.
 @item ... not change the state of hosts.
@@ -108,20 +108,20 @@ Without working network connection mmmd_mon will...
 @end itemize
 
 @noindent
-If the network connection doesn't work during startup, mmmd_mon will switch into passive mode (@pxref{Passive mode}).
+If the network connection doesn't work during startup, mmm_mond will switch into passive mode (@pxref{Passive mode}).
 
 
 @node Flapping
 @section Flapping
 @cindex Flapping, flap detection
 
-mmmd_mon supports the detection of hosts that are "flapping". Flapping occurs 
+mmm_mond supports the detection of hosts that are "flapping". Flapping occurs 
 if a host which is @code{ONLINE} changes its state to @code{HARD_OFFLINE} / @code{REPLICATION_FAIL} 
 / @code{REPLICATION_DELAY} too often and each time gets switched back to @code{ONLINE} 
 (because of @var{auto_set_online} or because it has been down for less than 60 seconds). This may lead to roles 
 getting switched between hosts very often.
 
-To prevent this mmmd_mon has a built in flap-detection which can be tuned in 
+To prevent this mmm_mond has a built in flap-detection which can be tuned in 
 the configuration file. If a host goes down for more than @var{flap_count} 
 times within @var{flap_duration} seconds it is considered as 
 flapping and will not be set @code{ONLINE} automatically. It will stay in state 

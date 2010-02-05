@@ -119,7 +119,7 @@ checker
 
 =head1 DESCRIPTION
 
-B<checker> is a helper binary for B<mmmd_mon>. It is called from, and communicates with B<mmmd_mon>. B<checker> processes commands from STDIN and writes the results of this commands to STDOUT:
+B<checker> is a helper binary for B<mmm_mond>. It is called from, and communicates with B<mmm_mond>. B<checker> processes commands from STDIN and writes the results of this commands to STDOUT:
 
 =open 4
 

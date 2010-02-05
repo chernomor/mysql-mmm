@@ -9,7 +9,7 @@ our $VERSION = 	'0.01';
 
 =head1 NAME
 
-MMM::Agent::Helpers - an interface to helper programs for B<mmmd_agent>
+MMM::Agent::Helpers - an interface to helper programs for B<mmm_agentd>
 
 =cut
 

@@ -5,9 +5,9 @@
 #
 # chkconfig: - 64 36
 # description:  MMM Monitor.
-# processname: mmmd_mon
+# processname: mmm_mond
 # config: /etc/mmm_mon.conf
-# pidfile: /var/run/mmmd_mon.pid
+# pidfile: /var/run/mmm_mond.pid
 
 # Cluster name (it can be empty for default cases)
 CLUSTER=''
@@ -25,15 +25,15 @@ fi
 #-----------------------------------------------------------------------
 # Paths
 if [ "$CLUSTER" != "" ]; then
-    MMMD_MON_BIN="/usr/sbin/mmmd_mon @$CLUSTER"
-    MMMD_MON_PIDFILE="/var/run/mmmd_mon-$CLUSTER.pid"
+    MMM_MOND_BIN="/usr/sbin/mmm_mond @$CLUSTER"
+    MMM_MOND_PIDFILE="/var/run/mmm_mond-$CLUSTER.pid"
 else 
-    MMMD_MON_BIN="/usr/sbin/mmmd_mon"
-    MMMD_MON_PIDFILE="/var/run/mmmd_mon.pid"
+    MMM_MOND_BIN="/usr/sbin/mmm_mond"
+    MMM_MOND_PIDFILE="/var/run/mmm_mond.pid"
 fi
 
-echo "Daemon bin: '$MMMD_MON_BIN'"
-echo "Daemon pid: '$MMMD_MON_PIDFILE'"
+echo "Daemon bin: '$MMM_MOND_BIN'"
+echo "Daemon pid: '$MMM_MOND_PIDFILE'"
 
 #-----------------------------------------------------------------------
 # See how we were called.
@@ -41,11 +41,11 @@ case "$1" in
   start)
         # Start daemon.
         echo -n "Starting MMM Monitor daemon: "
-        if [ -s $MMMD_MON_PIDFILE ] && kill -0 `cat $MMMD_MON_PIDFILE` 2> /dev/null; then
+        if [ -s $MMM_MOND_PIDFILE ] && kill -0 `cat $MMM_MOND_PIDFILE` 2> /dev/null; then
             echo " already running."
             exit 0
         fi
-        $MMMD_MON_BIN
+        $MMM_MOND_BIN
         if [ "$?" -ne 0 ]; then
             echo "failed"
             exit 1
@@ -57,8 +57,8 @@ case "$1" in
   stop)
         # Stop daemon.
         echo -n "Shutting down MMM Monitor daemon: "
-        if [ -s $MMMD_MON_PIDFILE ]; then
-            pid="$(cat $MMMD_MON_PIDFILE)"
+        if [ -s $MMM_MOND_PIDFILE ]; then
+            pid="$(cat $MMM_MOND_PIDFILE)"
             cnt=0
             kill "$pid"
             while kill -0 "$pid" 2>/dev/null; do
@@ -79,11 +79,11 @@ case "$1" in
 
   status)
         echo -n "Checking MMM Monitor process:"
-        if [ ! -s $MMMD_MON_PIDFILE ]; then
+        if [ ! -s $MMM_MOND_PIDFILE ]; then
             echo " not running."
             exit 3
         fi
-        pid="$(cat $MMMD_MON_PIDFILE)"
+        pid="$(cat $MMM_MOND_PIDFILE)"
         if ! kill -0 "$pid" 2> /dev/null; then
             echo " not running."
             exit 1

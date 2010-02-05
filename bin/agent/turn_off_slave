@@ -31,7 +31,7 @@ turn_off_slave
 
 =head1 DESCRIPTION
 
-turn_off_slave is a helper binary for B<mmmd_agent>. It stops the slave threads on the local MySQL server.
+turn_off_slave is a helper binary for B<mmm_agentd>. It stops the slave threads on the local MySQL server.
 
 =head1 USAGE
 

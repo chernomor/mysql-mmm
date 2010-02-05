@@ -1,6 +1,6 @@
-@node mmmd_agent
-@chapter @command{mmmd_agent} - the agent
-@cindex mmmd_agent
+@node mmm_agentd
+@chapter @command{mmm_agentd} - the agent
+@cindex mmm_agentd
 @cindex Agent
 
 TODO short description

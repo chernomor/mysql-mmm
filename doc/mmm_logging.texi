@@ -16,8 +16,8 @@ The name of the file depends on the program you want to create it for:
 
 @multitable @columnfractions 0.2 0.8
 @headitem Program @tab Filename
-@item mmmd_agent	@tab @file{mmm_agent_log.conf}
-@item mmmd_mon		@tab @file{mmm_mon_log.conf} or @file{mmm_mon_log_CLUSTER.conf}
+@item mmm_agentd	@tab @file{mmm_agent_log.conf}
+@item mmm_mond		@tab @file{mmm_mon_log.conf} or @file{mmm_mon_log_CLUSTER.conf}
 @item mmm_control	@tab @file{mmm_mon_log.conf} or @file{mmm_mon_log_CLUSTER.conf}
 @item mmm_backup	@tab -
 @item mmm_clone		@tab -

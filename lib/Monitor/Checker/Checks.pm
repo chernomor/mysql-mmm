@@ -166,6 +166,7 @@ sub rep_backlog($$) {
 
 		if ($dbh->err) {
 			my $ret = 'UNKNOWN: Unknown state. Execute error: ' . $dbh->errstr;
+			$ret = "ERROR: The monitor user '$peer_user' doesn't have the required REPLICATION CLIENT privilege! " . $dbh->errstr if ($dbh->err == 1227);
 			$sth->finish();
 			$dbh->disconnect();
 			$dbh = undef;
@@ -233,6 +234,7 @@ sub rep_threads($$) {
 
 		if ($dbh->err) {
 			my $ret = 'UNKNOWN: Unknown state. Execute error: ' . $dbh->errstr;
+			$ret = "ERROR: The monitor user '$peer_user' doesn't have the required REPLICATION CLIENT privilege! " . $dbh->errstr if ($dbh->err == 1227);
 			$sth->finish();
 			$dbh->disconnect();
 			$dbh = undef;

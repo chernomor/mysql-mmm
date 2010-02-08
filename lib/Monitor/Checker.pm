@@ -62,7 +62,7 @@ sub main($$) {
 				next if ($failures->{$host_name}->{state} == 1);
 				if ($failures->{$host_name}->{state} != -2) {
 					INFO "Check '$check_name' on '$host_name' is ok!";
-					$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 1));
+					$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 1, $res));
 				}
 				$failures->{$host_name}->{time}		= 0;
 				$failures->{$host_name}->{state}	= 1;
@@ -91,7 +91,7 @@ sub main($$) {
 				next if ($failure_age < $options->{trap_period});
 
 				ERROR "Check '$check_name' on '$host_name' has failed for $failure_age seconds! Message: $res";
-				$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 0));
+				$queue->enqueue(new MMM::Monitor::CheckResult::($host_name, $check_name, 0, $res));
 				$failures->{$host_name}->{state}	= 0;
 				next;
 			}

@@ -69,6 +69,20 @@ sub show() {
 	return $ret;
 }
 
+sub show_checks() {
+	my $checks	= MMM::Monitor::ChecksStatus->instance();
+	my $ret = '';
+	foreach my $host (keys(%{$main::config->{host}})) {
+		$ret .= "$host:\n";
+		$ret .= sprintf("           ping: %s\n", $checks->message($host, 'ping'));
+		$ret .= sprintf("          mysql: %s\n", $checks->message($host, 'mysql'));
+		$ret .= sprintf("    rep_threads: %s\n", $checks->message($host, 'rep_threads'));
+		$ret .= sprintf("    rep_backlog: %s\n", $checks->message($host, 'rep_backlog'));
+		$ret .= "\n";
+	}
+	return $ret;
+}
+
 sub set_online($) {
 	my $host	= shift;
 
@@ -344,6 +358,7 @@ sub help() {
     help                              - show this message
     ping                              - ping monitor
     show                              - show status
+    show checks                       - show checks status
     set_online <host>                 - set host <host> online
     set_offline <host>                - set host <host> offline
     mode                              - print current mode.

@@ -37,6 +37,7 @@ sub _new_instance($) {
 			$data->{$host_name}->{$check_name} = {};
 			$data->{$host_name}->{$check_name}->{status}      = ($res =~ /^OK/)? 1 : 0;
 			$data->{$host_name}->{$check_name}->{last_change} = $time;
+			$data->{$host_name}->{$check_name}->{message}     = $res;
 		}
 
 		# Shutdown checker
@@ -55,7 +56,11 @@ handle the results of a check and change state accordingly
 sub handle_result($$) {
 	my $self = shift;
 	my $result = shift;
+
+	# always save the latest message, but don't override time of last change
+	$self->{$result->{host}}->{$result->{check}}->{message}     = $result->{message};
 	return if ($result->{result} == $self->{$result->{host}}->{$result->{check}}->{status}); 
+
 	$self->{$result->{host}}->{$result->{check}}->{status}      = $result->{result};
 	$self->{$result->{host}}->{$result->{check}}->{last_change} = time();
 }
@@ -66,7 +71,7 @@ Get state of check "ping" on host $host.
 
 =cut
 
-sub ping() {
+sub ping($$) {
 	my $self = shift;
 	my $host = shift;
 	return $self->{$host}->{ping}->{status};
@@ -79,7 +84,7 @@ Get state of check "mysql" on host $host.
 
 =cut
 
-sub mysql() {
+sub mysql($$) {
 	my $self = shift;
 	my $host = shift;
 	return $self->{$host}->{mysql}->{status};
@@ -92,7 +97,7 @@ Get state of check "rep_threads" on host $host.
 
 =cut
 
-sub rep_threads() {
+sub rep_threads($$) {
 	my $self = shift;
 	my $host = shift;
 	return $self->{$host}->{rep_threads}->{status};
@@ -105,7 +110,7 @@ Get state of check "rep_backlog" on host $host.
 
 =cut
 
-sub rep_backlog() {
+sub rep_backlog($$) {
 	my $self = shift;
 	my $host = shift;
 	return $self->{$host}->{rep_backlog}->{status};
@@ -118,7 +123,7 @@ Get time of last state change
 
 =cut
 
-sub last_change() {
+sub last_change($$) {
 	my $self = shift;
 	my $host = shift;
 	my $time = $self->{$host}->{ping}->{last_change};
@@ -126,6 +131,20 @@ sub last_change() {
 	$time = $self->{$host}->{rep_threads}->{last_change} if ($self->{$host}->{rep_threads}->{last_change} > $time);
 	$time = $self->{$host}->{rep_backlog}->{last_change} if ($self->{$host}->{rep_backlog}->{last_change} > $time);
 	return $time;
+}
+
+
+=item message($host, $check)
+
+Get time of last state change
+
+=cut
+
+sub message($$$) {
+	my $self  = shift;
+	my $host  = shift;
+	my $check = shift;
+	return $self->{$host}->{$check}->{message};
 }
 
 1;

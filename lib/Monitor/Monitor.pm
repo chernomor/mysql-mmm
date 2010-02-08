@@ -897,6 +897,9 @@ sub _process_commands($) {
 		if    ($command eq 'help'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::help();							}
 		elsif ($command eq 'ping'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::ping();							}
 		elsif ($command eq 'show'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::show();							}
+		elsif ($command eq 'show'			&& $arg_cnt == 1 && $args[0] eq 'checks') {
+			$res = MMM::Monitor::Commands::show_checks();
+		}
 		elsif ($command eq 'mode'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::mode();							}
 		elsif ($command eq 'set_active'		&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_active();					}
 		elsif ($command eq 'set_passive'	&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_passive();					}

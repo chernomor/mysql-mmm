@@ -35,13 +35,13 @@ if [ "$CLUSTER" != "" ]; then
     DAEMON="/usr/sbin/mmm_mond"
     PIDFILE="/var/run/mmm_mond-$CLUSTER.pid"
     NAME="mmm_mond-$CLUSTER"
-	ARGS="@$CLUSTER"
+    ARGS="@$CLUSTER"
 fi
 
 case "$1" in
   start)
     log_daemon_msg "Starting $DESC" "$NAME"
-    if pidofproc -p $PIDFILE >/dev/null; then
+    if pidofproc -p $PIDFILE $NAME >/dev/null; then
       log_progress_msg "already running"
       log_end_msg 0
       exit 0
@@ -60,7 +60,7 @@ case "$1" in
     ;;
 
   status)
-    status_of_proc -p $PIDFILE $DAEMON "$NAME" && exit 0 || exit $?
+    status_of_proc $NAME "$NAME" && exit 0 || exit $?
     ;;
 
   restart|force-reload)

@@ -127,6 +127,7 @@ One should set read-only=1 in the configuration of all MySQL servers, MMM will c
 @itemize @minus
 @item Algorithm::Diff
 @item DBI and DBD::mysql
+@item File::Basename
 @item File::stat
 @item Log::Dispatch
 @item Log::Log4perl

@@ -18,6 +18,7 @@ Monitor:
 	DBD::mysql		libdbd-mysql-perl
 
 Agent:
+	File::Basename	perl-modules
 	Proc::Daemon	libproc-daemon-perl
 	Algorithm::Diff libalgorithm-diff-perl
 	DBI				libdbi-perl

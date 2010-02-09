@@ -6,6 +6,7 @@ use threads;
 use threads::shared;
 use Config;
 use English qw( PROGRAM_NAME );
+use File::Basename;
 use POSIX ':sys_wait_h';
 use Proc::Daemon;
 use Log::Log4perl qw(:easy);
@@ -35,7 +36,12 @@ if (scalar(@ARGV) && $ARGV[0] =~ /^@(.*)/) {
     shift(@ARGV);
     $cluster_name = $1;
     $postfix = "_$cluster_name";
+	$PROGRAM_NAME = basename($PROGRAM_NAME) . '-' . $cluster_name;
 }
+else {
+	$PROGRAM_NAME = basename($PROGRAM_NAME);
+}
+
 
 
 

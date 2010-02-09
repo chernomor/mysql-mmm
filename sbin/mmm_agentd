@@ -3,6 +3,7 @@
 use strict;
 use warnings FATAL => 'all';
 use English qw( PROGRAM_NAME );
+use File::Basename;
 use Proc::Daemon;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($INFO);
@@ -20,6 +21,8 @@ use MMM::Agent::Agent;
 
 chdir('/');
 umask(0022);
+
+$PROGRAM_NAME = basename($PROGRAM_NAME);
 
 MMM::Common::Log::init('mmm_agent_log.conf', 'mmm_agentd');
 

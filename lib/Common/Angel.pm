@@ -47,9 +47,6 @@ sub Init($) {
 
 		# Wait for child to exit
 		if (waitpid($MMM::Common::Angel::pid, 0) == -1) {
-			# child exited clean, reset attempts and starttime
-			$MMM::Common::Angel::attempts = 0;
-			$MMM::Common::Angel::starttime = time();
 			if ($ERRNO{ECHLD}) {
 				$is_shutdown = 1 unless ($MMM::Common::Angel::start_process);
 			}
@@ -70,6 +67,11 @@ sub Init($) {
 					}
 					else {
 						FATAL sprintf("Child exited with exitcode %s, restarting after 10 second sleep", WEXITSTATUS($?));
+						if ($diff >= 300 ) {
+							# reset attempts and starttime
+							$MMM::Common::Angel::attempts = 0;
+							$MMM::Common::Angel::starttime = time();
+						}
 						sleep(10);
 						$MMM::Common::Angel::start_process	= 1;
 					}

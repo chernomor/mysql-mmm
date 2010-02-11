@@ -12,7 +12,8 @@ use Proc::Daemon;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($INFO);
 
-# Define protocol version
+# Define version and protocol version
+use constant MMM_VERSION => '!!!VERSION!!!';
 use constant MMM_PROTOCOL_VERSION => 1;
 
 # Check perl for threads support
@@ -26,6 +27,14 @@ use MMM::Common::Log;
 use MMM::Common::PidFile;
 use MMM::Monitor::Monitor;
 use MMM::Monitor::NetworkChecker;
+
+
+# Maybe we were just asked for our version
+if (scalar(@ARGV) && $ARGV[0] eq "--version") {
+	printf "%s %s\n", basename($PROGRAM_NAME), MMM_VERSION;
+	exit(0);
+}
+
 
 chdir('/');
 umask(0022);

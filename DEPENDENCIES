@@ -29,6 +29,7 @@ Agent:
 	Unix::Uptime	(optional on linux)
 
 Tools:
+	File::Basename	perl-modules
 	Path::Class		libpath-class-perl
 	Data::Dumper	perl
 

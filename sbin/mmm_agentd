@@ -8,7 +8,8 @@ use Proc::Daemon;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($INFO);
 
-# Define protocol version
+# Define version and protocol version
+use constant MMM_VERSION => '!!!VERSION!!!';
 use constant MMM_PROTOCOL_VERSION => 1;
 
 
@@ -19,8 +20,19 @@ use MMM::Common::Log;
 use MMM::Common::PidFile;
 use MMM::Agent::Agent;
 
+
+# Maybe we were just asked for our version
+if (scalar(@ARGV) && $ARGV[0] eq "--version") {
+	printf "%s %s\n", basename($PROGRAM_NAME), MMM_VERSION;
+	exit(0);
+}
+
+
 chdir('/');
 umask(0022);
+
+
+
 
 $PROGRAM_NAME = basename($PROGRAM_NAME);
 

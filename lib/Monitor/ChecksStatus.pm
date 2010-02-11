@@ -117,15 +117,19 @@ sub rep_backlog($$) {
 }
 
 
-=item last_change($host)
+=item last_change($host, [$check])
 
 Get time of last state change
 
 =cut
 
-sub last_change($$) {
-	my $self = shift;
-	my $host = shift;
+sub last_change {
+	my $self  = shift;
+	my $host  = shift;
+	my $check = shift || undef;
+
+	return $self->{$host}->{$check}->{last_change} if (defined($check));
+
 	my $time = $self->{$host}->{ping}->{last_change};
 	$time = $self->{$host}->{mysql}->{last_change}       if ($self->{$host}->{mysql}->{last_change}       > $time);
 	$time = $self->{$host}->{rep_threads}->{last_change} if ($self->{$host}->{rep_threads}->{last_change} > $time);

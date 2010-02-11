@@ -3,8 +3,10 @@ package MMM::Monitor::Commands;
 use strict;
 use warnings FATAL => 'all';
 use Log::Log4perl qw(:easy);
+use List::Util qw(max);
 use threads;
 use threads::shared;
+use Log::Log4perl::DateFormat;
 use MMM::Common::Socket;
 use MMM::Monitor::Agents;
 use MMM::Monitor::ChecksStatus;
@@ -69,16 +71,64 @@ sub show() {
 	return $ret;
 }
 
-sub show_checks() {
+sub checks {
+	my $host	= shift || 'all';
+	my $check	= shift || 'all';
+
 	my $checks	= MMM::Monitor::ChecksStatus->instance();
 	my $ret = '';
+
+	my $dateformat = Log::Log4perl::DateFormat->new('yyyy/MM/dd hh:mm:ss');
+
+	my @valid_checks = qw(ping mysql rep_threads rep_backlog);
+	return "ERROR: Unknown check '$check'!" unless ($check eq 'all' || grep(/^$check$/, @valid_checks));
+
+	if ($host ne 'all') {
+		return "ERROR: Unknown host name '$host'!" unless (defined($main::config->{host}->{$host}));
+		if ($check ne 'all') {
+			return sprintf("%s  %s  [last change: %s]  %s",
+				$host,
+				$check,
+				$dateformat->format($checks->last_change($host, $check)),
+				$checks->message($host, $check)
+			);
+		}
+		foreach $check (@valid_checks) {
+			$ret .= sprintf("%s  %-11s  [last change: %s]  %s\n",
+				$host,
+				$check,
+				$dateformat->format($checks->last_change($host, $check)),
+				$checks->message($host, $check)
+			);
+		}
+		return $ret;
+	}
+
+	my $len = 0;
+	foreach my $host (keys(%{$main::config->{host}})) { $len = max($len, length $host) }
+
+	if ($check ne 'all') {
+		foreach my $host (keys(%{$main::config->{host}})) {
+			$ret .= sprintf("%*s  %s  [last change: %s]  %s\n",
+				$len * -1,
+				$host,
+				$check,
+				$dateformat->format($checks->last_change($host, $check)),
+				$checks->message($host, $check)
+			);
+		}
+		return $ret;
+	}
 	foreach my $host (keys(%{$main::config->{host}})) {
-		$ret .= "$host:\n";
-		$ret .= sprintf("           ping: %s\n", $checks->message($host, 'ping'));
-		$ret .= sprintf("          mysql: %s\n", $checks->message($host, 'mysql'));
-		$ret .= sprintf("    rep_threads: %s\n", $checks->message($host, 'rep_threads'));
-		$ret .= sprintf("    rep_backlog: %s\n", $checks->message($host, 'rep_backlog'));
-		$ret .= "\n";
+		foreach $check (@valid_checks) {
+			$ret .= sprintf("%*s  %-11s  [last change: %s]  %s\n",
+				$len * -1,
+				$host,
+				$check,
+				$dateformat->format($checks->last_change($host, $check)),
+				$checks->message($host, $check)
+			);
+		}
 	}
 	return $ret;
 }
@@ -358,7 +408,7 @@ sub help() {
     help                              - show this message
     ping                              - ping monitor
     show                              - show status
-    show checks                       - show checks status
+    checks [<host>|all [<check>|all]] - show checks status
     set_online <host>                 - set host <host> online
     set_offline <host>                - set host <host> offline
     mode                              - print current mode.

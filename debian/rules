@@ -30,4 +30,6 @@ binary-indep: build
 
 binary:	binary-indep
 
-.PHONY: binary binary-indep clean build
+binary-arch:
+
+.PHONY: binary binary-indep binary-arch clean build

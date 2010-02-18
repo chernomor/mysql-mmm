@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Pascal Hofmann <mail@pascalhofmann.de>
 Build-Depends: debhelper (>= 5),
     fakeroot
-Standards-Version: 3.7.2
+Standards-Version: 3.8.4
 
 Package: mysql-mmm-common
 Architecture: all

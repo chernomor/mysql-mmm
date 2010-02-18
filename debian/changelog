@@ -1,4 +1,28 @@
+mysql-mmm (2.1.0-1) unstable; urgency=low
+
+  * Renamed mmmd_mon and mmmd_agent - they are called mmm_agentd and mmm_mond
+    now (fixes bug #410612) 
+  * Some changes to fulfill the debian policy and the Filesystem Hierarchy
+    Standard. (Place utility binaries in /usr/lib/mysql-mmm/ (old location was
+    /usr/bin/mysql-mmm) and some smaller changes)
+  * Made debian init scripts compliant to LSB and debian policy.
+  * Determine whether to set a flapping host to ONLINE 'cause of
+    auto_set_online using time of last check state change instead of time of
+    last host state change. (bug #517650)
+  * Added command 'mmm_control checks'
+  * Let checks 'rep_threads' and 'rep_backlog' report an error when the monitor
+    user doesn't have sufficient privileges.
+  * Set $PROGRAM_NAME for prettier ps output.
+  * Enhanced debian init scripts.
+  * Small fix for angel functionality.
+  * Added mmm_* --version
+  * Fixed debian/control
+  * Close ITP (Closes: #568405)
+
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Thu, 18 Feb 2010 14:16:13 +0000
+
 mysql-mmm (2.0.11-1) stable; urgency=low
+
   * let auto_set_online set flapping hosts to ONLINE after flap_duration seconds
     without failure (bug #484128)
   * Prevent angel from filling filesystem on infinit error conditions
@@ -6,9 +30,10 @@ mysql-mmm (2.0.11-1) stable; urgency=low
   * Ignore white space after config values in the config file (bug #494128)
   * Use Unix::Uptime when available (bug #465107)
 
- -- Pascal Hofmann <mail@pascalhofmann.de>  Wed, 03 Feb 2010 14:15:00 +0100
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Fri, 12 Feb 2010 02:29:39 +0000
 
 mysql-mmm (2.0.10-1) stable; urgency=low
+
   * Check for failure when configuring ips, checking for ips and removing ips
     (bug #429651)
   * Show preferred role status in mmm_control show output (bug #463241)

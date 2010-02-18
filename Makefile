@@ -24,7 +24,7 @@ release-archives:
 	sed -i 's/!!!VERSION!!!/$(VERSION)/' $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/sbin/mmm_*
 	chmod 640 $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/etc/mysql-mmm/*.conf
 	cp Makefile.release $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/Makefile
-	cp README INSTALL COPYING VERSION LICENSE $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/
+	cp README INSTALL COPYING VERSION LICENSE UPGRADE $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/
 	find $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION) -depth -type d -name '.svn' -exec rm -rf {} \;
 	find $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION) -depth -type d -name 't' -exec rm -rf {} \;
 	find $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION) -depth -type f -name '*.swp' -exec rm -rf {} \;

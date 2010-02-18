@@ -1,6 +1,6 @@
 \input texinfo @c -*- texinfo -*-
 @setfilename mmm.info
-@settitle MMM Manual 2.0.11-1
+@settitle MMM Manual 2.1.0-1
 @set language en
 
 @copying

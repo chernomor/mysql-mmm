@@ -35,6 +35,36 @@ Show the current cluster status. See @ref{States} for an explanation of the diff
 @end smallexample
 
 
+@section @code{checks} [@var{host}|all [@var{check}|all]]
+@cindex checks
+Show information about the specified/all check(s) for the specified/all host(s).
+
+@smallexample
+# mmm_control checks
+mmm-master1  ping         [last change: 2010/02/11 12:43:16]  OK
+mmm-master1  mysql        [last change: 2010/02/11 12:43:16]  OK
+mmm-master1  rep_threads  [last change: 2010/02/11 12:43:16]  OK
+mmm-master1  rep_backlog  [last change: 2010/02/11 12:43:16]  OK: Backlog is null
+mmm-master2  ping         [last change: 2010/02/11 12:43:16]  OK
+mmm-master2  mysql        [last change: 2010/02/11 12:43:16]  OK
+mmm-master2  rep_threads  [last change: 2010/02/11 12:43:16]  OK
+mmm-master2  rep_backlog  [last change: 2010/02/11 12:43:16]  OK: Backlog is null
+       
+# mmm_control checks mmm-master1
+mmm-master1  ping         [last change: 2010/02/11 12:43:16]  OK
+mmm-master1  mysql        [last change: 2010/02/11 12:43:16]  OK
+mmm-master1  rep_threads  [last change: 2010/02/11 12:43:16]  OK
+mmm-master1  rep_backlog  [last change: 2010/02/11 12:43:16]  OK: Backlog is null
+       
+# mmm_control checks mmm-master1 rep_backlog
+mmm-master1  rep_backlog  [last change: 2010/02/11 12:43:16]  OK: Backlog is null
+
+# mmm_control checks all rep_backlog
+mmm-master1  rep_backlog  [last change: 2010/02/11 12:43:16]  OK: Backlog is null 
+mmm-master2  rep_backlog  [last change: 2010/02/11 12:43:16]  OK: Backlog is null
+@end smallexample
+
+
 @node set_online
 @section @code{set_online @var{host}}
 @cindex set_online

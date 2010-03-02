@@ -5,6 +5,7 @@ use warnings FATAL => 'all';
 use English qw(OSNAME EFFECTIVE_USER_ID);
 use DBI;
 use Net::Ping;
+use POSIX ':signal_h';
 
 our $VERSION = '0.01';
 
@@ -100,9 +101,16 @@ sub mysql($$) {
 	my ($peer_host, $peer_port, $peer_user, $peer_password) = _get_connection_info($host);
 	return "ERROR: Invalid host '$host'" unless ($peer_host);
 
+	my $mask = POSIX::SigSet->new( SIGALRM );
+	my $action = POSIX::SigAction->new(
+		sub { die 'TIMEOUT'; },
+		$mask,
+	);
+	my $oldaction = POSIX::SigAction->new();
+	sigaction( SIGALRM, $action, $oldaction );
+
 	my $res = eval {
-		local $SIG{ALRM} = sub { die 'TIMEOUT'; };
-		alarm($timeout);
+		alarm($timeout + 1);
 		
 		# connect to server
 		my $dsn = "DBI:mysql:host=$peer_host;port=$peer_port;mysql_connect_timeout=$timeout";
@@ -122,6 +130,7 @@ sub mysql($$) {
 			return 'ERROR: SQL Query Error: ' . $dbh->errstr;
 		}
 
+		alarm(1);
 		$dbh->disconnect();
 		$dbh = undef;
 
@@ -151,40 +160,55 @@ sub rep_backlog($$) {
 	my ($peer_host, $peer_port, $peer_user, $peer_password) = _get_connection_info($host);
 	return "ERROR: Invalid host '$host'" unless ($peer_host);
 
+	my $mask = POSIX::SigSet->new( SIGALRM );
+	my $action = POSIX::SigAction->new(
+		sub { die 'TIMEOUT'; },
+		$mask,
+	);
+	my $oldaction = POSIX::SigAction->new();
+	sigaction( SIGALRM, $action, $oldaction );
+
 	my $res = eval {
-		local $SIG{ALRM} = sub { die 'TIMEOUT'; };
-		alarm($timeout);
+		alarm($timeout + 1);
 	
 		# connect to server
-		my $dsn = "DBI:mysql:host=$peer_host;port=$peer_port";
+		my $dsn = "DBI:mysql:host=$peer_host;port=$peer_port;mysql_connect_timeout=$timeout";
 		my $dbh = DBI->connect($dsn, $peer_user, $peer_password, { PrintError => 0 });
-		return "UNKNOWN: Connect error (host = $peer_host:$peer_port, user = $peer_user)! " . $DBI::errstr unless ($dbh);
+		unless ($dbh) {
+			alarm(0);
+			return "UNKNOWN: Connect error (host = $peer_host:$peer_port, user = $peer_user)! " . $DBI::errstr;
+		}
 	
 		# Check server (replication backlog)
 		my $sth = $dbh->prepare('SHOW SLAVE STATUS');
 		my $res = $sth->execute;
 
 		if ($dbh->err) {
+			alarm(1);
 			my $ret = 'UNKNOWN: Unknown state. Execute error: ' . $dbh->errstr;
 			$ret = "ERROR: The monitor user '$peer_user' doesn't have the required REPLICATION CLIENT privilege! " . $dbh->errstr if ($dbh->err == 1227);
 			$sth->finish();
 			$dbh->disconnect();
 			$dbh = undef;
+			alarm(0);
 			return $ret;
 		}
 
 		unless ($res) {
+			alarm(1);
 			$sth->finish();
 			$dbh->disconnect();
 			$dbh = undef;
+			alarm(0);
 			return 'ERROR: Replication is not running';
 		}
 	
 		my $status = $sth->fetchrow_hashref;
-
+		alarm(1);
 		$sth->finish();
 		$dbh->disconnect();
 		$dbh = undef;
+		alarm(0);
 
 		return 'ERROR: Replication is not set up' unless defined($status);
 
@@ -219,12 +243,19 @@ sub rep_threads($$) {
 	my ($peer_host, $peer_port, $peer_user, $peer_password) = _get_connection_info($host);
 	return "ERROR: Invalid host '$host'" unless ($peer_host);
 
+	my $mask = POSIX::SigSet->new( SIGALRM );
+	my $action = POSIX::SigAction->new(
+		sub { die 'TIMEOUT'; },
+		$mask,
+	);
+	my $oldaction = POSIX::SigAction->new();
+	sigaction( SIGALRM, $action, $oldaction );
+
 	my $res = eval {
-		local $SIG{ALRM} = sub { die 'TIMEOUT'; };
-		alarm($timeout);
+		alarm($timeout + 1);
 	
 		# connect to server
-		my $dsn = "DBI:mysql:host=$peer_host;port=$peer_port";
+		my $dsn = "DBI:mysql:host=$peer_host;port=$peer_port;mysql_connect_timeout=$timeout";
 		my $dbh = DBI->connect($dsn, $peer_user, $peer_password, { PrintError => 0 });
 		return "UNKNOWN: Connect error (host = $peer_host:$peer_port, user = $peer_user)! " . $DBI::errstr unless ($dbh);
 	
@@ -233,26 +264,32 @@ sub rep_threads($$) {
 		my $res = $sth->execute;
 
 		if ($dbh->err) {
+			alarm(1);
 			my $ret = 'UNKNOWN: Unknown state. Execute error: ' . $dbh->errstr;
 			$ret = "ERROR: The monitor user '$peer_user' doesn't have the required REPLICATION CLIENT privilege! " . $dbh->errstr if ($dbh->err == 1227);
 			$sth->finish();
 			$dbh->disconnect();
 			$dbh = undef;
+			alarm(0);
 			return $ret;
 		}
 
 		unless ($res) {
+			alarm(1);
 			$sth->finish();
 			$dbh->disconnect();
 			$dbh = undef;
+			alarm(0);
 			return 'ERROR: Replication is not running';
 		}
 	
 		my $status = $sth->fetchrow_hashref;
 
+		alarm(1);
 		$sth->finish();
 		$dbh->disconnect();
 		$dbh = undef;
+		alarm(0);
 
 		return 'ERROR: Replication is not set up' unless defined($status);
 

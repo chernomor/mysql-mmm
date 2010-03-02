@@ -1,3 +1,11 @@
+mysql-mmm (2.1.1-1) unstable; urgency=low
+
+  * Changed default logging behaviour (bug #484395)
+  * Fixed DBI timeout handling (bug #528437) 
+  * Close ITP (Closes: #568405)
+
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Tue, 02 Mar 2010 20:08:21 +0000
+
 mysql-mmm (2.1.0-1) unstable; urgency=low
 
   * Renamed mmmd_mon and mmmd_agent - they are called mmm_agentd and mmm_mond
@@ -17,7 +25,6 @@ mysql-mmm (2.1.0-1) unstable; urgency=low
   * Small fix for angel functionality.
   * Added mmm_* --version
   * Fixed debian/control
-  * Close ITP (Closes: #568405)
 
  -- Pascal Hofmann <mail@pascalhofmann.de>  Thu, 18 Feb 2010 14:16:13 +0000
 

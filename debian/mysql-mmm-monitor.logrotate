@@ -1,34 +1,4 @@
-/var/log/mysql-mmm/mmm_mond.info {
-	daily
-	missingok
-	rotate 7
-	compress
-	delaycompress
-	notifempty
-	create 640 root adm
-	sharedscripts
-}
-/var/log/mysql-mmm/mmm_mond.warn {
-	daily
-	missingok
-	rotate 7
-	compress
-	delaycompress
-	notifempty
-	create 640 root adm
-	sharedscripts
-}
-/var/log/mysql-mmm/mmm_mond.error {
-	daily
-	missingok
-	rotate 7
-	compress
-	delaycompress
-	notifempty
-	create 640 root adm
-	sharedscripts
-}
-/var/log/mysql-mmm/mmm_mond.fatal {
+/var/log/mysql-mmm/mmm_mond.log {
 	daily
 	missingok
 	rotate 7

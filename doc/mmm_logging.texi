@@ -30,6 +30,29 @@ The name of the file depends on the program you want to create it for:
 
 Here is the default logging configuration:
 @smallexample
+log4perl.logger = INFO, LogFile
+
+log4perl.appender.LogFile = Log::Log4perl::Appender::File
+log4perl.appender.LogFile.Threshold = INFO 
+log4perl.appender.LogFile.filename = /var/log/mysql-mmm/@var{progam}.info
+log4perl.appender.LogFile.recreate = 1
+log4perl.appender.LogFile.layout = PatternLayout
+log4perl.appender.LogFile.layout.ConversionPattern = %d %5p %m%n
+@end smallexample
+
+@*
+In addition to that, if debug mode is enabled:
+@smallexample
+log4perl.logger = DEBUG, ScreenLog, LogFile
+log4perl.appender.ScreenLog = Log::Log4perl::Appender::Screen
+log4perl.appender.ScreenLog.stderr = 0
+log4perl.appender.ScreenLog.layout = PatternLayout
+log4perl.appender.ScreenLog.layout.ConversionPattern = %d %5p %m%n
+@end smallexample
+
+@*
+It is also possible to log into multiple files (separated by severity) or let MMM send you mails (this was the default logging configuration in versions below 2.1.1):
+@smallexample
 log4perl.logger = INFO, FileInfo, FileWarn, FileError, FileFatal, MailFatal
 
 log4perl.appender.FileInfo = Log::Log4perl::Appender::File
@@ -66,14 +89,4 @@ log4perl.appender.MailFatal.to = root
 log4perl.appender.MailFatal.subject = FATAL error in @var{progam}
 log4perl.appender.MailFatal.layout = PatternLayout
 log4perl.appender.MailFatal.layout.ConversionPattern = %d %m%n
-@end smallexample
-
-@*
-In addition to that, if debug mode is enabled:
-@smallexample
-log4perl.logger = DEBUG, ScreenLog, FileInfo, FileWarn, FileError, FileFatal, MailFatal
-log4perl.appender.ScreenLog = Log::Log4perl::Appender::Screen
-log4perl.appender.ScreenLog.stderr = 0
-log4perl.appender.ScreenLog.layout = PatternLayout
-log4perl.appender.ScreenLog.layout.ConversionPattern = %d %5p %m%n
 @end smallexample

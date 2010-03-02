@@ -1,9 +1,8 @@
 Source: mysql-mmm
-Section: misc
+Section: database
 Priority: optional
 Maintainer: Pascal Hofmann <mail@pascalhofmann.de>
-Build-Depends: debhelper (>= 5),
-    fakeroot
+Build-Depends: debhelper (>= 5)
 Standards-Version: 3.8.4
 
 Package: mysql-mmm-common

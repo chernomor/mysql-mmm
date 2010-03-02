@@ -1,9 +1,12 @@
+VERSION= $(shell cat ../VERSION)
+
 mysql-mmm.pdf: mmm.texi mmm_agent.texi mmm_configuration.texi mmm_control.texi mmm_logging.texi mmm_monitor.texi mmm_internals.texi Makefile mysql-mmm.css
 	-rm -r tmp/
 	mkdir -p tmp/
 	cd illustrations && make
 	cp illustrations/*.png tmp/
 	cp mmm*.texi tmp/
+	sed -i 's/!!!VERSION!!!/$(VERSION)/' tmp/mmm.texi
 	cd tmp && up_menus --nodetail mmm.texi
 	cd tmp && pdftex --interaction=nonstopmode mmm.texi
 	cd tmp && texindex mmm.??

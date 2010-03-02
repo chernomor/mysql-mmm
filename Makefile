@@ -32,9 +32,9 @@ release-archives:
 	tar -C $(RELEASEDIR) -czf $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION).tar.gz $(PACKAGENAME)-$(VERSION)/
 
 release-debs: release-archives
+	tar -C $(RELEASEDIR) -czf $(RELEASEDIR)/$(PACKAGENAME)_$(VERSION).orig.tar.gz $(PACKAGENAME)-$(VERSION)/
 	cp -r debian $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/
 	rm -rf $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/debian/.svn/
-	tar -C $(RELEASEDIR) -czf $(RELEASEDIR)/$(PACKAGENAME)_$(VERSION).orig.tar.gz $(PACKAGENAME)-$(VERSION)/
 	-cd $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/ && dpkg-buildpackage -rfakeroot
 	rm -rf $(RELEASEDIR)/$(PACKAGENAME)-$(VERSION)/debian/
 	

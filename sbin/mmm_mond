@@ -72,11 +72,6 @@ INFO 'STARTING...';
 
 our $monitor	= new MMM::Monitor::Monitor::();
 
-if (!MMM::Monitor::NetworkChecker->initial_check()) {
-	LOGDIE "None of the 'ping_ips' could be reached during startup. Network seems to be down - mmm_mond will shutdown now.";
-}
-
-
 my $pidfilename = $config->{monitor}->{pid_path};
 my $pidfile = new MMM::Common::PidFile:: $pidfilename;
 
@@ -106,9 +101,9 @@ $SIG{QUIT} = \&ShutdownHandler;
 $SIG{PIPE} = 'IGNORE';
 $SIG{CHLD} = \&ChildHandler;
 
-$monitor->init();
-
-$monitor->main();
+if ($monitor->init()) {
+	$monitor->main();
+}
 
 INFO 'END';
 exit(0);

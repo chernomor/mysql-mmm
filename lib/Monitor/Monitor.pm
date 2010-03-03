@@ -65,6 +65,24 @@ Init queues, single instance classes, ... and try to determine status.
 sub init($) {
 	my $self = shift;
 
+	#___________________________________________________________________________
+	#
+	# Wait until network connection is available
+	#___________________________________________________________________________
+
+	INFO "Waiting for network connection...";
+	unless (MMM::Monitor::NetworkChecker->wait_for_network()) {
+		INFO "Received shutdown request while waiting for network connection.";
+		return 0;
+	}
+	INFO "Network connection is available.";
+
+
+	#___________________________________________________________________________
+	#
+	# Create thread queues and other stuff... 
+	#___________________________________________________________________________
+
 	my $agents = MMM::Monitor::Agents->instance();
 
 	$self->checker_queue(new Thread::Queue::);
@@ -73,6 +91,7 @@ sub init($) {
 	$self->result_queue(new Thread::Queue::);
 	$self->roles(MMM::Monitor::Roles->instance());
 	$self->passive_info('');
+
 	if ($main::config->{monitor}->{mode} eq 'active') {
 		$self->mode(MMM_MONITOR_MODE_ACTIVE);
 	}
@@ -110,16 +129,6 @@ sub init($) {
 
 
 	my $checks	= $self->checks_status;
-
-	#___________________________________________________________________________
-	#
-	# Go into passive mode if we have no network connection at startup
-	#___________________________________________________________________________
-
-	unless ($main::have_net) {
-		$self->mode(MMM_MONITOR_MODE_PASSIVE);
-		$self->passive_info('No network connection during startup.');
-	}
 
 	
 	#___________________________________________________________________________
@@ -331,7 +340,7 @@ sub init($) {
 
 		WARN "Monitor started in passive mode.";
 
-		return;
+		return 1;
 	}
 
 	# Stay in ACTIVE MODE
@@ -362,6 +371,8 @@ sub init($) {
 	INFO "Monitor started in active mode."  if ($self->mode == MMM_MONITOR_MODE_ACTIVE);
 	INFO "Monitor started in manual mode."  if ($self->mode == MMM_MONITOR_MODE_MANUAL);
 	INFO "Monitor started in wait mode."    if ($self->mode == MMM_MONITOR_MODE_WAIT);
+
+	return 1;
 }
 
 sub check_master_configuration($) {

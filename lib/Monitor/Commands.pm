@@ -78,7 +78,7 @@ sub checks {
 	my $checks	= MMM::Monitor::ChecksStatus->instance();
 	my $ret = '';
 
-	my $dateformat = Log::Log4perl::DateFormat->new('yyyy/MM/dd hh:mm:ss');
+	my $dateformat = Log::Log4perl::DateFormat->new('yyyy/MM/dd HH:mm:ss');
 
 	my @valid_checks = qw(ping mysql rep_threads rep_backlog);
 	return "ERROR: Unknown check '$check'!" unless ($check eq 'all' || grep(/^$check$/, @valid_checks));

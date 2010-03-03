@@ -61,7 +61,7 @@ sub show() {
 	my $roles	= MMM::Monitor::Roles->instance();
 
 	my $ret = '';
-	if ($monitor->passive) {
+	if ($monitor->is_passive) {
 		$ret .= "--- Monitor is in PASSIVE MODE ---\n";
 		$ret .= sprintf("Cause: %s\n", $monitor->passive_info);
 		$ret =~ s/^/# /mg;
@@ -193,7 +193,7 @@ sub set_offline($) {
 
 	FATAL "Admin changed state of '$host' from $host_state to ADMIN_OFFLINE";
 	$agents->set_state($host, 'ADMIN_OFFLINE');
-	MMM::Monitor::Roles->instance()->clear_host_roles($host);
+	MMM::Monitor::Roles->instance()->clear_roles($host);
 	MMM::Monitor::Monitor->instance()->send_agent_status($host);
 
     return "OK: State of '$host' changed to ADMIN_OFFLINE. Now you can wait some time and check all roles!";
@@ -203,7 +203,7 @@ sub set_ip($$) {
 	my $ip		= shift;
 	my $host	= shift;
 
-	return "ERROR: This command is only allowed in passive mode" unless (MMM::Monitor::Monitor->instance()->passive);
+	return "ERROR: This command is only allowed in passive mode" unless (MMM::Monitor::Monitor->instance()->is_passive);
 
 	my $agents	= MMM::Monitor::Agents->instance();
 	my $roles	= MMM::Monitor::Roles->instance();
@@ -239,14 +239,19 @@ sub move_role($$) {
 	my $role	= shift;
 	my $host	= shift;
 	
-	return "ERROR: This command is only allowed in active mode" if (MMM::Monitor::Monitor->instance()->passive);
+	my $monitor	= MMM::Monitor::Monitor->instance();
+	return "ERROR: This command is not allowed in passive mode" if ($monitor->is_passive);
 
 	my $agents	= MMM::Monitor::Agents->instance();
 	my $roles	= MMM::Monitor::Roles->instance();
 
 	return "ERROR: Unknown role name '$role'!" unless ($roles->exists($role));
 	return "ERROR: Unknown host name '$host'!" unless ($agents->exists($host));
-	return "ERROR: move_role may be used for exclusive roles only!" unless ($roles->is_exclusive($role));
+
+	unless ($roles->is_exclusive($role)) {
+		$roles->clear_balanced_role($host, $role);
+		return "OK: Balanced role $role has been removed from host '$host'. Now you can wait some time and check new roles info!";
+	}
 
 	my $host_state = $agents->state($host);
 	return "ERROR: Can't move role to host with state $host_state." unless ($host_state eq 'ONLINE');
@@ -261,7 +266,9 @@ sub move_role($$) {
 	my $agent = MMM::Monitor::Agents->instance()->get($host);
 	return "ERROR: Can't reach agent daemon on '$host'! Can't move roles there!" unless ($agent->cmd_ping());
 
-	return "ERROR: Role '$role' is assigned to preferred host '$old_owner'. Can't move it!" if ($roles->assigned_to_preferred_host($role));
+	if ($monitor->is_active && $roles->assigned_to_preferred_host($role)) {
+		return "ERROR: Role '$role' is assigned to preferred host '$old_owner'. Can't move it!";
+	}
 
 	my $ip = $roles->get_exclusive_role_ip($role);
 	return "Error: Role $role has no IP." unless ($ip);
@@ -272,13 +279,13 @@ sub move_role($$) {
 	$roles->set_role($role, $ip, $host);
 
 	# Notify old host (if is_active_master_role($role) this will make the host non writable)
-	MMM::Monitor::Monitor->instance()->send_agent_status($old_owner);
+	$monitor->send_agent_status($old_owner);
 
 	# Notify slaves (this will make them switch the master)
-	MMM::Monitor::Monitor->instance()->notify_slaves($host) if ($roles->is_active_master_role($role));
+	$monitor->notify_slaves($host) if ($roles->is_active_master_role($role));
 
 	# Notify new host (if is_active_master_role($role) this will make the host writable)
-	MMM::Monitor::Monitor->instance()->send_agent_status($host);
+	$monitor->send_agent_status($host);
 	
 	return "OK: Role '$role' has been moved from '$old_owner' to '$host'. Now you can wait some time and check new roles info!";
 	
@@ -288,7 +295,8 @@ sub forced_move_role($$) {
 	my $role	= shift;
 	my $host	= shift;
 	
-	return "ERROR: This command is only allowed in active mode" if (MMM::Monitor::Monitor->instance()->passive);
+	my $monitor	= MMM::Monitor::Monitor->instance();
+	return "ERROR: This command is not allowed in passive mode" if (MMM::Monitor::Monitor->instance()->is_passive);
 
 	my $agents	= MMM::Monitor::Agents->instance();
 	my $roles	= MMM::Monitor::Roles->instance();
@@ -328,12 +336,12 @@ sub forced_move_role($$) {
 	if (!$checks->rep_threads($old_owner)) {
 		FATAL "State of host '$old_owner' changed from ONLINE to REPLICATION_FAIL (because of move_role --force)";
 		$old_agent->state('REPLICATION_FAIL');
-		$roles->clear_host_roles($old_owner);
+		$roles->clear_roles($old_owner) if ($monitor->is_active);
 	}
 	elsif (!$checks->rep_backlog($old_owner)) {
 		FATAL "State of host '$old_owner' changed from ONLINE to REPLICATION_BACKLOG (because of move_role --force)";
 		$old_agent->state('REPLICATION_BACKLOG');
-		$roles->clear_host_roles($old_owner);
+		$roles->clear_roles($old_owner) if ($monitor->is_active);
 	}
 
 	# Notify old host (this will make the host non writable)
@@ -352,13 +360,13 @@ sub forced_move_role($$) {
 
 =item mode
 
-Get information about current mode (active or passive)
+Get information about current mode (active, manual or passive)
 
 =cut
 
 sub mode() {
-	return 'PASSIVE' if (MMM::Monitor::Monitor->instance()->passive);
-	return 'ACTIVE';
+	my $monitor	= MMM::Monitor::Monitor->instance();
+	return $monitor->get_mode_string();
 }
 
 
@@ -369,23 +377,82 @@ Switch to active mode.
 =cut
 
 sub set_active() {
-	return 'OK: Already in active mode.' unless (MMM::Monitor::Monitor->instance()->passive);
+	my $monitor	= MMM::Monitor::Monitor->instance();
 
+	return 'OK: Already in active mode.' if ($monitor->is_active);
 
-	# Send status to agents
-	MMM::Monitor::Monitor->instance()->send_status_to_agents();
+	my $old_mode = $monitor->get_mode_string();
+	INFO "Admin changed mode from '$old_mode' to 'ACTIVE'";
+	
+	if ($monitor->is_passive) {
+		# Send status to agents
+		$monitor->send_status_to_agents();
 
-	# Clear 'bad' roles
-	my $agents	= MMM::Monitor::Agents->instance();
-	foreach my $host (keys(%{$main::config->{host}})) {
-		my $agent = $agents->get($host);
-		$agent->cmd_clear_bad_roles(); # TODO check result
+		# Clear 'bad' roles
+		my $agents	= MMM::Monitor::Agents->instance();
+		foreach my $host (keys(%{$main::config->{host}})) {
+			my $agent = $agents->get($host);
+			$agent->cmd_clear_bad_roles(); # TODO check result
+		}
+		$monitor->passive_info('');
+	}
+	elsif ($monitor->is_manual) {
+		# remove all roles from hosts which are not ONLINE
+		my $roles	= MMM::Monitor::Roles->instance();
+		my $agents	= MMM::Monitor::Agents->instance();
+		my $checks	= MMM::Monitor::ChecksStatus->instance();
+		foreach my $host (keys(%{$main::config->{host}})) {
+			my $host_state = $agents->state($host);
+			next if ($host_state eq 'ONLINE' || $roles->get_host_roles($host) == 0);
+			my $agent = $agents->get($host);
+			$roles->clear_roles($host);
+			my $ret = $monitor->send_agent_status($host);
+			next if ($host_state eq 'REPLICATION_FAIL');
+			next if ($host_state eq 'REPLICATION_BACKLOG');
+			# NOTE host_state should never be ADMIN_OFFLINE at this point
+			if (!$ret) {
+				ERROR sprintf("Can't send offline status notification to '%s' - killing it!", $host);
+				$monitor->_kill_host($host, $checks->ping($host));
+			}
+		}
 	}
 
 
-	MMM::Monitor::Monitor->instance()->passive(0);
-	MMM::Monitor::Monitor->instance()->passive_info('');
+	$monitor->set_active();
 	return 'OK: Switched into active mode.';
+}
+
+
+=item set_manual
+
+Switch to manual mode.
+
+=cut
+
+sub set_manual() {
+	my $monitor	= MMM::Monitor::Monitor->instance();
+
+	return 'OK: Already in manual mode.' if ($monitor->is_manual);
+
+	my $old_mode = $monitor->get_mode_string();
+	INFO "Admin changed mode from '$old_mode' to 'MANUAL'";
+
+	if ($monitor->is_passive) {
+		# Send status to agents
+		$monitor->send_status_to_agents();
+
+		# Clear 'bad' roles
+		my $agents	= MMM::Monitor::Agents->instance();
+		foreach my $host (keys(%{$main::config->{host}})) {
+			my $agent = $agents->get($host);
+			$agent->cmd_clear_bad_roles(); # TODO check result
+		}
+		$monitor->passive_info('');
+	}
+
+
+	$monitor->set_manual();
+	return 'OK: Switched into manual mode.';
 }
 
 
@@ -396,10 +463,15 @@ Switch to passive mode.
 =cut
 
 sub set_passive() {
-	return 'OK: Already in passive mode.' if (MMM::Monitor::Monitor->instance()->passive);
+	my $monitor	= MMM::Monitor::Monitor->instance();
 
-	MMM::Monitor::Monitor->instance()->passive(1);
-	MMM::Monitor::Monitor->instance()->passive_info('Admin switched to passive mode.');
+	return 'OK: Already in passive mode.' if ($monitor->is_passive);
+
+	my $old_mode = $monitor->get_mode_string();
+	INFO "Admin changed mode from '$old_mode' to 'PASSIVE'";
+
+	$monitor->set_passive();
+	$monitor->passive_info('Admin switched to passive mode.');
 	return 'OK: Switched into passive mode.';
 }
 
@@ -413,6 +485,7 @@ sub help() {
     set_offline <host>                - set host <host> offline
     mode                              - print current mode.
     set_active                        - switch into active mode.
+    set_manual                        - switch into manual mode.
     set_passive                       - switch into passive mode.
     move_role [--force] <role> <host> - move exclusive role <role> to host <host>
                                         (Only use --force if you know what you are doing!)

@@ -112,6 +112,29 @@ sub get_host_roles($$) {
 }
 
 
+=item host_has_roles($host)
+
+Check whether there are roles assigned to host $host
+
+=cut
+
+sub host_has_roles($$) {
+	my $self	= shift;
+	my $host	= shift;
+
+	return 0 unless (defined($host));
+
+	foreach my $role (keys(%$self)) {
+		my $role_info = $self->{$role};
+		foreach my $ip (keys(%{$role_info->{ips}})) {
+			my $ip_info = $role_info->{ips}->{$ip};
+			return 1 if ($ip_info->{assigned_to} eq $host);
+		}
+	}
+	return 0;
+}
+
+
 =item count_host_roles($host)
 
 Count all roles assigned to host $host
@@ -211,13 +234,13 @@ sub assigned_to_preferred_host($$) {
 }
 
 
-=item clear_host_roles($host)
+=item clear_roles($host)
 
 Remove all roles from host $host.
 
 =cut
 
-sub clear_host_roles($$) {
+sub clear_roles($$) {
 	my $self	= shift;
 	my $host	= shift;
 
@@ -235,6 +258,34 @@ sub clear_host_roles($$) {
 		}
 	}
 	return $orphaned_master_role;
+}
+
+
+=item clear_balanced_role($host, $role)
+
+Remove balanced role $role from host $host.
+
+=cut
+
+sub clear_balanced_role($$$) {
+	my $self	= shift;
+	my $host	= shift;
+	my $role	= shift;
+
+	INFO "Removing balanced role $role from host '$host':";
+
+	my $role_info = $self->{$role};
+	return 0 unless $role_info;
+	my $cnt = 0;
+	next unless ($role_info->{mode} eq 'balanced');
+	foreach my $ip (keys(%{$role_info->{ips}})) {
+		my $ip_info = $role_info->{ips}->{$ip};
+		next unless ($ip_info->{assigned_to} eq $host);
+		$cnt++;
+		INFO "    Removed role '$role($ip)' from host '$host'";
+		$ip_info->{assigned_to} = '';
+	}
+	return $cnt;
 }
 
 

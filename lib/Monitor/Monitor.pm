@@ -28,6 +28,11 @@ MMM::Monitor::Monitor - single instance class with monitor logic
 
 our $VERSION = '0.01';
 
+use constant MMM_MONITOR_MODE_PASSIVE => 0;
+use constant MMM_MONITOR_MODE_ACTIVE  => 1;
+use constant MMM_MONITOR_MODE_MANUAL  => 2;
+use constant MMM_MONITOR_MODE_WAIT    => 3;
+
 use Class::Struct;
 
 sub instance() {
@@ -40,10 +45,11 @@ struct 'MMM::Monitor::Monitor' => {
 	command_queue		=> 'Thread::Queue',
 	result_queue		=> 'Thread::Queue',
 	roles				=> 'MMM::Monitor::Roles',
-	passive				=> '$',
+	mode				=> '$',
 	passive_info		=> '$',
 	kill_host_bin		=> '$'
 };
+
 
 
 =head1 FUNCTIONS
@@ -67,6 +73,22 @@ sub init($) {
 	$self->result_queue(new Thread::Queue::);
 	$self->roles(MMM::Monitor::Roles->instance());
 	$self->passive_info('');
+	if ($main::config->{monitor}->{mode} eq 'active') {
+		$self->mode(MMM_MONITOR_MODE_ACTIVE);
+	}
+	elsif ($main::config->{monitor}->{mode} eq 'manual') {
+		$self->mode(MMM_MONITOR_MODE_MANUAL);
+	}
+	elsif ($main::config->{monitor}->{mode} eq 'wait') {
+		$self->mode(MMM_MONITOR_MODE_WAIT);
+	}
+	elsif ($main::config->{monitor}->{mode} eq 'passive') {
+		$self->mode(MMM_MONITOR_MODE_PASSIVE);
+		$self->passive_info('Configured to start up in passive mode.');
+	}
+	else {
+		LOGDIE "Something very, very strange just happend - dieing..."
+	}
 
 
 	#___________________________________________________________________________
@@ -94,8 +116,10 @@ sub init($) {
 	# Go into passive mode if we have no network connection at startup
 	#___________________________________________________________________________
 
-	$self->passive(!$main::have_net);
-	$self->passive_info('No network connection during startup.') unless ($main::have_net);
+	unless ($main::have_net) {
+		$self->mode(MMM_MONITOR_MODE_PASSIVE);
+		$self->passive_info('No network connection during startup.');
+	}
 
 	
 	#___________________________________________________________________________
@@ -256,7 +280,7 @@ sub init($) {
 
 	unless ($status) {
 		# Enter PASSIVE MODE
-		$self->passive(1);
+		$self->mode(MMM_MONITOR_MODE_PASSIVE);
 		my $agent_status_str = '';
 		foreach my $host (sort(keys(%{$agent_status}))) {
 			$agent_status_str .= sprintf(
@@ -335,8 +359,9 @@ sub init($) {
 		}
 	}
 
-	INFO "Monitor started in active mode."  unless ($self->passive);
-	WARN "Monitor started in passive mode." if ($self->passive);
+	INFO "Monitor started in active mode."  if ($self->mode == MMM_MONITOR_MODE_ACTIVE);
+	INFO "Monitor started in manual mode."  if ($self->mode == MMM_MONITOR_MODE_MANUAL);
+	INFO "Monitor started in wait mode."    if ($self->mode == MMM_MONITOR_MODE_WAIT);
 }
 
 sub check_master_configuration($) {
@@ -507,7 +532,7 @@ sub _check_host_states($) {
 
 	foreach my $host (keys(%{$main::config->{host}})) {
 
-		$agents->save_status() unless ($self->passive);
+		$agents->save_status() unless ($self->is_passive);
 
 		my $agent		= $agents->get($host);
 		my $state		= $agent->state;
@@ -539,7 +564,8 @@ sub _check_host_states($) {
 			unless ($ping && $mysql) {
 				FATAL sprintf("State of host '%s' changed from %s to HARD_OFFLINE (ping: %s, mysql: %s)", $host, $state, ($ping? 'OK' : 'not OK'), ($mysql? 'OK' : 'not OK'));
 				$agent->state('HARD_OFFLINE');
-				$self->roles->clear_host_roles($host);
+				next if ($self->is_manual);
+				$self->roles->clear_roles($host);
 				if (!$self->send_agent_status($host)) {
 					ERROR sprintf("Can't send offline status notification to '%s' - killing it!", $host);
 					$self->_kill_host($host, $checks->ping($host));
@@ -557,7 +583,8 @@ sub _check_host_states($) {
 			if ($ping && $mysql && !$rep_threads && $peer_state eq 'ONLINE' && $checks->ping($peer) && $checks->mysql($peer)) {
 				FATAL "State of host '$host' changed from $state to REPLICATION_FAIL";
 				$agent->state('REPLICATION_FAIL');
-				$self->roles->clear_host_roles($host);
+				next if ($self->is_manual);
+				$self->roles->clear_roles($host);
 				$self->send_agent_status($host);
 				next;
 			}
@@ -566,7 +593,8 @@ sub _check_host_states($) {
 			if ($ping && $mysql && !$rep_backlog && $rep_threads && $peer_state eq 'ONLINE' && $checks->ping($peer) && $checks->mysql($peer)) {
 				FATAL "State of host '$host' changed from $state to REPLICATION_DELAY";
 				$agent->state('REPLICATION_DELAY');
-				$self->roles->clear_host_roles($host);
+				next if ($self->is_manual);
+				$self->roles->clear_roles($host);
 				$self->send_agent_status($host);
 				next;
 			}
@@ -711,7 +739,7 @@ sub _check_host_states($) {
 			next;
 		}
 	}
-	$agents->save_status() unless ($self->passive);
+	$agents->save_status() unless ($self->is_passive);
 }
 
 
@@ -725,7 +753,7 @@ sub _distribute_roles($) {
 	my $self = shift;
 
 	# Never change roles if we are in PASSIVE mode
-	return if ($self->passive);
+	return if ($self->is_passive);
 
 	my $old_active_master = $self->roles->get_active_master();
 	
@@ -734,7 +762,7 @@ sub _distribute_roles($) {
 	$self->roles->process_orphans('balanced');
 
 	# obey preferences
-	$self->roles->obey_preferences();
+	$self->roles->obey_preferences() if ($self->is_active);
 
 	# Balance roles
 	$self->roles->balance();
@@ -797,7 +825,7 @@ sub send_agent_status($$$) {
 
 	# Never send anything to agents if we are in PASSIVE mode
 	# Never send anything to agents if we have no network connection
-	return if ($self->passive || !$main::have_net);
+	return if ($self->is_passive || !$main::have_net);
 
 	# Determine active master if it was not passed
 	$master = $self->roles->get_active_master() unless (defined($master));
@@ -903,6 +931,7 @@ sub _process_commands($) {
 		elsif ($command eq 'mode'			&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::mode();							}
 		elsif ($command eq 'set_active'		&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_active();					}
 		elsif ($command eq 'set_passive'	&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_passive();					}
+		elsif ($command eq 'set_manual'		&& $arg_cnt == 0) { $res = MMM::Monitor::Commands::set_manual();					}
 		elsif ($command eq 'set_online'		&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_online ($args[0]);			}
 		elsif ($command eq 'set_offline'	&& $arg_cnt == 1) { $res = MMM::Monitor::Commands::set_offline($args[0]);			}
 		elsif ($command eq 'move_role'		&& $arg_cnt == 2) { $res = MMM::Monitor::Commands::move_role($args[0], $args[1]);	}
@@ -915,6 +944,94 @@ sub _process_commands($) {
 		# Enqueue result
 		$self->result_queue->enqueue($res);
 	}
+}
+
+
+=item is_active()
+
+Check if monitor is in active mode
+
+=cut
+
+sub is_active($$) {
+	my $self	= shift;
+	return ($self->mode == MMM_MONITOR_MODE_ACTIVE);
+}
+
+
+=item is_manual()
+
+Check if monitor is in manual mode
+
+=cut
+
+sub is_manual($$) {
+	my $self	= shift;
+	return ($self->mode == MMM_MONITOR_MODE_MANUAL || $self->mode == MMM_MONITOR_MODE_WAIT);
+}
+
+
+=item is_passive()
+
+Check if monitor is in passive mode
+
+=cut
+
+sub is_passive($$) {
+	my $self	= shift;
+	return ($self->mode == MMM_MONITOR_MODE_PASSIVE);
+}
+
+
+=item set_active()
+
+Set mode to active
+
+=cut
+
+sub set_active($$) {
+	my $self	= shift;
+	$self->mode(MMM_MONITOR_MODE_ACTIVE);
+}
+
+
+=item set_manual()
+
+Set mode to manual
+
+=cut
+
+sub set_manual($$) {
+	my $self	= shift;
+	$self->mode(MMM_MONITOR_MODE_MANUAL);
+}
+
+
+=item set_passive()
+
+Set mode to passive
+
+=cut
+
+sub set_passive($$) {
+	my $self	= shift;
+	$self->mode(MMM_MONITOR_MODE_PASSIVE);
+}
+
+
+=item get_mode_string()
+
+Get string representation of current mode
+
+=cut
+
+sub get_mode_string($) {
+	my $self	= shift;
+	return 'ACTIVE'  if ($self->mode == MMM_MONITOR_MODE_ACTIVE);
+	return 'MANUAL'  if ($self->mode == MMM_MONITOR_MODE_MANUAL);
+	return 'WAIT'    if ($self->mode == MMM_MONITOR_MODE_WAIT);
+	return 'PASSIVE' if ($self->mode == MMM_MONITOR_MODE_PASSIVE);
+	return 'UNKNOWN'; # should never happen
 }
 
 1;

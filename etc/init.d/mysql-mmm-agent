@@ -9,9 +9,22 @@
 # config: /etc/mmm_agent.conf
 # pidfile: /var/run/mmm_agentd.pid
 
+# Cluster name (it can be empty for default cases)
+CLUSTER=''
+
+
+#-----------------------------------------------------------------------
 # Paths
-MMM_AGENTD_BIN="/usr/sbin/mmm_agentd"
-MMM_AGENTD_PIDFILE="/var/run/mmm_agentd.pid"
+if [ "$CLUSTER" != "" ]; then
+    MMM_AGENTD_BIN="/usr/sbin/mmm_agentd @$CLUSTER"
+    MMM_AGENTD_PIDFILE="/var/run/mmm_agentd-$CLUSTER.pid"
+else 
+    MMM_AGENTD_BIN="/usr/sbin/mmm_agentd"
+    MMM_AGENTD_PIDFILE="/var/run/mmm_agentd.pid"
+fi
+
+echo "Daemon bin: '$MMM_AGENTD_BIN'"
+echo "Daemon pid: '$MMM_AGENTD_PIDFILE'"
 
 #-----------------------------------------------------------------------
 # See how we were called.

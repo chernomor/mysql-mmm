@@ -165,10 +165,11 @@ sub _execute($$$) {
 	my $return_all	= shift;
 
 	my $path		= $main::agent->bin_path . "/agent/$command";
+	my $config_file		= $main::agent->config_file;
 	$params = '' unless defined($params);
 
 	DEBUG "Executing $path $params";
-	my $res = `$path $params`;
+	my $res = `$path $config_file $params`;
 
 	unless ($return_all) {
 		my @lines = split /\n/, $res;

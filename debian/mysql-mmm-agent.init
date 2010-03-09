@@ -14,10 +14,14 @@ set -e
 
 . /lib/lsb/init-functions
 
+# Cluster name (it can be empty for default cases)
+CLUSTER=''
+
 DESC='MMM Agent Daemon'
 NAME='mmm_agentd'
 PIDFILE="/var/run/mmm_agentd.pid"
 DAEMON="/usr/sbin/mmm_agentd"
+ARGS=''
 ENABLED=0
 
 test -f /etc/default/mysql-mmm-agent && . /etc/default/mysql-mmm-agent
@@ -25,6 +29,13 @@ test -f /etc/default/mysql-mmm-agent && . /etc/default/mysql-mmm-agent
 if [ "$ENABLED" = "0" ]; then
     log_action_msg "$DESC disabled, see /etc/default/mysql-mmm-agent"
     exit 0
+fi
+
+if [ "$CLUSTER" != "" ]; then
+    DAEMON="/usr/sbin/mmm_agentd"
+    PIDFILE="/var/run/mmm_agentd-$CLUSTER.pid"
+    NAME="mmm_agentd-$CLUSTER"
+    ARGS="@$CLUSTER"
 fi
 
 case "$1" in
@@ -35,7 +46,7 @@ case "$1" in
       log_end_msg 0
       exit 0
     fi
-    $DAEMON
+    $DAEMON $ARGS
     log_end_msg $?
     ;;
 

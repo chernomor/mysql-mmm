@@ -6,12 +6,13 @@ use warnings FATAL => 'all';
 use MMM::Agent::Helpers::Actions;
 
 # Check arguments
-if (scalar(@ARGV) != 2) {
-	print "Usage: $0 <interface> <ip>\n\n";
+if (scalar(@ARGV) != 3) {
+	print "Usage: $0 <config_file> <interface> <ip>\n\n";
 	exit(1);
 }
 
 # Fetch arguments
+my $config_file = shift;
 my $if = shift;
 my $ip = shift;
 

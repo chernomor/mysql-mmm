@@ -31,17 +31,30 @@ if (scalar(@ARGV) && $ARGV[0] eq "--version") {
 chdir('/');
 umask(0022);
 
+our $cluster_name = '';
+my $postfix = '';
+if (scalar(@ARGV) && $ARGV[0] =~ /^@(.*)/) {
+    shift(@ARGV);
+    $cluster_name = $1;
+    $postfix = "_$cluster_name";
+        $PROGRAM_NAME = basename($PROGRAM_NAME) . '-' . $cluster_name;
+}
+else {
+        $PROGRAM_NAME = basename($PROGRAM_NAME);
+}
 
 
 
-$PROGRAM_NAME = basename($PROGRAM_NAME);
 
-MMM::Common::Log::init('mmm_agent_log.conf', 'mmm_agentd');
+MMM::Common::Log::init("mmm_agent_log$postfix.conf", "mmm_agentd$postfix");
 
 # Read configuration
 our $config = new MMM::Common::Config::;
-$config->read('mmm_agent');
+$config->read("mmm_agent$postfix");
 $config->check('AGENT');
+
+
+
 
 my $debug = $config->{debug};
 
@@ -50,7 +63,8 @@ MMM::Common::Log::debug() if ($debug);
 our $agent	= new MMM::Agent::Agent::(
 	protocol_version	=> 1,
 	active_master		=> '',
-	state				=> 'UNKNOWN'
+	state				=> 'UNKNOWN',
+	config_file		=> "mmm_agent$postfix"
 );
 $agent->from_config($config);
 
@@ -67,7 +81,7 @@ unless ($debug) {
 	# Set umask again
 	umask(0022);
 	# Init logging again to re-open fds
-	MMM::Common::Log::init('mmm_agent_log.conf', 'mmm_agentd');
+	MMM::Common::Log::init("mmm_agent_log$postfix.conf", "mmm_agentd$postfix");
 }
 
 # Init angel magic, which will restart us if we die unexpected
@@ -76,10 +90,10 @@ MMM::Common::Angel::Init($pidfile);
 # Shutdown flag
 our $shutdown = 0;
 
-# Catch signals
-$SIG{INT} = \&SignalHandler;
-$SIG{TERM} = \&SignalHandler;
-$SIG{QUIT} = \&SignalHandler;
+# Set signal handlers
+$SIG{INT} = \&ShutdownHandler;
+$SIG{TERM} = \&ShutdownHandler;
+$SIG{QUIT} = \&ShutdownHandler;
 
 $agent->main();
 
@@ -87,7 +101,7 @@ INFO 'END';
 exit(0);
 
 #-----------------------------------------------------------------
-sub SignalHandler() {
+sub ShutdownHandler() {
 	INFO "Signal received: exiting...";
 	$shutdown = 1;
 }

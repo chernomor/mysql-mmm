@@ -40,7 +40,8 @@ struct 'MMM::Agent::Agent' => {
 
 	active_master		=> '$',
 	state				=> '$',
-	roles				=> '@'
+	roles				=> '@',
+	config_file			=> '$'
 };
 
 sub main($) {

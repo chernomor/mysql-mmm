@@ -7,14 +7,15 @@ use MMM::Common::Config;
 use MMM::Agent::Helpers::Actions;
 
 # Check arguments
-if (scalar(@ARGV) != 0) {
-	print "Usage: $0\n\n";
+if (scalar(@ARGV) != 1) {
+	print "Usage: $0 <config_file>\n\n";
 	exit(1);
 }
 
 # Read config file
+my $config_file = shift;
 our $config = new MMM::Common::Config::;
-$config->read('mmm_agent');
+$config->read($config_file);
 $config->check('AGENT');
 
 # Finally do the work

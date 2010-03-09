@@ -83,6 +83,7 @@ sub handle_command($$) {
 	DEBUG "Received Command $cmd";
 	my ($cmd_name, $version, $host, @params) = split('\|', $cmd, -1);
 
+	return "ERROR: Invalid command '$cmd'!" unless (defined($host));
 	return "ERROR: Invalid hostname in command ($host)! My name is '" . $self->name . "'" if ($host ne $self->name);
 	
 	if ($version > main::MMM_PROTOCOL_VERSION) {

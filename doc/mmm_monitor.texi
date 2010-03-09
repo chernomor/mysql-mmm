@@ -108,7 +108,7 @@ Without working network connection mmm_mond will...
 @end itemize
 
 @noindent
-If the network connection doesn't work during startup, mmm_mond will switch into passive mode (@pxref{Passive mode}).
+If the network connection doesn't work during startup, mmm_mond will delay startup until it's available again.
 
 
 @node Flapping
@@ -130,20 +130,22 @@ flapping and will not be set @code{ONLINE} automatically. It will stay in state
 If @var{auto_set_online} is > 0, flapping hosts will automatically be set to @code{ONLINE} 
 after @var{flap_duration} seconds.
 
-@node Passive mode
-@section Passive mode
-@cindex passive mode
+@node Modes
+@section Modes
+@cindex Modes
 
-entered if no network connection during startup
-entered if discrepancies are detected during startup
-entered with set_passive
+@subsection Active mode
+The monitor will remove roles from failed hosts and assign them to other hosts automatically.
+@subsection Manual mode
+The monitor will only distribute @code{balanced} roles across the hosts, but will not remove roles from failed hosts automatically. You can remove roles from failed hosts manually with @code{move_role}.
+@subsection Wait mode
+Like @code{MANUAL} mode, but mode will be changed into @code{ACTIVE} mode when both master hosts are @code{ONLINE} or after @code{wait_for_other_master} seconds have elapsed.
+@subsection Passive mode
+In passive mode the monitor doesn't change roles, update the status file nor send anything to agents.
+In passive mode you can modify roles (unclean) with @code{set_ip} - the changes won't be applied until the monitor is switched to @code{ACTIVE} or @code{MANUAL} mode with @code{set_active} or @code{set_manual}.
+Passive mode will be entered if conflicting roles are detected during startup. You should then analyze the situation, fix the role information (if needed) and switch into @code{ACTIVE} or @code{MANUAL} mode.
+It also can be entered manually with @code{set_passive}.
 
-roles can be changed (unclean) with set_ip
-changed to active with set_active
-
-roles get never changed automatically
-nothing is send to agents
-status file won't be updated
 
 @node Startup
 @section Startup
@@ -152,6 +154,7 @@ status file won't be updated
 @itemize
 
 @item Initial network check
+@item If network is down startup will be delayed until it's reachable again.
 @item Initial host checks
 @item reads status information from ...
 @itemize @minus
@@ -159,7 +162,7 @@ status file won't be updated
 @item agents (agent info)
 @item hosts (system info)
 @end itemize
-@item If status information doesn't match or network is down @code{PASSIVE} mode will be entered.
+and tries to figure out the cluster status.
 @end itemize
 
 @node Role transition

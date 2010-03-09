@@ -231,6 +231,29 @@ The @code{monitor} section is required by mmm_mond and mmm_control.
 @item Used by:			@tab monitor
 @end multitable
 
+@item @strong{careful_startup}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Startup carefully i.e. switch into passive mode when writer role is configured on multiple hosts.
+@item Allowed values:	@tab true/yes/1/on false/no/0/off
+@item Default value:	@tab 0
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{mode}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab Default mode of monitor.
+@item Allowed values:	@tab active manual wait passive
+@item Default value:	@tab active
+@item Used by:			@tab monitor
+@end multitable
+
+@item @strong{wait_for_other_master}
+@multitable @columnfractions 0.2 0.8
+@item Description:		@tab How many seconds to wait for other master to become @code{ONLINE} before switching from mode @code{WAIT} to mode @code{ACTIVE}. 0 = infinite.
+@item Default value:	@tab 120
+@item Used by:			@tab monitor
+@end multitable
+
 @end itemize
 
 

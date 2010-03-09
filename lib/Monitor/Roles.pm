@@ -178,6 +178,74 @@ sub get_active_master($) {
 }
 
 
+=item get_passive_master
+
+Get the passive master
+
+=cut
+
+sub get_passive_master($) {
+	my $self	= shift;
+
+	my $role = $self->{$main::config->{active_master_role}};
+	my $active_master = $self->get_active_master();
+	return '' unless $role;
+	return '' unless $active_master;
+
+	foreach my $host ( @{ $role->{hosts} } ) {
+		return $host if ($host ne $active_master);
+	}
+	return '';
+}
+
+
+=item get_first_master
+
+Get the first master
+
+=cut
+
+sub get_first_master($) {
+	my $self	= shift;
+
+	my $role = $self->{$main::config->{active_master_role}};
+	return '' unless $role;
+	return '' unless $role->{hosts}[0];
+	return $role->{hosts}[0];
+}
+
+
+=item get_second_master
+
+Get the second master
+
+=cut
+
+sub get_second_master($) {
+	my $self	= shift;
+
+	my $role = $self->{$main::config->{active_master_role}};
+	return '' unless $role;
+	return '' unless $role->{hosts}[1];
+	return $role->{hosts}[1];
+}
+
+
+=item get_master_hosts
+
+Get the hosts which can handle the active master-role
+
+=cut
+
+sub get_master_hosts($) {
+	my $self	= shift;
+
+	my $role = $self->{$main::config->{active_master_role}};
+	return '' unless $role;
+	return $self->{$role}->{hosts};
+}
+
+
 =item get_exclusive_role_owner($role)
 
 Get the host which has the exclusive role $role assigned
@@ -610,6 +678,21 @@ sub can_handle($$$) {
 	my $host	= shift;
 	return 0 unless defined($self->{$role});
 	return grep({$_ eq $host} @{$self->{$role}->{hosts}});
+}
+
+
+=item is_master($host)
+
+Check if host $host can handle role $role.
+
+=cut
+
+sub is_master($$) {
+	my $self	= shift;
+	my $host	= shift;
+	my $role = $self->{$main::config->{active_master_role}};
+	return 0 unless defined($role);
+	return grep({$_ eq $host} @{$role->{hosts}});
 }
 
 

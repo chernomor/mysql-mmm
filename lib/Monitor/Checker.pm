@@ -184,7 +184,7 @@ sub ping($) {
 	my $self	= shift;
 	my $name	= $self->{name};
 
-	DEBUG "Pinging checker '$name'...";
+#	DEBUG "Pinging checker '$name'...";
 
 	my $reader = $self->{reader};
 	my $writer = $self->{writer};
@@ -202,7 +202,7 @@ READ: {
 		return 0;
 	}
 
-	DEBUG "Checker '$name' is OK ($recv_res)";
+#	DEBUG "Checker '$name' is OK ($recv_res)";
 	return 1;
 }
 

@@ -385,15 +385,8 @@ sub set_active() {
 	INFO "Admin changed mode from '$old_mode' to 'ACTIVE'";
 	
 	if ($monitor->is_passive) {
-		# Send status to agents
-		$monitor->send_status_to_agents();
-
-		# Clear 'bad' roles
-		my $agents	= MMM::Monitor::Agents->instance();
-		foreach my $host (keys(%{$main::config->{host}})) {
-			my $agent = $agents->get($host);
-			$agent->cmd_clear_bad_roles(); # TODO check result
-		}
+		$monitor->set_active(); # so that we can send status to agents
+		$monitor->cleanup_and_send_status();
 		$monitor->passive_info('');
 	}
 	elsif ($monitor->is_manual) {
@@ -407,8 +400,8 @@ sub set_active() {
 			my $agent = $agents->get($host);
 			$roles->clear_roles($host);
 			my $ret = $monitor->send_agent_status($host);
-			next if ($host_state eq 'REPLICATION_FAIL');
-			next if ($host_state eq 'REPLICATION_BACKLOG');
+#			next if ($host_state eq 'REPLICATION_FAIL');
+#			next if ($host_state eq 'REPLICATION_BACKLOG');
 			# NOTE host_state should never be ADMIN_OFFLINE at this point
 			if (!$ret) {
 				ERROR sprintf("Can't send offline status notification to '%s' - killing it!", $host);
@@ -416,7 +409,6 @@ sub set_active() {
 			}
 		}
 	}
-
 
 	$monitor->set_active();
 	return 'OK: Switched into active mode.';
@@ -438,18 +430,10 @@ sub set_manual() {
 	INFO "Admin changed mode from '$old_mode' to 'MANUAL'";
 
 	if ($monitor->is_passive) {
-		# Send status to agents
-		$monitor->send_status_to_agents();
-
-		# Clear 'bad' roles
-		my $agents	= MMM::Monitor::Agents->instance();
-		foreach my $host (keys(%{$main::config->{host}})) {
-			my $agent = $agents->get($host);
-			$agent->cmd_clear_bad_roles(); # TODO check result
-		}
+		$monitor->set_manual(); # so that we can send status to agents
+		$monitor->cleanup_and_send_status();
 		$monitor->passive_info('');
 	}
-
 
 	$monitor->set_manual();
 	return 'OK: Switched into manual mode.';

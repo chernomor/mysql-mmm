@@ -38,7 +38,9 @@ our $RULESET = {
 		'flap_count'			=> { 'default' => 3 },
 		'auto_set_online'		=> { 'default' => 0 },
 		'kill_host_bin'			=> { 'default' => 'kill_host' },
-		'mode'					=> { 'default' => 'active', 'values' => ['passive', 'active', 'manual', 'wait'] }
+		'careful_startup'		=> { 'default' => 1, 'boolean' => 1 },
+		'mode'					=> { 'default' => 'active', 'values' => ['passive', 'active', 'manual', 'wait'] },
+		'wait_for_other_master'	=> { 'default' => 120 }
 		}
 	},
 	'socket'				=> { 'create_if_empty' => ['AGENT', 'CONTROL', 'MONITOR'], 'section' => {

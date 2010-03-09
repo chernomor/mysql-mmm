@@ -4,7 +4,9 @@ use strict;
 use warnings FATAL => 'all';
 use English qw(EVAL_ERROR);
 use Algorithm::Diff;
+use DBI;
 use Class::Struct;
+use Errno qw(EINTR);
 use Log::Log4perl qw(:easy);
 use MMM::Common::Role;
 use MMM::Common::Socket;
@@ -81,6 +83,7 @@ sub handle_command($$) {
 	DEBUG "Received Command $cmd";
 	my ($cmd_name, $version, $host, @params) = split('\|', $cmd, -1);
 
+	return "ERROR: Invalid command '$cmd'!" unless (defined($host));
 	return "ERROR: Invalid hostname in command ($host)! My name is '" . $self->name . "'" if ($host ne $self->name);
 	
 	if ($version > main::MMM_PROTOCOL_VERSION) {
@@ -114,7 +117,23 @@ sub cmd_get_agent_status($) {
 sub cmd_get_system_status($) {
 	my $self	= shift;
 
-	# TODO maybe determine and send master info if we are a slave host.
+	# determine master info
+    my $dsn			= sprintf("DBI:mysql:host=%s;port=%s;mysql_connect_timeout=3", $self->ip, $self->mysql_port);
+    my $eintr		= EINTR;
+	my $master_ip	= '';
+
+    my $dbh;
+CONNECT: {
+    DEBUG "Connecting to mysql";
+    $dbh   = DBI->connect($dsn, $self->mysql_user, $self->mysql_password, { PrintError => 0 });
+    unless ($dbh) {
+        redo CONNECT if ($DBI::err == 2003 && $DBI::errstr =~ /\($eintr\)/);
+        WARN "Couldn't connect to mysql. Can't determine current master host." . $DBI::err . " " . $DBI::errstr;
+    }
+}
+
+    my $slave_status = $dbh->selectrow_hashref('SHOW SLAVE STATUS');
+	$master_ip = $slave_status->{Master_Host} if (defined($slave_status));
 
 	my @roles;
 	foreach my $role (keys(%{$main::config->{role}})) {
@@ -133,7 +152,7 @@ sub cmd_get_system_status($) {
 	return "ERROR: Could not check if MySQL is writable: $res" if ($ret == 255);
 	my $writable = ($ret == 1);
 
-	my $answer = join('|', ($writable, join(',', @roles)));
+	my $answer = join('|', ($writable, join(',', @roles), $master_ip));
 	return "OK: Returning status!|$answer";
 }
 

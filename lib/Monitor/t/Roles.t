@@ -55,7 +55,7 @@ is($roles->get_active_master(), '', 'No active master with no assigned roles');
 $roles->assign($role_writer, 'db1');
 is($roles->get_active_master(), 'db1', 'Active master after assigning writer role');
 
-$roles->clear_host_roles($roles->get_active_master());
+$roles->clear_roles($roles->get_active_master());
 is($roles->get_active_master(), '', 'No active master with active master host cleared');
 
 $roles->assign($role_writer, 'db2');
@@ -84,7 +84,7 @@ is($roles->count_host_roles('db1'), 2, 'balance roles (role count db1)');
 is($roles->count_host_roles('db2'), 2, 'balance roles (role count db2)');
 
 $agents->{db2}->state('HARD_OFFLINE');
-$roles->clear_host_roles('db2');
+$roles->clear_roles('db2');
 $roles->process_orphans('exclusive');
 $roles->process_orphans('balanced');
 is($roles->count_host_roles('db1'), 4, 'process orphans assigns all orphaned roles');

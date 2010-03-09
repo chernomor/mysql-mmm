@@ -54,29 +54,32 @@ sub main() {
 	$checker->shutdown();
 }
 
-sub initial_check() {
+sub wait_for_network() {
 	my @ips		= @{$main::config->{monitor}->{ping_ips}};
-	my $state	= 0;
 	
 	# Create checker
 	my $checker = new MMM::Monitor::Checker::('ping_ip');
 
-	# Ping all ips
-	foreach my $ip (@ips) {
-		# Ping checker
-		$checker->spawn() unless $checker->ping();
-
-		my $res = $checker->check($ip);
-		if ($res =~ /^OK/) {
-			DEBUG "IP '$ip' is reachable: $res";
-			$state = 1;
-			last;
+	while (!$main::shutdown) {
+		# Ping all ips
+		foreach my $ip (@ips) {
+			last if ($main::shutdown);
+			# Ping checker
+			$checker->spawn() unless $checker->ping();
+	
+			my $res = $checker->check($ip);
+			if ($res =~ /^OK/) {
+				DEBUG "IP '$ip' is reachable: $res";
+				$checker->shutdown();
+				return 1;
+			}
 		}
-		DEBUG "IP '$ip' is not reachable: $res";
+
+		# Sleep a while before checking every ip again
+		sleep($main::config->{monitor}->{ping_interval});
 	}
 	$checker->shutdown();
-
-	return $state;
+	return 0;
 }
 
 1;

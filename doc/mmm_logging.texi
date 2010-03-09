@@ -86,6 +86,7 @@ log4perl.appender.FileFatal.layout.ConversionPattern = %d %5p %m%n
 log4perl.appender.MailFatal = Log::Dispatch::Email::MailSend
 log4perl.appender.MailFatal.Threshold = FATAL 
 log4perl.appender.MailFatal.to = root
+log4perl.appender.MailFatal.buffered = 0
 log4perl.appender.MailFatal.subject = FATAL error in @var{progam}
 log4perl.appender.MailFatal.layout = PatternLayout
 log4perl.appender.MailFatal.layout.ConversionPattern = %d %m%n

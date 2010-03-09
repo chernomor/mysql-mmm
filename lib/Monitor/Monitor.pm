@@ -204,8 +204,10 @@ sub init($) {
 			}
 
 			my $master = '';
-		    foreach my $a_host (keys(%{$main::config->{host}})) {
-				$master = $a_host if ($main::config->{host}->{$a_host}->{ip} eq $master_ip);
+			if (defined($master_ip)) {
+			    foreach my $a_host (keys(%{$main::config->{host}})) {
+					$master = $a_host if ($main::config->{host}->{$a_host}->{ip} eq $master_ip);
+				}
 			}
 			$startup_status->set_system_status($host, $writable, \@roles, $master);
 		}

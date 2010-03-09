@@ -1,3 +1,19 @@
+mysql-mmm (2.2.0-1) unstable; urgency=low
+
+  * Added manual mode (bug #531011), wait mode, config values 'mode' and
+    'wait_for_other_master'
+  * Don't die at startup when no network connection is available - wait for it
+    to appear instead (bug #416572)
+  * Changed startup behaviour. mmm_mond will only go into passive mode if it
+    detects the active_master_role on more than one host.
+  * Added config value 'careful_startup' (bug #422549). If set to 0 mmm_mond
+    will never switch into passive mode at startup.
+  * Added check for invalid agent commands (prevents crash when mmmd_mon
+    version 1.x talks to an 2.x agent). 
+  * Fixed date format for 'mmm_control checks' (bug #531841)
+
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Tue, 09 Mar 2010 14:18:15 +0000
+
 mysql-mmm (2.1.1-1) unstable; urgency=low
 
   * Changed default logging behaviour (bug #484395)

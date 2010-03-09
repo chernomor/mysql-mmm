@@ -11,6 +11,7 @@ mysql-mmm (2.2.0-1) unstable; urgency=low
   * Added check for invalid agent commands (prevents crash when mmmd_mon
     version 1.x talks to an 2.x agent). 
   * Fixed date format for 'mmm_control checks' (bug #531841)
+  * Allow running multiple agents on the same host (bug #525719)
 
  -- Pascal Hofmann <mail@pascalhofmann.de>  Tue, 09 Mar 2010 14:18:15 +0000
 

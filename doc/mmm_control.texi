@@ -190,7 +190,7 @@ OK: Role 'writer' has been moved from 'db2' to 'db1'. Now you can wait some time
 @end smallexample
 
 @section @code{move_role --force @var{role} @var{host}}
-Can be used to move the @var{active_master_role} to a host with state @code{REPLICATION_FAIL} or @code{REPLICATION_BACKLOG}. Use this with caution! This command is not available in @code{PASSIVE} mode.
+Can be used to move the @var{active_master_role} to a host with state @code{REPLICATION_FAIL} or @code{REPLICATION_DELAY}. Use this with caution! This command is not available in @code{PASSIVE} mode.
 
 @section @code{set_ip @var{ip} @var{host}}
 @code{set_ip} can be used to manipulate the roles in @code{PASSIVE} mode. The changes won't be applied until the monitor is switched into @code{ACTIVE} or @code{manual} mode via @code{set_active} or @code{set_manual}.

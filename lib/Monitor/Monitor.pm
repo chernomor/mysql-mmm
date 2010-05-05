@@ -660,7 +660,7 @@ sub _check_host_states($) {
 				$self->roles->clear_roles($host); 
 				my $ret = $self->send_agent_status($host); 
 #   			next if ($host_state eq 'REPLICATION_FAIL'); 
-#   			next if ($host_state eq 'REPLICATION_BACKLOG'); 
+#   			next if ($host_state eq 'REPLICATION_DELAY'); 
 				# NOTE host_state should never be ADMIN_OFFLINE at this point 
 				if (!$ret) { 
 					ERROR sprintf("Can't send offline status notification to '%s' - killing it!", $host); 

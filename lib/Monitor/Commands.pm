@@ -184,7 +184,7 @@ sub set_offline($) {
 	my $host_state = $agents->state($host);
 	return "OK: This host is already ADMIN_OFFLINE. Skipping command." if ($host_state eq 'ADMIN_OFFLINE');
 
-	unless ($host_state eq 'ONLINE' || $host_state eq 'REPLICATION_FAIL' || $host_state eq 'REPLICATION_BACKLOG') {
+	unless ($host_state eq 'ONLINE' || $host_state eq 'REPLICATION_FAIL' || $host_state eq 'REPLICATION_DELAY') {
 		return "ERROR: Host '$host' is '$host_state' at the moment. It can't be switched to ADMIN_OFFLINE.";
 	}
 
@@ -308,7 +308,7 @@ sub forced_move_role($$) {
 	return "ERROR: move_role --forced may be used for the active master role only!" unless ($roles->is_active_master_role($role));
 
 	my $host_state = $agents->state($host);
-	unless ($host_state eq 'REPLICATION_FAIL' || $host_state eq 'REPLICATION_BACKLOG') {
+	unless ($host_state eq 'REPLICATION_FAIL' || $host_state eq 'REPLICATION_DELAY') {
 		return "ERROR: Can't force move of role to host with state $host_state.";
 	}
 
@@ -339,8 +339,8 @@ sub forced_move_role($$) {
 		$roles->clear_roles($old_owner) if ($monitor->is_active);
 	}
 	elsif (!$checks->rep_backlog($old_owner)) {
-		FATAL "State of host '$old_owner' changed from ONLINE to REPLICATION_BACKLOG (because of move_role --force)";
-		$old_agent->state('REPLICATION_BACKLOG');
+		FATAL "State of host '$old_owner' changed from ONLINE to REPLICATION_DELAY (because of move_role --force)";
+		$old_agent->state('REPLICATION_DELAY');
 		$roles->clear_roles($old_owner) if ($monitor->is_active);
 	}
 
@@ -401,7 +401,7 @@ sub set_active() {
 			$roles->clear_roles($host);
 			my $ret = $monitor->send_agent_status($host);
 #			next if ($host_state eq 'REPLICATION_FAIL');
-#			next if ($host_state eq 'REPLICATION_BACKLOG');
+#			next if ($host_state eq 'REPLICATION_DELAY');
 			# NOTE host_state should never be ADMIN_OFFLINE at this point
 			if (!$ret) {
 				ERROR sprintf("Can't send offline status notification to '%s' - killing it!", $host);

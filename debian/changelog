@@ -1,3 +1,11 @@
+mysql-mmm (2.2.1-1) unstable; urgency=low
+
+  * Fixed usage of wrong state name in set_active, forced_move_role and
+    set_offline which could lead to strange errors when hosts had replication
+    backlog.
+
+ -- Pascal Hofmann <mail@pascalhofmann.de>  Fri, 07 May 2010 07:50:00 +0000
+
 mysql-mmm (2.2.0-1) unstable; urgency=low
 
   * Added manual mode (bug #531011), wait mode, config values 'mode' and

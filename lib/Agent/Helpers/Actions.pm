@@ -121,20 +121,54 @@ Deny writes on local MySQL server. Sets global read_only to 1.
 =cut
 
 sub mysql_deny_write() {
-	_mysql_set_read_only(1);
-	kill_sql();
+	my $blocking_type = $main::config->{blocking_type};
+	if($blocking_type eq "hard" ) {
+		_mysql_set_read_only(1);
+		kill_sql();
+	}elsif($blocking_type eq "soft" ){
+		my $dbh = _get_connect();
+		block_port();
+		_wait_and_kill_sql_clients($dbh);
+		_mysql_set_read_only(1, $dbh);
+		unblock_port();
+	}else{
+		_exit_error("Unknown blocking_type %blocking_type");
+	}
 	_exit_ok();
 }
 
+sub block_port() {
+	my $cmd = $main::config->{iptables_block_cmd};
+
+	my $ret = system($cmd);
+
+	return 1 if ($ret == 0);
+	$ret = $ret >> 8;
+	_exit_error("Could not block port. '$cmd' exited with $ret");
+}
+
+sub unblock_port() {
+	my $cmd = $main::config->{iptables_unblock_cmd};
+
+	my $ret = system($cmd);
+
+	return 1 if ($ret == 0);
+	$ret = $ret >> 8;
+	_exit_error("Could not unblock port. '$cmd' exited with $ret");
+}
 
 sub _mysql_set_read_only($) {
 	my $read_only_new	= shift;
-	my ($host, $port, $user, $password)	= _get_connection_info();
-	_exit_error('No connection info') unless defined($host);
+	my $dbh				= shift;
 
-	# connect to server
-	my $dbh = _mysql_connect($host, $port, $user, $password);
-	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)! " . $DBI::errstr) unless ($dbh);
+	if( ! defined($dbh) ) {
+		my ($host, $port, $user, $password)	= _get_connection_info();
+		_exit_error('No connection info') unless defined($host);
+
+		# connect to server
+		$dbh = _mysql_connect($host, $port, $user, $password);
+		_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)! " . $DBI::errstr) unless ($dbh);
+	}
 	
 	# check old read_only state
 	(my $read_only_old) = $dbh->selectrow_array('select @@read_only');
@@ -158,13 +192,24 @@ kill all user threads to prevent further writes
 =cut
 
 sub kill_sql() {
-	
+	my $dbh = _get_connect();
+	_wait_and_kill_sql_clients($dbh);
+}
+
+sub _get_connect() {
 	my ($host, $port, $user, $password)	= _get_connection_info();
 	_exit_error('No connection info') unless defined($host);
 
 	# Connect to server
 	my $dbh = _mysql_connect($host, $port, $user, $password);
 	_exit_error("Can't connect to MySQL (host = $host:$port, user = $user)! " . $DBI::errstr) unless ($dbh);
+
+	return $dbh;
+}
+
+sub _wait_and_kill_sql_clients($) {
+	my $dbh = shift;
+	my $blocking_type = $main::config->{blocking_type};
 
 	my $my_id = $dbh->{'mysql_thread_id'};
 
@@ -191,9 +236,12 @@ sub kill_sql() {
 
 			# Give threads a chance to finish if we're not on our last retry
 			if ($elapsed_retries < $max_retries
-			 && defined ($processlist->{$id}->{Info})
+			 && (
+				$blocking_type eq "soft" # spare all threads
+			 || # if blocking_type == hard then spare writing threads and kill others
+				defined ($processlist->{$id}->{Info})
 			 && $processlist->{$id}->{Info} =~ /^\s*(\/\*.*?\*\/)?\s*(INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER|REPAIR|OPTIMIZE|ANALYZE|CHECK)/si
-			) {
+			)) {
 				$retry = 1;
 				next;
 	        }

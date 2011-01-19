@@ -19,6 +19,12 @@ our $RULESET = {
 	'max_kill_retries'		=> { 'default' => 10, 'required' => ['AGENT'] },
 	'default_copy_method'	=> { 'required' => ['TOOLS'], 'refvalues' => 'copy_method' },
 	'clone_dirs'			=> { 'required' => ['TOOLS'], 'multiple' => 1 },
+
+	'blocking_type'			=> { 'default' => 'soft' }, # soft | hard
+	# iptables rules for blocking_type=soft
+	'iptables_block_cmd'	=> { 'default' => 'iptables -A INPUT -p tcp --dport 3306 -m state --state NEW -j REJECT' },
+	'iptables_unblock_cmd'	=> { 'default' => 'iptables -D INPUT -p tcp --dport 3306 -m state --state NEW -j REJECT' },
+
 	'role'					=> { 'required' => ['AGENT', 'MONITOR'], 'multiple' => 1, 'section' => {
 		'mode'					=> { 'required' => ['MONITOR'], 'values' => ['balanced', 'exclusive'] },
 		'hosts'					=> { 'required' => ['MONITOR'], 'refvalues' => 'host', 'multiple' => 1 },

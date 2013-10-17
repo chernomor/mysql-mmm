@@ -32,6 +32,7 @@ Tools:
 	File::Basename	perl-modules
 	Path::Class		libpath-class-perl
 	Data::Dumper	perl
+    Version         perl 
 
 
 Tests:

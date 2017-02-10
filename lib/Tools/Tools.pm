@@ -5,6 +5,7 @@ use warnings FATAL => 'all';
 use English qw(FORMAT_NAME);
 use Path::Class qw(dir);
 use Log::Log4perl qw(:easy);
+use version;
 
 
 our $VERSION = '0.01';
@@ -488,7 +489,26 @@ sub cleanup($$$) {
 	system("find $dir -name master.info | xargs rm -vf");
 	system("find $dir -name relay-log.info | xargs rm -vf");
 	system("find $dir -name '*.pid' | xargs rm -vf");
-	
+
+    my $res = system("mysql --version");
+    if ($res) {
+        ERROR("Error determining mysql version. You must manually remove auto.cnf if MySQL version >=5.6");
+    } else {
+        my $ver = `mysql --version`;
+        my $version;
+
+        foreach my $string (split /\s+/, $ver) {
+            if ($string =~ m/[0-9]*\.?[0-9]*\.?[0-9]*,/ ) {
+                chop($string);
+                $version = $string;
+            }
+        }
+        if ( version->parse($version) > version->parse("5.5.9") ) {
+            INFO 'Deleting auto.cnf to ensure compatibility with MySQL >= 5.6';
+            system("find $dir -name auto.cnf | xargs rm -vf");
+        }
+    }
+
 	INFO 'Changing permissions on mysql data dir...';
 	foreach my $sub_dir (@$clone_dirs) {
 		system("chown -R mysql:mysql $dir/$sub_dir");

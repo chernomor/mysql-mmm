@@ -1,3 +1,19 @@
+mysql-mmm (2.2.3) stable; urgency=low
+
+  * Fix a case in which the MySQL version string is not 
+    compatible with the "version" perl lib.
+
+ -- Evelio Vila <eveliovila@gmail.com>  Mon, 17 Mar 2014 13:13:00 CEST
+
+
+mysql-mmm (2.2.2) stable; urgency=low
+
+  * Remove new auto.cnf file after copy is finished for MySQL >=5.6;
+    otherwise replication breaks.
+
+ -- Evelio Vila <eveliovila@gmail.com>  Fri, 17 Oct 2013 11:30:00 CEST
+
+
 mysql-mmm (2.2.1-1) unstable; urgency=low
 
   * Fixed usage of wrong state name in set_active, forced_move_role and
